@@ -1,0 +1,34 @@
+﻿Build started 16/12/2016 13:10:59.
+     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /Od /D _MBCS /Gm /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc
+         common.cc
+       Link:
+         F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
+         x64\Debug\cvar.obj
+         x64\Debug\input.obj
+         x64\Debug\math.obj
+         x64\Debug\plg_loader.obj
+         x64\Debug\renderer_cmds.obj
+         x64\Debug\renderer_main.obj
+         x64\Debug\win_console.obj
+         x64\Debug\win_input.obj
+         x64\Debug\win_shared.obj
+         x64\Debug\win_main.obj
+         x64\Debug\win_main_window.obj
+         x64\Debug\win_renderer_dib.obj
+         x64\Debug\win_wndproc.obj
+         LINK : F:\code\QuakeClone\x64\Debug\QuakeClone.exe not found or not built by the last incremental link; performing full link
+         QuakeClone.vcxproj -> F:\code\QuakeClone\x64\Debug\QuakeClone.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe;#1" /manifest x64\Debug\QuakeClone.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "x64\Debug\QuakeClone.unsuccessfulbuild".
+         Touching "x64\Debug\QuakeClone.lastbuildstate".
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.61
