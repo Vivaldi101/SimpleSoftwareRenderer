@@ -13,6 +13,7 @@
 extern void	Sys_CreateConsole();
 extern void	Sys_DestroyConsole();
 extern void Sys_Print(const char *msg);
+extern void Sys_Sleep(DWORD ms);
 extern void Conbuf_AppendText(const char *msg);
 
 // Com System
@@ -34,6 +35,7 @@ extern void	In_Frame();
 
 // Windows
 extern void Vid_CreateWindow(struct RendererState *rs, int width, int height, void *wndproc, void *hinstance);
+extern void Sys_ToggleFullscreen(HWND window);
 
 // Events
 void Sys_QueEvent(int time, enum SysEventType type, int value, int value2, int data_len, void *data);
@@ -53,7 +55,7 @@ struct WinVars {
 
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event
-	unsigned		sys_msgime;
+	u32				sys_msg_time;
 };
 extern WinVars global_win_vars;
 #endif	// Header guard

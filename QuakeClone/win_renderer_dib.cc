@@ -86,8 +86,8 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	** fill in the BITMAPINFO struct
 	*/
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
-	win_dib_info->bmiHeader.biWidth         = 960;		// get the buffer
-	win_dib_info->bmiHeader.biHeight        = -540;		// top down buffer
+	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		// get the buffer
+	win_dib_info->bmiHeader.biHeight        = -vid_sys->height;		// top down buffer
 	win_dib_info->bmiHeader.biPlanes        = 1;
 	win_dib_info->bmiHeader.biBitCount      = vid_sys->bpp * 8;
 	win_dib_info->bmiHeader.biCompression   = BI_RGB;

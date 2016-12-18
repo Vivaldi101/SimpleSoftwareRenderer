@@ -212,6 +212,16 @@ static inline Vec4 Vector4Inverse(const Vec4 *v) {
 	return i;
 }
 
+static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
+	Vec3 v = {};
+
+	v[0] = p1[0] - p0[0];
+	v[1] = p1[1] - p0[1];
+	v[2] = p1[2] - p0[2];
+
+	return v;
+}
+
 void MatrixMultiply(Vec3 (*lhs)[3], Vec3 (*rhs)[3], Vec3 (*result)[3]);
 void MatrixMultiply(Vec4 (*lhs)[4], Vec4 (*rhs)[4], Vec4 (*result)[4]);
 void MatrixMultiply(Vec4 *lhs, Vec4 (*rhs)[4], Vec4 *result);

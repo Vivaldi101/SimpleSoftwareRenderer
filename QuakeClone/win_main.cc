@@ -5,7 +5,9 @@
 
 static int	s_global_sys_argc;
 static char *s_global_sys_argv[MAX_NUM_ARGVS];
+
 WinVars global_win_vars;
+static WINDOWPLACEMENT global_window_pos = { sizeof(global_window_pos) };
 
 void Sys_Init() {
 }
@@ -18,6 +20,32 @@ void Sys_Quit() {
 
 void Sys_Print(const char *msg) {
 	Conbuf_AppendText(msg);
+}
+
+void Sys_Sleep(DWORD ms) {
+	Sleep(ms);
+}
+
+void Sys_ToggleFullscreen(HWND window) {
+	DWORD style = GetWindowLong(window, GWL_STYLE);
+	if (style & WS_OVERLAPPEDWINDOW) {
+		MONITORINFO mi = { sizeof(mi) };
+		if (GetWindowPlacement(window, &global_window_pos) && GetMonitorInfo(MonitorFromWindow(window, MONITOR_DEFAULTTOPRIMARY), &mi)) {
+			SetWindowLong(window, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+			SetWindowPos(window, HWND_TOP,
+						 mi.rcMonitor.left, mi.rcMonitor.top,
+						 mi.rcMonitor.right - mi.rcMonitor.left,
+						 mi.rcMonitor.bottom - mi.rcMonitor.top,
+						 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+		}
+	} else {
+		SetWindowLong(window, GWL_STYLE,
+					  style | WS_OVERLAPPEDWINDOW);
+		SetWindowPlacement(window, &global_window_pos);
+		SetWindowPos(window, 0, 0, 0, 0, 0,
+					 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+					 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+	}
 }
 
 static void ParseCommandLine(char *cmd_line) {
@@ -107,11 +135,11 @@ void Sys_PumpEvents() {
 		}
 
 		// save the msg time, because wndprocs don't have access to the timestamp
-		if (global_win_vars.sys_msgime && global_win_vars.sys_msgime > (int)msg.time) {
+		if (global_win_vars.sys_msg_time && global_win_vars.sys_msg_time > (int)msg.time) {
 			// don't ever let the event times run backwards	
 //			common->Printf( "Sys_PumpEvents: win32.sysMsgTime (%i) > msg.time (%i)\n", win32.sysMsgTime, msg.time );
 		} else {
-			global_win_vars.sys_msgime = msg.time;
+			global_win_vars.sys_msg_time = msg.time;
 		}
 
 		TranslateMessage(&msg);

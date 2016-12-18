@@ -121,9 +121,9 @@ void R_TransformViewToClip(MeshData *md);
 void R_TransformClipToScreen(MeshData *md);
 void R_DrawMesh(MeshData *md);
 
-// for fun
-void R_RotateCube(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
+void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius = 0.0f);
+void R_CullBackFaces(MeshData *md);
 
 
 #endif	// Header guard

@@ -52,8 +52,10 @@ void Com_Frame() {
 
 	int num_game_frames_to_run = 0;
 
+	static Vec3 mat_rot_x[3];
 	static Vec3 mat_rot_y[3];
-	static r32 rot_theta = -1.0f;
+	static Vec3 mat_rot_z[3];
+	static r32 rot_theta = DEG2RAD(-1.0f);
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -80,28 +82,28 @@ void Com_Frame() {
 			// ready to actually run the frames
 			break;
 		}
-		Sleep(0);
+		Sys_Sleep(0);
 	}
 
-	mat_rot_y[0][0] = cos(DEG2RAD(rot_theta));
-	mat_rot_y[0][1] = 0;
-	mat_rot_y[0][2] = -sin(DEG2RAD(rot_theta));
+	mat_rot_x[0][0] = 1.0f;
+	mat_rot_x[0][1] = 0.0f;
+	mat_rot_x[0][2] = 0.0f;
 
-	mat_rot_y[1][0] = 0;
-	mat_rot_y[1][1] = 1;
-	mat_rot_y[1][2] = 0;
+	mat_rot_x[1][0] = 0.0f;
+	mat_rot_x[1][1] = cos(rot_theta);
+	mat_rot_x[1][2] = sin(rot_theta);
 
-	mat_rot_y[2][0] = sin(DEG2RAD(rot_theta));
-	mat_rot_y[2][1] = 0;
-	mat_rot_y[2][2] = cos(DEG2RAD(rot_theta));
+	mat_rot_x[2][0] = 0.0f;
+	mat_rot_x[2][1] = -sin(rot_theta);
+	mat_rot_x[2][2] = cos(rot_theta);
 
-	R_RotateCube(&mat_rot_y, md.local_vertex_array, md.num_verts); 
-	//MatrixMultiply(md.local_vertex_array, &mat_rot_y, 
-
+	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
 
 	R_BeginFrame();
 	R_TransformModelToWorld(&md); 
+	md.state = R_CullPointAndRadius(md.world_pos);
 	R_SetupEulerView(0.0f, 0.0f, 0.0f);
+	R_CullBackFaces(&md);
 	R_TransformWorldToView(&md);
 	R_TransformViewToClip(&md);
 	R_TransformClipToScreen(&md);
@@ -111,14 +113,13 @@ void Com_Frame() {
 	R_EndFrame();
 
 	// time debugging, first frame will be zero
-	//Sleep(20);
 	static int last_time = Sys_GetMilliseconds();
 	int	now_time = Sys_GetMilliseconds();
 	int	frame_msec = now_time - last_time;
 	last_time = now_time;
 	{
 		char buffer[64];
-		sprintf_s(buffer, "MS: %d, Frames to sim: %d, Theta: %f\n", frame_msec, num_game_frames_to_run, rot_theta);
+		sprintf_s(buffer, "MS: %d, Frames to sim: %d\n", frame_msec, num_game_frames_to_run);
 		OutputDebugStringA(buffer);
 	}
 }

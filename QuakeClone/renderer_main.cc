@@ -28,19 +28,16 @@ void R_DrawGradient(VidSystem *vid_sys) {
 b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
 
 	RendererState *rs = &global_renderer_state;
-	Vid_CreateWindow(rs, 960, 540, wndproc, hinstance);	
+	Vid_CreateWindow(rs, 800, 800, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
 		Sys_Quit();
 	}
 
+
 	R_SetupFrustum(90.0f, 50.0f, 500.0f, 0.0f, 0.0f, 0.0f);
 
-	//MeshData md;
-	//PLG_InitParsing("poly_data.plg", &md);
-
-	//md.state = R_CullPointAndRadius(md.world_pos, 0.0f);
 	int x = 42;
 
 	return true;
@@ -103,6 +100,10 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far, r32 view_orig_x, r32 view_
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		vs.frustum_planes[i].unit_normal = Vector3Normalize(&vs.frustum_planes[i].unit_normal);
 		vs.frustum_planes[i].dist = Vector3DotProduct(vs.frustum_planes[i].unit_normal, vs.world_orientation.origin);
+		if (vs.frustum_planes[i].dist < 0.0f) {
+			Negate(vs.frustum_planes[i].dist);
+			Vector3Negate(vs.frustum_planes[i].unit_normal);
+		}
 		vs.frustum_planes[i].type = PLANE_NON_AXIAL;
 	}
 
@@ -211,14 +212,16 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll) {
 // memcpy all the verts to a temp buffer and transform
 // with an invisible homogeneous 1
 void R_TransformWorldToView(MeshData *md) {
-	int num_verts = md->num_verts;
-	for (int i = 0; i < num_verts; ++i) {
-		Vec4 vert, tmp;
-		Vector3Copy(vert, md->trans_vertex_array[i]);
-		vert.v.w = 1;
+	if (!(md->state & CULL_OUT)) {
+		int num_verts = md->num_verts;
+		for (int i = 0; i < num_verts; ++i) {
+			Vec4 vert, tmp;
+			Vector3Copy(vert, md->trans_vertex_array[i]);
+			vert.v.w = 1;
 
-		MatrixMultiply(&vert, &global_renderer_state.current_view.world_view_matrix, &tmp);  
-		Vector3Copy(md->trans_vertex_array[i], tmp);
+			MatrixMultiply(&vert, &global_renderer_state.current_view.world_view_matrix, &tmp);  
+			Vector3Copy(md->trans_vertex_array[i], tmp);
+		}
 	}
 }
 
@@ -236,56 +239,75 @@ void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {
 	}
 }
 
-FrustumClippingState R_CullPointAndRadius(Vec3 point, r32 radius) {
-	Sys_Print("Culling!!\n");
+FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
+	FrustumClippingState cull_state[NUM_FRUSTUM_PLANES];
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-		Plane p = global_renderer_state.current_view.frustum_planes[i];
+		Plane pl = global_renderer_state.current_view.frustum_planes[i];
 
-		r32 dist = Vector3DotProduct(point, p.unit_normal) - p.dist;
-		if (dist > 0.0f) {
+		r32 dot = Vector3DotProduct(pt, pl.unit_normal);
+		if (dot + radius < 0.0f) {
 			//Sys_Print("Point center is outside of a plane\n");
-			if (dist - radius > 0.0f) {
-				Sys_Print("Point with radius is outside of the frustum\n");
-				return CULL_OUT;
-			} else {
-				Sys_Print("Point with radius is partially clipped of the frustum\n");
-				return CULL_CLIP;
-			}
-		} else if (dist < 0.0f) {
+			//if (dot - radius > 0.0f) {
+			//	Sys_Print("Point with radius is outside of the frustum\n");
+			//	return CULL_OUT;
+			//} else {
+			//	Sys_Print("Point with radius is partially clipped of the frustum\n");
+			//	return CULL_CLIP;
+			//}
+			//Sys_Print("Point is culled!\n");
+			//return CULL_IN;
+			cull_state[i] = CULL_IN;
+		} else if (dot + radius > 0.0f) {
 			//Sys_Print("Point center is inside of a plane\n");
-			if (dist - radius < 0.0f) {
-				Sys_Print("Point with radius is inside of the frustum\n");
-				return CULL_IN;
-			} else {
-				Sys_Print("Point with radius is partially clipped of the frustum\n");
-				return CULL_CLIP;
-			}
+			//if (dist - radius < 0.0f) {
+			//	Sys_Print("Point with radius is inside of the frustum\n");
+			//	return CULL_IN;
+			//} else {
+			//	Sys_Print("Point with radius is partially clipped of the frustum\n");
+			//	return CULL_CLIP;
+			//}
+			//Sys_Print("Point is NOT culled!\n");
+			cull_state[i] = CULL_OUT;
 		} 
 	}
-	Sys_Print("Point is on a plane of the frustum\n");
-	return CULL_OUT;
+
+	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
+		if (cull_state[i] != CULL_IN) {
+			Sys_Print("Point is culled!!\n");
+			return CULL_OUT;
+		}
+	}
+
+	Sys_Print("NO culling!!\n");
+	return CULL_IN;
+	//Sys_Print("Point is on a plane of the frustum\n");
+	//return CULL_OUT;
 }
 
 void R_TransformViewToClip(MeshData *md) {
-	int num_verts = md->num_verts;
+	if (!(md->state & CULL_OUT)) {
+		int num_verts = md->num_verts;
 
-	r32 dist = global_renderer_state.current_view.view_dist_h;
-	r32 z;
-	for (int i = 0; i < num_verts; ++i) {
-		z = md->trans_vertex_array[i].v.z;
-		md->trans_vertex_array[i].v.x = (md->trans_vertex_array[i].v.x * dist) / z; 
-		md->trans_vertex_array[i].v.y = (md->trans_vertex_array[i].v.y * dist) / z; 
+		r32 dist = global_renderer_state.current_view.view_dist_h;
+		r32 z;
+		for (int i = 0; i < num_verts; ++i) {
+			z = md->trans_vertex_array[i].v.z;
+			md->trans_vertex_array[i].v.x = (md->trans_vertex_array[i].v.x * dist) / z; 
+			md->trans_vertex_array[i].v.y = (md->trans_vertex_array[i].v.y * dist) / z; 
+		}
 	}
 }
 
 void R_TransformClipToScreen(MeshData *md) {
-	int num_verts = md->num_verts;
+	if (!(md->state & CULL_OUT)) {
+		int num_verts = md->num_verts;
 
-	r32 screen_width_factor = (0.5f * global_renderer_state.current_view.viewport_width) - 0.5f;
-	r32 screen_height_factor = (0.5f * global_renderer_state.current_view.viewport_height) - 0.5f;
-	for (int i = 0; i < num_verts; ++i) {
-		md->trans_vertex_array[i].v.x = screen_width_factor + (md->trans_vertex_array[i].v.x * screen_width_factor);
-		md->trans_vertex_array[i].v.y = screen_height_factor - (md->trans_vertex_array[i].v.y * screen_height_factor);
+		r32 screen_width_factor = (0.5f * global_renderer_state.current_view.viewport_width) - 0.5f;
+		r32 screen_height_factor = (0.5f * global_renderer_state.current_view.viewport_height) - 0.5f;
+		for (int i = 0; i < num_verts; ++i) {
+			md->trans_vertex_array[i].v.x = screen_width_factor + (md->trans_vertex_array[i].v.x * screen_width_factor);
+			md->trans_vertex_array[i].v.y = screen_height_factor - (md->trans_vertex_array[i].v.y * screen_height_factor);
+		}
 	}
 }
 
@@ -428,38 +450,46 @@ static void R_DrawLine(int x0, int y0, int x1, int y1, u32 color) {
 }
 
 void R_DrawMesh(MeshData *md) {
-	int num_polys = md->num_polys;
+	if (!(md->state & CULL_OUT)) {
+		int num_polys = md->num_polys;
 
-	for (int i = 0; i < num_polys; ++i) {
-		if (!(md->poly_array[i].state & POLY_STATE_ACTIVE) || (md->poly_array[i].state & POLY_STATE_CLIPPED)) {
-			continue;
+		for (int i = 0; i < num_polys; ++i) {
+			if ((md->poly_array[i].state & POLY_STATE_BACKFACE)) {
+				continue;
+			}
+
+			int v0 = md->poly_array[i].vert_indices[0];
+			int v1 = md->poly_array[i].vert_indices[1];
+			int v2 = md->poly_array[i].vert_indices[2];
+
+			R_DrawLine((int)md->trans_vertex_array[v0].v.x,
+					   (int)md->trans_vertex_array[v0].v.y,
+					   (int)md->trans_vertex_array[v1].v.x,
+					   (int)md->trans_vertex_array[v1].v.y,
+					   md->poly_array[i].color);
+
+			R_DrawLine((int)md->trans_vertex_array[v1].v.x,
+					   (int)md->trans_vertex_array[v1].v.y,
+					   (int)md->trans_vertex_array[v2].v.x,
+					   (int)md->trans_vertex_array[v2].v.y,
+					   md->poly_array[i].color);
+
+			R_DrawLine((int)md->trans_vertex_array[v2].v.x,
+					   (int)md->trans_vertex_array[v2].v.y,
+					   (int)md->trans_vertex_array[v0].v.x,
+					   (int)md->trans_vertex_array[v0].v.y,
+					   md->poly_array[i].color);
 		}
 
-		int v0 = md->poly_array[i].vert_indices[0];
-		int v1 = md->poly_array[i].vert_indices[1];
-		int v2 = md->poly_array[i].vert_indices[2];
-
-		R_DrawLine((int)md->trans_vertex_array[v0].v.x,
-				   (int)md->trans_vertex_array[v0].v.y,
-				   (int)md->trans_vertex_array[v1].v.x,
-				   (int)md->trans_vertex_array[v1].v.y,
-				   md->poly_array[i].color);
-
-		R_DrawLine((int)md->trans_vertex_array[v1].v.x,
-				   (int)md->trans_vertex_array[v1].v.y,
-				   (int)md->trans_vertex_array[v2].v.x,
-				   (int)md->trans_vertex_array[v2].v.y,
-				   md->poly_array[i].color);
-
-		R_DrawLine((int)md->trans_vertex_array[v2].v.x,
-				   (int)md->trans_vertex_array[v2].v.y,
-				   (int)md->trans_vertex_array[v0].v.x,
-				   (int)md->trans_vertex_array[v0].v.y,
-				   md->poly_array[i].color);
+		for (int i = 0; i < num_polys; ++i) {
+			if ((md->poly_array[i].state & POLY_STATE_BACKFACE)) {
+				md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
+			}
+		}
 	}
 }
 
-void R_RotateCube(Vec3 (*rot_mat)[3], Vec3 *points, int num_points) {
+void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points) {
 	for (int i = 0; i < num_points; ++i) {
 		r32 x = Vector3DotProduct((*rot_mat)[0], points[i]);
 		r32 y = Vector3DotProduct((*rot_mat)[1], points[i]);
@@ -468,5 +498,32 @@ void R_RotateCube(Vec3 (*rot_mat)[3], Vec3 *points, int num_points) {
 		points[i][0] = x;
 		points[i][1] = y;
 		points[i][2] = z;
+	}
+}
+
+void R_CullBackFaces(MeshData *md) {
+	if (!(md->state & CULL_OUT)) {
+
+		int num_polys = md->num_polys;
+		for (int i = 0; i < num_polys; ++i) {
+			if (md->poly_array[i].state & POLY_STATE_BACKFACE) {
+				continue;
+			}
+
+			int v0 = md->poly_array[i].vert_indices[0];
+			int v1 = md->poly_array[i].vert_indices[1];
+			int v2 = md->poly_array[i].vert_indices[2];
+
+			Vec3 u = Vector3Build(md->trans_vertex_array[v0], md->trans_vertex_array[v1]);
+			Vec3 v = Vector3Build(md->trans_vertex_array[v0], md->trans_vertex_array[v2]);
+			Vec3 n = CrossProduct(u, v);
+			Vec3 view = Vector3Build(global_renderer_state.current_view.world_orientation.origin, md->trans_vertex_array[v0]);
+
+			r32 dot = Vector3DotProduct(view, n);
+
+			if (dot <= 0.0f) {
+				md->poly_array[i].state |= POLY_STATE_BACKFACE;
+			}
+		}
 	}
 }

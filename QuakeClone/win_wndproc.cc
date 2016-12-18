@@ -71,7 +71,7 @@ static int MapKey (int key) {
 }
 #endif
 
-LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
+LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) {
 	//static b32 flip = true;
 	//int zdelta, i;
 
@@ -96,7 +96,10 @@ LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 	}
 #endif
 
-	switch (umsg) {
+	u64 key;
+	b32 was_key_down;
+	b32 is_key_down;
+	switch (msg) {
 #if 0
 	case WM_MOUSEWHEEL:
 		// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/mouseinput/aboutmouseinput.asp
@@ -148,7 +151,7 @@ LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 #endif
 
 	case WM_CREATE: {
-		global_win_vars.hwnd = hwnd;
+		global_win_vars.hwnd = window;
 
 		//vid_xpos = Cvar_Get ("vid_xpos", "3", CVAR_ARCHIVE);
 		//vid_ypos = Cvar_Get ("vid_ypos", "22", CVAR_ARCHIVE);
@@ -268,7 +271,9 @@ LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 	//	}
 	//} break;
 
-		case WM_SYSKEYDOWN:
+
+		case WM_SYSKEYDOWN: {
+		}
 			//if ( wParam == 13 )
 			//{
 			//	if ( r_fullscreen )
@@ -282,18 +287,30 @@ LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 			// fall through
 		case WM_KEYDOWN: {
 			//Sys_QueEvent(global_win_vars.sys_msgime, SE_KEY, MapKey( lparam ), true, 0, NULL );
-		} break;
+		} /*break;*/
 
-		case WM_SYSKEYUP:
+		case WM_SYSKEYUP: {
+		}
 		case WM_KEYUP: {
+			key	= wparam;
+			was_key_down = ((1 << 30) & lparam) != 0;
+			is_key_down = ((1 << 31) & lparam) == 0;
+
+			if (is_key_down) {
+				b32 alt_down = lparam & (1 << 29);
+				if ((key == VK_RETURN) && alt_down) {
+					Sys_ToggleFullscreen(window);
+				}
+			}
+
 			//Sys_QueEvent(global_win_vars.sys_msgime, SE_KEY, MapKey( lparam ), false, 0, NULL );
 		} break;
 
 		case WM_CHAR: {
-			Sys_QueEvent(global_win_vars.sys_msgime, SE_CHAR, (int)wparam, 0, 0, 0);
+			Sys_QueEvent(global_win_vars.sys_msg_time, SE_CHAR, (int)wparam, 0, 0, 0);
 		} break;
 	}
 	
 
-    return DefWindowProc(hwnd, umsg, wparam, lparam);
+    return DefWindowProc(window, msg, wparam, lparam);
 }
