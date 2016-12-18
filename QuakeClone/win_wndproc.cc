@@ -301,9 +301,9 @@ LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) 
 				if ((key == VK_RETURN) && alt_down) {
 					Sys_ToggleFullscreen(window);
 				}
+				Sys_QueEvent(global_win_vars.sys_msg_time, SE_KEY, (int)key, 0, 0, 0);
 			}
 
-			//Sys_QueEvent(global_win_vars.sys_msgime, SE_KEY, MapKey( lparam ), false, 0, NULL );
 		} break;
 
 		case WM_CHAR: {

@@ -28,7 +28,8 @@ void R_DrawGradient(VidSystem *vid_sys) {
 b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
 
 	RendererState *rs = &global_renderer_state;
-	Vid_CreateWindow(rs, 800, 800, wndproc, hinstance);	
+	// should be 1920 / 2, 1080 / 2
+	Vid_CreateWindow(rs, 1000, 1000, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");

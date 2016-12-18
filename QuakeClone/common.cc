@@ -9,6 +9,7 @@ static int s_global_game_time_residual;
 static int s_global_game_frame;
 
 static MeshData md;
+static int yaw;
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 	Sys_Init();
 
@@ -25,6 +26,11 @@ static void ProcessEvent(SysEvent se) {
 	if (se.ev_value == VK_ESCAPE) {
 		//Sys_Print(se.ev_value);
 		Sys_Quit();
+	}
+	if (se.ev_value == VK_RIGHT) {
+		++yaw;
+	} else if (se.ev_value == VK_LEFT) {
+		--yaw;
 	}
 }
 void Com_RunEventLoop() {
@@ -101,8 +107,8 @@ void Com_Frame() {
 
 	R_BeginFrame();
 	R_TransformModelToWorld(&md); 
-	md.state = R_CullPointAndRadius(md.world_pos);
-	R_SetupEulerView(0.0f, 0.0f, 0.0f);
+	md.state = R_CullPointAndRadius(md.world_pos, 1.0f);	// 1.0f for now
+	R_SetupEulerView(0.0f, yaw, 0.0f);
 	R_CullBackFaces(&md);
 	R_TransformWorldToView(&md);
 	R_TransformViewToClip(&md);
