@@ -30,7 +30,7 @@ b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into 
 	memset(&global_renderer_state, 0, sizeof(RendererState));
 	RendererState *rs = &global_renderer_state;
 	// should be 1920 / 2, 1080 / 2
-	Vid_CreateWindow(rs, 1920 / 2, 1080 / 2, wndproc, hinstance);	
+	Vid_CreateWindow(rs, 1920, 1080, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
@@ -46,6 +46,8 @@ b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into 
 #if 1
 void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 	ViewSystem *vs = &global_renderer_state.current_view;
+	Vec3 view_dir = global_renderer_state.current_view.world_orientation.dir;
+	Vec3 origin = vs->world_orientation.origin;
 
 	vs->z_near = z_near;
 	vs->z_far = z_far;
@@ -55,7 +57,7 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 	vs->viewplane_width = 2.0f;	// normalized
 	vs->viewplane_height = vs->viewplane_width / vs->aspect_ratio;
 	vs->viewport_width = (r32)global_renderer_state.vid_sys.width;		// conversions for now
-	vs->viewport_height = (r32)global_renderer_state.vid_sys.height;		// --,,--
+	vs->viewport_height = (r32)global_renderer_state.vid_sys.height;	// --,,--
 
 	vs->fov_h = fov_h;
 
@@ -66,19 +68,43 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 	vs->view_dist_v = (vs->viewplane_height / 2.0f) / half_tan_h;
 	vs->fov_v = RAD2DEG(atan((vs->viewplane_height / 2.0f) / vs->view_dist_h)) * 2.0f;
 
+
+	if (origin[2] != 0.0f) {
+		if (view_dir[1] != 0.0f) {
+			int x = 42;
+		}
+	}
+
+	// cos and -sin of left clipping plane
+	r32 yaw = DEG2RAD(view_dir[1] - (vs->fov_h * 0.5f));
+
 	// left plane normal
-	Vec3 lpn;
-	Vector3Init(lpn, -(vs->viewplane_width) / 2.0f, 0, vs->view_dist_h); 
+	Vec3 lpn = {};
+	//lpn[0] = (origin[0] - vs->viewplane_width / 2.0f);
+	//lpn[0] *= (-sin(yaw));
+	//lpn[2] = (origin[2] - vs->view_dist_h);
+	//lpn[2] *= (cos(yaw));
+
+	Vector3Init(lpn, (-sin(yaw) * -(vs->viewplane_width)) / 2.0f, 0, (cos(yaw) * vs->view_dist_h)); 
 	PerpOperator(lpn, 0, 2);
 	vs->frustum_planes[FRUSTUM_PLANE_INDEX_LEFT].unit_normal = lpn;
 
+	// cos and sin of right clipping plane
+	yaw = DEG2RAD(view_dir[1] + (vs->fov_h * 0.5f));
+
 	// right plane normal
-	Vec3 rpn;
-	Vector3Init(rpn, vs->viewplane_width / 2.0f, 0, vs->view_dist_h); 
+	Vec3 rpn = {};
+	//rpn[0] = (origin[0] + vs->viewplane_width / 2.0f);
+	//rpn[0] *= (sin(yaw));
+	//rpn[2] = (origin[2] - vs->view_dist_h);
+	//rpn[2] *= (cos(yaw));
+
+	Vector3Init(rpn, (sin(yaw) * vs->viewplane_width) / 2.0f, 0, (cos(yaw) * vs->view_dist_h)); 
 	PerpOperator(rpn, 2, 0);
 	vs->frustum_planes[FRUSTUM_PLANE_INDEX_RIGHT].unit_normal = rpn;
 
 
+	// FIXME: top and bottom plane normals
 	// top plane normal
 	Vec3 tpn;
 	Vector3Init(tpn, 0, vs->viewplane_height / 2.0f, vs->view_dist_h);
@@ -94,12 +120,14 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		vs->frustum_planes[i].unit_normal = Vector3Normalize(&vs->frustum_planes[i].unit_normal);
 		vs->frustum_planes[i].dist = Vector3DotProduct(vs->frustum_planes[i].unit_normal, vs->world_orientation.origin);
-		if (vs->frustum_planes[i].dist < 0.0f) {
-			Negate(vs->frustum_planes[i].dist);
-			Vector3Negate(vs->frustum_planes[i].unit_normal);
-		}
+		//if (vs->frustum_planes[i].dist < 0.0f) {
+		//	int x = 42;
+		//}
 		vs->frustum_planes[i].type = PLANE_NON_AXIAL;
 	}
+
+	int x = 42;
+	
 }
 #endif
 
@@ -109,30 +137,30 @@ void R_SetupFrustum (r32 fov_h, r32 z_near, r32 z_far) {
 	float	xs, xc;
 	float	ang;
 
-	ang = tr.viewParms.fovX / 180 * M_PI * 0.5f;
+	ang = global_renderer_state.current_view.fov_h / 180 * M_PI * 0.5f;
+	xs = sin(ang);
+	xc = cos(ang);
+
+	Vector3Scale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[0].normal );
+	Vector3MA( tr.viewParms.frustum[0].normal, xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[0].normal );
+
+	Vector3Scale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[1].normal );
+	Vector3MA( tr.viewParms.frustum[1].normal, -xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[1].normal );
+
+	ang = global_renderer_state.current_view.fov_v / 180 * M_PI * 0.5f;
 	xs = sin( ang );
 	xc = cos( ang );
 
-	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[0].normal );
-	VectorMA( tr.viewParms.frustum[0].normal, xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[0].normal );
+	Vector3Scale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[2].normal );
+	Vector3MA( tr.viewParms.frustum[2].normal, xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[2].normal );
 
-	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[1].normal );
-	VectorMA( tr.viewParms.frustum[1].normal, -xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[1].normal );
+	Vector3Scale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[3].normal );
+	Vector3MA( tr.viewParms.frustum[3].normal, -xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[3].normal );
 
-	ang = tr.viewParms.fovY / 180 * M_PI * 0.5f;
-	xs = sin( ang );
-	xc = cos( ang );
-
-	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[2].normal );
-	VectorMA( tr.viewParms.frustum[2].normal, xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[2].normal );
-
-	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[3].normal );
-	VectorMA( tr.viewParms.frustum[3].normal, -xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[3].normal );
-
-	for (i=0 ; i<4 ; i++) {
+	for (i = 0; i < NUM_FRUSTUM_PLANES; i++) {
 		tr.viewParms.frustum[i].type = PLANE_NON_AXIAL;
-		tr.viewParms.frustum[i].dist = DotProduct (tr.viewParms.or.origin, tr.viewParms.frustum[i].normal);
-		SetPlaneSignbits( &tr.viewParms.frustum[i] );
+		tr.viewParms.frustum[i].dist = Vector3DotProduct(tr.viewParms.or.origin, tr.viewParms.frustum[i].normal);
+		//SetPlaneSignbits( &tr.viewParms.frustum[i] );
 	}
 }
 #endif
@@ -275,12 +303,12 @@ void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {
 }
 
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
-	FrustumClippingState cull_state[NUM_FRUSTUM_PLANES];
+	FrustumClippingState cull_state[NUM_FRUSTUM_PLANES] = {CULL_IN, CULL_IN, CULL_IN, CULL_IN};
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = global_renderer_state.current_view.frustum_planes[i];
 
-		r32 dot = Vector3DotProduct(pt, pl.unit_normal);
-		if (dot + radius < 0.0f) {
+		r32 dist = Vector3DotProduct(pt, pl.unit_normal) - pl.dist;
+		if (dist > radius) {
 			//Sys_Print("Point center is outside of a plane\n");
 			//if (dot - radius > 0.0f) {
 			//	Sys_Print("Point with radius is outside of the frustum\n");
@@ -291,23 +319,12 @@ FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
 			//}
 			//Sys_Print("Point is culled!\n");
 			//return CULL_IN;
-			cull_state[i] = CULL_IN;
-		} else if (dot + radius > 0.0f) {
-			//Sys_Print("Point center is inside of a plane\n");
-			//if (dist - radius < 0.0f) {
-			//	Sys_Print("Point with radius is inside of the frustum\n");
-			//	return CULL_IN;
-			//} else {
-			//	Sys_Print("Point with radius is partially clipped of the frustum\n");
-			//	return CULL_CLIP;
-			//}
-			//Sys_Print("Point is NOT culled!\n");
 			cull_state[i] = CULL_OUT;
-		} 
+		}  
 	}
 
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-		if (cull_state[i] != CULL_IN) {
+		if (cull_state[i] == CULL_OUT) {
 			Sys_Print("Point is culled!!\n");
 			return CULL_OUT;
 		}

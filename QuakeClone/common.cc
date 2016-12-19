@@ -9,8 +9,10 @@ static int s_global_game_time_residual;
 static int s_global_game_frame;
 
 static MeshData md;
-static r32 yaw;
-static r32 fwd;
+
+static r32 yaw = 0.0f;
+static r32 mov_x = 0.0f;
+static r32 mov_z = 0.0f;
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 	Sys_Init();
 
@@ -29,9 +31,13 @@ static void ProcessEvent(SysEvent se) {
 		Sys_Quit();
 	}
 	if (se.ev_value == VK_UP) {
-		++fwd;
+		//fwd += 5.0f;
+		mov_x += (2.0f * sin(DEG2RAD(yaw)));
+		mov_z += (2.0f * cos(DEG2RAD(yaw)));
 	} else if (se.ev_value == VK_DOWN) {
-		--fwd;
+		//fwd -= 5.0f;
+		mov_x -= (2.0f * sin(DEG2RAD(yaw)));
+		mov_z -= (2.0f * cos(DEG2RAD(yaw)));
 	}
 	if (se.ev_value == VK_RIGHT) {
 		++yaw;
@@ -121,14 +127,14 @@ void Com_Frame() {
 	mat_rot_z[2][1] = 0.0f;
 	mat_rot_z[2][2] = 1.0f;
 
-	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
 	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
+	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
 
 	R_BeginFrame(&md);
 	R_TransformModelToWorld(&md); 
-	md.state = R_CullPointAndRadius(md.world_pos, 10.0f);	// 1.0f for now
-	R_SetupEulerView(0.0f, yaw, 0.0f, 0.0f, 0.0f, fwd);
+	R_SetupEulerView(0.0f, yaw, 0.0f, mov_x, 0.0f, mov_z);
 	R_SetupFrustum(90.0f, 50.0f, 500.0f);
+	md.state = R_CullPointAndRadius(md.world_pos, 1.0f);	// radius value is for testing for now
 	R_CullBackFaces(&md);
 	R_TransformWorldToView(&md);
 	R_TransformViewToClip(&md);
@@ -145,7 +151,7 @@ void Com_Frame() {
 	last_time = now_time;
 	{
 		char buffer[64];
-		sprintf_s(buffer, "MS: %d, Frames to sim: %d\n", frame_msec, num_game_frames_to_run);
+		sprintf_s(buffer, "MS: %d, yaw: %f\n", frame_msec, yaw);
 		OutputDebugStringA(buffer);
 	}
 }

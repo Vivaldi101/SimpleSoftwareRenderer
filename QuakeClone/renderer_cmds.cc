@@ -6,9 +6,8 @@ void R_BeginFrame(MeshData *md) {
 	
 	int num_polys = md->num_polys;
 	for (int i = 0; i < num_polys; ++i) {
-		if ((md->poly_array[i].state & POLY_STATE_BACKFACE)) {
-			md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
-		}
+		md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
+		md->poly_array[i].state = md->poly_array[i].state & (~CULL_OUT);
 	}
 	// clean up the framebuffer
 	void *buffer = global_renderer_state.vid_sys.buffer;
