@@ -77,6 +77,7 @@ struct ViewSystem {
 	Vec4			perspective_screen_matrix[4];
 
 	Orientation		world_orientation;
+	Orientation		debug_orientation;
 	Vec3			target;
 
 	r32				viewport_x,		viewport_y;
@@ -110,10 +111,10 @@ b32	R_Init(void *hinstance, void *wndproc);
 void R_DrawGradient(VidSystem *vid_sys);
 
 void R_EndFrame();
-void R_BeginFrame();
+void R_BeginFrame(MeshData *md);
 
-void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
-void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll);
+void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far);
+void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
 
 void R_TransformModelToWorld(MeshData *md, VertexTransformState ts = LOCAL_TO_TRANSFORMED);
 void R_TransformWorldToView(MeshData *md);

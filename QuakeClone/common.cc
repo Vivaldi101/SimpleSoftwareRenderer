@@ -9,7 +9,8 @@ static int s_global_game_time_residual;
 static int s_global_game_frame;
 
 static MeshData md;
-static int yaw;
+static r32 yaw;
+static r32 fwd;
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 	Sys_Init();
 
@@ -26,6 +27,11 @@ static void ProcessEvent(SysEvent se) {
 	if (se.ev_value == VK_ESCAPE) {
 		//Sys_Print(se.ev_value);
 		Sys_Quit();
+	}
+	if (se.ev_value == VK_UP) {
+		++fwd;
+	} else if (se.ev_value == VK_DOWN) {
+		--fwd;
 	}
 	if (se.ev_value == VK_RIGHT) {
 		++yaw;
@@ -103,12 +109,26 @@ void Com_Frame() {
 	mat_rot_x[2][1] = -sin(rot_theta);
 	mat_rot_x[2][2] = cos(rot_theta);
 
-	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
+	mat_rot_z[0][0] = cos(rot_theta);
+	mat_rot_z[0][1] = sin(rot_theta);
+	mat_rot_z[0][2] = 0.0f;
 
-	R_BeginFrame();
+	mat_rot_z[1][0] = -sin(rot_theta);
+	mat_rot_z[1][1] = cos(rot_theta);
+	mat_rot_z[1][2] = 0.0f;
+
+	mat_rot_z[2][0] = 0.0f;
+	mat_rot_z[2][1] = 0.0f;
+	mat_rot_z[2][2] = 1.0f;
+
+	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
+	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
+
+	R_BeginFrame(&md);
 	R_TransformModelToWorld(&md); 
-	md.state = R_CullPointAndRadius(md.world_pos, 1.0f);	// 1.0f for now
-	R_SetupEulerView(0.0f, yaw, 0.0f);
+	md.state = R_CullPointAndRadius(md.world_pos, 10.0f);	// 1.0f for now
+	R_SetupEulerView(0.0f, yaw, 0.0f, 0.0f, 0.0f, fwd);
+	R_SetupFrustum(90.0f, 50.0f, 500.0f);
 	R_CullBackFaces(&md);
 	R_TransformWorldToView(&md);
 	R_TransformViewToClip(&md);

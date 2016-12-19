@@ -27,9 +27,10 @@ void R_DrawGradient(VidSystem *vid_sys) {
 
 b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
 
+	memset(&global_renderer_state, 0, sizeof(RendererState));
 	RendererState *rs = &global_renderer_state;
 	// should be 1920 / 2, 1080 / 2
-	Vid_CreateWindow(rs, 1000, 1000, wndproc, hinstance);	
+	Vid_CreateWindow(rs, 1920 / 2, 1080 / 2, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
@@ -37,84 +38,107 @@ b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into 
 	}
 
 
-	R_SetupFrustum(90.0f, 50.0f, 500.0f, 0.0f, 0.0f, 0.0f);
-
 	int x = 42;
 
 	return true;
 } 
 
-void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z) {
-	ViewSystem vs;
-	memset(&vs, 0, sizeof(vs));
+#if 1
+void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
+	ViewSystem *vs = &global_renderer_state.current_view;
 
-	Vector3Init(vs.world_orientation.origin, view_orig_x, view_orig_y, view_orig_z);
-	Matrix3x3SetIdentity(global_renderer_state.current_view.world_orientation.axis);
+	vs->z_near = z_near;
+	vs->z_far = z_far;
 
-	vs.z_near = z_near;
-	vs.z_far = z_far;
+	vs->aspect_ratio = (r32)global_renderer_state.vid_sys.width / (r32)global_renderer_state.vid_sys.height;
 
-	vs.aspect_ratio = (r32)global_renderer_state.vid_sys.width / (r32)global_renderer_state.vid_sys.height;
+	vs->viewplane_width = 2.0f;	// normalized
+	vs->viewplane_height = vs->viewplane_width / vs->aspect_ratio;
+	vs->viewport_width = (r32)global_renderer_state.vid_sys.width;		// conversions for now
+	vs->viewport_height = (r32)global_renderer_state.vid_sys.height;		// --,,--
 
-	vs.viewplane_width = 2.0f;	// normalized
-	vs.viewplane_height = vs.viewplane_width / vs.aspect_ratio;
-	vs.viewport_width = (r32)global_renderer_state.vid_sys.width;		// conversions for now
-	vs.viewport_height = (r32)global_renderer_state.vid_sys.height;		// --,,--
+	vs->fov_h = fov_h;
 
-	vs.fov_h = fov_h;
-
-	Matrix4x4SetIdentity(vs.world_view_matrix);
-	Matrix4x4SetIdentity(vs.view_perspective_matrix);
-	Matrix4x4SetIdentity(vs.perspective_screen_matrix);
 
 	r32 half_tan_h = tan(DEG2RAD(fov_h / 2.0f));
 
-	vs.view_dist_h = (vs.viewplane_width / 2.0f) / half_tan_h;
-	vs.view_dist_v = (vs.viewplane_height / 2.0f) / half_tan_h;
-	vs.fov_v = RAD2DEG(atan((vs.viewplane_height / 2.0f) / vs.view_dist_h)) * 2.0f;
+	vs->view_dist_h = (vs->viewplane_width / 2.0f) / half_tan_h;
+	vs->view_dist_v = (vs->viewplane_height / 2.0f) / half_tan_h;
+	vs->fov_v = RAD2DEG(atan((vs->viewplane_height / 2.0f) / vs->view_dist_h)) * 2.0f;
 
 	// left plane normal
 	Vec3 lpn;
-	Vector3Init(lpn, -(vs.viewplane_width) / 2.0f, 0, vs.view_dist_h); 
+	Vector3Init(lpn, -(vs->viewplane_width) / 2.0f, 0, vs->view_dist_h); 
 	PerpOperator(lpn, 0, 2);
-	vs.frustum_planes[FRUSTUM_PLANE_INDEX_LEFT].unit_normal = lpn;
+	vs->frustum_planes[FRUSTUM_PLANE_INDEX_LEFT].unit_normal = lpn;
 
 	// right plane normal
 	Vec3 rpn;
-	Vector3Init(rpn, vs.viewplane_width / 2.0f, 0, vs.view_dist_h); 
+	Vector3Init(rpn, vs->viewplane_width / 2.0f, 0, vs->view_dist_h); 
 	PerpOperator(rpn, 2, 0);
-	vs.frustum_planes[FRUSTUM_PLANE_INDEX_RIGHT].unit_normal = rpn;
+	vs->frustum_planes[FRUSTUM_PLANE_INDEX_RIGHT].unit_normal = rpn;
 
 
 	// top plane normal
 	Vec3 tpn;
-	Vector3Init(tpn, 0, vs.viewplane_height / 2.0f, vs.view_dist_h);
+	Vector3Init(tpn, 0, vs->viewplane_height / 2.0f, vs->view_dist_h);
 	PerpOperator(tpn, 2, 1);
-	vs.frustum_planes[FRUSTUM_PLANE_INDEX_TOP].unit_normal = tpn;
+	vs->frustum_planes[FRUSTUM_PLANE_INDEX_TOP].unit_normal = tpn;
 
 	// bottom plane normal
 	Vec3 bpn;
-	Vector3Init(bpn, 0, -(vs.viewplane_height) / 2.0f, vs.view_dist_h);
+	Vector3Init(bpn, 0, -(vs->viewplane_height) / 2.0f, vs->view_dist_h);
 	PerpOperator(bpn, 1, 2);
-	vs.frustum_planes[FRUSTUM_PLANE_INDEX_BOTTOM].unit_normal = bpn;
+	vs->frustum_planes[FRUSTUM_PLANE_INDEX_BOTTOM].unit_normal = bpn;
 
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-		vs.frustum_planes[i].unit_normal = Vector3Normalize(&vs.frustum_planes[i].unit_normal);
-		vs.frustum_planes[i].dist = Vector3DotProduct(vs.frustum_planes[i].unit_normal, vs.world_orientation.origin);
-		if (vs.frustum_planes[i].dist < 0.0f) {
-			Negate(vs.frustum_planes[i].dist);
-			Vector3Negate(vs.frustum_planes[i].unit_normal);
+		vs->frustum_planes[i].unit_normal = Vector3Normalize(&vs->frustum_planes[i].unit_normal);
+		vs->frustum_planes[i].dist = Vector3DotProduct(vs->frustum_planes[i].unit_normal, vs->world_orientation.origin);
+		if (vs->frustum_planes[i].dist < 0.0f) {
+			Negate(vs->frustum_planes[i].dist);
+			Vector3Negate(vs->frustum_planes[i].unit_normal);
 		}
-		vs.frustum_planes[i].type = PLANE_NON_AXIAL;
+		vs->frustum_planes[i].type = PLANE_NON_AXIAL;
 	}
-
-	memcpy(&global_renderer_state.current_view, &vs, sizeof(vs));
 }
+#endif
+
+#if 0
+void R_SetupFrustum (r32 fov_h, r32 z_near, r32 z_far) {
+	int		i;
+	float	xs, xc;
+	float	ang;
+
+	ang = tr.viewParms.fovX / 180 * M_PI * 0.5f;
+	xs = sin( ang );
+	xc = cos( ang );
+
+	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[0].normal );
+	VectorMA( tr.viewParms.frustum[0].normal, xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[0].normal );
+
+	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[1].normal );
+	VectorMA( tr.viewParms.frustum[1].normal, -xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[1].normal );
+
+	ang = tr.viewParms.fovY / 180 * M_PI * 0.5f;
+	xs = sin( ang );
+	xc = cos( ang );
+
+	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[2].normal );
+	VectorMA( tr.viewParms.frustum[2].normal, xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[2].normal );
+
+	VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[3].normal );
+	VectorMA( tr.viewParms.frustum[3].normal, -xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[3].normal );
+
+	for (i=0 ; i<4 ; i++) {
+		tr.viewParms.frustum[i].type = PLANE_NON_AXIAL;
+		tr.viewParms.frustum[i].dist = DotProduct (tr.viewParms.or.origin, tr.viewParms.frustum[i].normal);
+		SetPlaneSignbits( &tr.viewParms.frustum[i] );
+	}
+}
+#endif
 
 
-void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll) {
-	ViewSystem *vs = &global_renderer_state.current_view;
-
+void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z) {
 	Vec4 inv_trans_mat[4]; 
 	Vec4 final[4];
 
@@ -125,6 +149,18 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll) {
 	Vec4 tmp3[4];
 	Vec4 tmp4[4];
 
+	ViewSystem *vs = &global_renderer_state.current_view;
+	Matrix4x4SetIdentity(vs->world_view_matrix);
+	Matrix4x4SetIdentity(vs->view_perspective_matrix);
+	Matrix4x4SetIdentity(vs->perspective_screen_matrix);
+	Vector3Init(vs->world_orientation.origin, view_orig_x, view_orig_y, view_orig_z);
+	Vector3Copy(vs->debug_orientation.origin, vs->world_orientation.origin);
+	Vec3 origin;
+	Vector3Copy(origin, vs->world_orientation.origin);
+	Vector3Negate(origin);
+	Matrix3x3SetIdentity(global_renderer_state.current_view.world_orientation.axis);
+
+
 	Matrix4x4SetIdentity(inv_trans_mat);
 	Matrix4x4SetIdentity(rot_x);
 	Matrix4x4SetIdentity(rot_y);
@@ -132,14 +168,11 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll) {
 
 	Matrix4x4SetIdentity(tmp1);
 	Matrix4x4SetIdentity(tmp2);
-	//Matrix4x4SetIdentity(tmp3);
-	//Matrix4x4SetIdentity(tmp4);
+	Matrix4x4SetIdentity(tmp3);
+	Matrix4x4SetIdentity(tmp4);
 
 	// inverse translation matrix for the view
-	Vector3Init(inv_trans_mat[3],
-				-vs->world_orientation.origin.v.x,
-				-vs->world_orientation.origin.v.y,
-				-vs->world_orientation.origin.v.z);
+	Vector3Copy(inv_trans_mat[3], origin);
 
 	// get the euler angles in degrees
 	r32 theta_x = vs->world_orientation.dir.v.x = pitch;
@@ -167,46 +200,41 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll) {
 	Vector3Init(rot_z[0], cos_theta, sin_theta, 0); 
 	Vector3Init(rot_z[1], -sin_theta, cos_theta, 0); 
 
-	// FIXME: move the matrix products into own routine
-	// euler pitch, yaw, roll order
-	// testing some funny shit
-	Negate(rot_y[0].v.z);
-	Negate(rot_y[2].v.x);
+	//// FIXME: move the matrix products into own routine
+	//// euler pitch, yaw, roll order
+	//// testing some funny shit
+	//Negate(rot_y[0].v.z);
+	//Negate(rot_y[2].v.x);
 
-	for (int i = 0; i < 3; ++i) {
-		tmp1[i][0] = Vector3DotProduct(rot_x[i], rot_y[0]);
-		tmp1[i][1] = Vector3DotProduct(rot_x[i], rot_y[1]);
-		tmp1[i][2] = Vector3DotProduct(rot_x[i], rot_y[2]);
-	}
+	//for (int i = 0; i < 3; ++i) {
+	//	tmp1[i][0] = Vector3DotProduct(rot_x[i], rot_y[0]);
+	//	tmp1[i][1] = Vector3DotProduct(rot_x[i], rot_y[1]);
+	//	tmp1[i][2] = Vector3DotProduct(rot_x[i], rot_y[2]);
+	//}
 
-	Negate(rot_z[0].v.y);
-	Negate(rot_z[1].v.x);
+	//Negate(rot_z[0].v.y);
+	//Negate(rot_z[1].v.x);
 
-	for (int i = 0; i < 3; ++i) {
-		tmp2[i][0] = Vector3DotProduct(tmp1[i], rot_z[0]);
-		tmp2[i][1] = Vector3DotProduct(tmp1[i], rot_z[1]);
-		tmp2[i][2] = Vector3DotProduct(tmp1[i], rot_z[2]);
-	}
+	//for (int i = 0; i < 3; ++i) {
+	//	tmp2[i][0] = Vector3DotProduct(tmp1[i], rot_z[0]);
+	//	tmp2[i][1] = Vector3DotProduct(tmp1[i], rot_z[1]);
+	//	tmp2[i][2] = Vector3DotProduct(tmp1[i], rot_z[2]);
+	//}
 
-	Vec3 inv_trans_vec;
-	memcpy(&inv_trans_vec, &vs->world_orientation.origin, sizeof(inv_trans_vec));
-	Vector3Negate(inv_trans_vec);
-	Vector3Copy(tmp2[3], inv_trans_vec);
-	memcpy(vs->world_view_matrix, &tmp2, sizeof(tmp2));
+	//Vector3Copy(tmp2[3], origin);
+	//memcpy(vs->world_view_matrix, &tmp2, sizeof(tmp2));
 
 
-	Negate(rot_y[0].v.z);
-	Negate(rot_y[2].v.x);
+	//Negate(rot_y[0].v.z);
+	//Negate(rot_y[2].v.x);
 
-	Negate(rot_z[0].v.y);
-	Negate(rot_z[1].v.x);
+	//Negate(rot_z[0].v.y);
+	//Negate(rot_z[1].v.x);
 
-	//MatrixMultiply(&rot_x, &rot_y, &tmp3);
-	//MatrixMultiply(&tmp3, &rot_z, &tmp4);
-	//MatrixMultiply(&tmp4, &inv_trans_mat, &final);
-	//memcpy(vs->world_view_matrix, &final, sizeof(final));
-
-	int x = 42;	// debug break point
+	MatrixMultiply(&inv_trans_mat, &rot_x, &tmp3);
+	MatrixMultiply(&tmp3, &rot_y, &tmp4);
+	MatrixMultiply(&tmp4, &rot_z, &final);
+	memcpy(vs->world_view_matrix, &final, sizeof(final));
 }
 
 // FIXME: maybe use 1x4 by 4x4 matrix multiply
@@ -224,6 +252,12 @@ void R_TransformWorldToView(MeshData *md) {
 			Vector3Copy(md->trans_vertex_array[i], tmp);
 		}
 	}
+
+	Vec4 origin, tmp;
+	Vector3Copy(origin, global_renderer_state.current_view.debug_orientation.origin);
+	origin.v.w = 1;
+	MatrixMultiply(&origin, &global_renderer_state.current_view.world_view_matrix, &tmp);  
+	Vector3Copy(global_renderer_state.current_view.debug_orientation.origin, tmp);
 }
 
 void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {
@@ -480,13 +514,13 @@ void R_DrawMesh(MeshData *md) {
 					   (int)md->trans_vertex_array[v0].v.x,
 					   (int)md->trans_vertex_array[v0].v.y,
 					   md->poly_array[i].color);
+
+			//R_DrawLine((int)global_renderer_state.current_view.debug_orientation.origin[0],
+			//		   (int)global_renderer_state.current_view.debug_orientation.origin[1], 
+			//		   (int)md->trans_vertex_array[v1][0], (int)md->trans_vertex_array[v1][1], 0xff);
 		}
 
-		for (int i = 0; i < num_polys; ++i) {
-			if ((md->poly_array[i].state & POLY_STATE_BACKFACE)) {
-				md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
-			}
-		}
+
 	}
 }
 
@@ -519,6 +553,10 @@ void R_CullBackFaces(MeshData *md) {
 			Vec3 v = Vector3Build(md->trans_vertex_array[v0], md->trans_vertex_array[v2]);
 			Vec3 n = CrossProduct(u, v);
 			Vec3 view = Vector3Build(global_renderer_state.current_view.world_orientation.origin, md->trans_vertex_array[v0]);
+
+			if (global_renderer_state.current_view.world_orientation.origin[2] > 0.0f) {
+				int x = 42;
+			}
 
 			r32 dot = Vector3DotProduct(view, n);
 
