@@ -157,7 +157,7 @@ union Vec4 {
 };
 
 static inline Vec3 CrossProduct(Vec3 v1, Vec3 v2) {
-	Vec3 cross;
+	Vec3 cross = {};
 
 	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
 	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];

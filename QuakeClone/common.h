@@ -2,7 +2,7 @@
 #define COMMON_H
 #include "shared.h"
 
-#define MAX_UPS 120
+#define MAX_UPS 60
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
 // Console

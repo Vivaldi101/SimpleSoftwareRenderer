@@ -30,7 +30,7 @@ b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into 
 	memset(&global_renderer_state, 0, sizeof(RendererState));
 	RendererState *rs = &global_renderer_state;
 	// should be 1920 / 2, 1080 / 2
-	Vid_CreateWindow(rs, 1920 / 2, 1080 / 2, wndproc, hinstance);	
+	Vid_CreateWindow(rs, 1920, 1080, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
@@ -279,13 +279,9 @@ void R_TransformWorldToView(MeshData *md) {
 			MatrixMultiply(&vert, &global_renderer_state.current_view.world_view_matrix, &tmp);  
 			Vector3Copy(md->trans_vertex_array[i], tmp);
 		}
+	} else {
+		int x = 42;
 	}
-
-	Vec4 origin, tmp;
-	Vector3Copy(origin, global_renderer_state.current_view.debug_orientation.origin);
-	origin.v.w = 1;
-	MatrixMultiply(&origin, &global_renderer_state.current_view.world_view_matrix, &tmp);  
-	Vector3Copy(global_renderer_state.current_view.debug_orientation.origin, tmp);
 }
 
 void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {
@@ -558,7 +554,7 @@ void R_CullBackFaces(MeshData *md) {
 
 		int num_polys = md->num_polys;
 		for (int i = 0; i < num_polys; ++i) {
-			if (md->poly_array[i].state & POLY_STATE_BACKFACE) {
+			if ((md->poly_array[i].state & POLY_STATE_BACKFACE) || !(md->poly_array[i].state & POLY_STATE_ACTIVE)) {
 				continue;
 			}
 

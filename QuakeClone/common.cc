@@ -16,6 +16,8 @@ static MeshData player_md;
 static r32 yaw = 0.0f;
 static r32 mov_x = 0.0f;
 static r32 mov_z = 0.0f;
+static Vec3 mat_rot_y[3];
+
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 	Sys_Init();
 
@@ -33,6 +35,7 @@ static void ProcessEvent(SysEvent se) {
 		//Sys_Print(se.ev_value);
 		Sys_Quit();
 	}
+
 	if (se.ev_value == VK_UP) {
 		//fwd += 5.0f;
 		mov_x += (2.0f * sin(DEG2RAD(yaw)));
@@ -42,11 +45,37 @@ static void ProcessEvent(SysEvent se) {
 		mov_x -= (2.0f * sin(DEG2RAD(yaw)));
 		mov_z -= (2.0f * cos(DEG2RAD(yaw)));
 	}
+
 	if (se.ev_value == VK_RIGHT) {
-		++yaw;
+		yaw += 5.0f;
+		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		mat_rot_y[0][1] = 0.0f;
+		mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
+
+		mat_rot_y[1][0] = 0.0f;
+		mat_rot_y[1][1] = 1.0f;
+		mat_rot_y[1][2] = 0.0f;
+
+		mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
+		mat_rot_y[2][1] = 0.0f;
+		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
 	} else if (se.ev_value == VK_LEFT) {
-		--yaw;
+		yaw -= 5.0f;
+		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		mat_rot_y[0][1] = 0.0f;
+		mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
+
+		mat_rot_y[1][0] = 0.0f;
+		mat_rot_y[1][1] = 1.0f;
+		mat_rot_y[1][2] = 0.0f;
+
+		mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
+		mat_rot_y[2][1] = 0.0f;
+		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
 	}
+
 }
 void Com_RunEventLoop() {
 	SysEvent se;
@@ -74,9 +103,9 @@ void Com_Frame() {
 	int num_game_frames_to_run = 0;
 
 	static Vec3 mat_rot_x[3];
-	static Vec3 mat_rot_y[3];
 	static Vec3 mat_rot_z[3];
 	static r32 rot_theta = DEG2RAD(-1.0f);
+	static r32 view_angle = 0.0f;
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -118,6 +147,7 @@ void Com_Frame() {
 	mat_rot_x[2][1] = -sin(rot_theta);
 	mat_rot_x[2][2] = cos(rot_theta);
 
+
 	mat_rot_z[0][0] = cos(rot_theta);
 	mat_rot_z[0][1] = sin(rot_theta);
 	mat_rot_z[0][2] = 0.0f;
@@ -130,12 +160,6 @@ void Com_Frame() {
 	mat_rot_z[2][1] = 0.0f;
 	mat_rot_z[2][2] = 1.0f;
 
-	player_md.world_pos[0] = mov_x + 50.0f * sin(DEG2RAD(yaw));
-	player_md.world_pos[1] = global_renderer_state.current_view.world_orientation.origin[1] - 25.0f;
-	player_md.world_pos[2] = mov_z + 50.0f * cos(DEG2RAD(yaw));
-
-	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
-	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
 
 	int num_polys = md.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
@@ -145,6 +169,21 @@ void Com_Frame() {
 		player_md.poly_array[i].state = md.poly_array[i].state & (~POLY_STATE_BACKFACE);
 		player_md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
 	}
+
+	player_md.world_pos[0] = mov_x + (40.0f * sin(DEG2RAD(yaw)));
+	player_md.world_pos[1] = global_renderer_state.current_view.world_orientation.origin[1] - 25.0f;
+	player_md.world_pos[2] = mov_z + (40.0f * cos(DEG2RAD(yaw)));
+
+	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
+	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
+
+	md.world_pos[0] = 3.0f * cos(DEG2RAD(view_angle));
+	md.world_pos[2] = 3.0f * sin(DEG2RAD(view_angle));
+
+	if (++view_angle >= 360.0f) {
+		view_angle = 0.0f;
+	}
+
 	R_BeginFrame(&md);
 	R_TransformModelToWorld(&md); 
 	R_TransformModelToWorld(&player_md); 
@@ -172,7 +211,7 @@ void Com_Frame() {
 	last_time = now_time;
 	{
 		char buffer[64];
-		sprintf_s(buffer, "MS: %d, yaw: %f\n", frame_msec, yaw);
+		//sprintf_s(buffer, "Player theta: %f\n", player_theta);
 		OutputDebugStringA(buffer);
 	}
 }
