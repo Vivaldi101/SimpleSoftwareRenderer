@@ -4,11 +4,11 @@
 void R_BeginFrame(MeshData *md) {
 	// extern void Draw_BuildGammaTable( void );
 	
-	int num_polys = md->num_polys;
-	for (int i = 0; i < num_polys; ++i) {
-		md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
-		md->poly_array[i].state = md->poly_array[i].state & (~CULL_OUT);
-	}
+	//int num_polys = md->num_polys;
+	//for (int i = 0; i < num_polys; ++i) {
+	//	md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
+	//	md->poly_array[i].state = md->poly_array[i].state & (~CULL_OUT);
+	//}
 	// clean up the framebuffer
 	void *buffer = global_renderer_state.vid_sys.buffer;
 	int pitch = global_renderer_state.vid_sys.pitch;

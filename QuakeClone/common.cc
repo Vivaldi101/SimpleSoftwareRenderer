@@ -8,15 +8,18 @@ int global_com_frame_msec;
 static int s_global_game_time_residual;
 static int s_global_game_frame;
 
+// just for prototyping purposes
 static MeshData md;
+static MeshData player_md;
 
+// just for prototyping purposes
 static r32 yaw = 0.0f;
 static r32 mov_x = 0.0f;
 static r32 mov_z = 0.0f;
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 	Sys_Init();
 
-	PLG_InitParsing("poly_data.plg", &md);
+	PLG_InitParsing("poly_data.plg", &md, &player_md);
 
 	if (!R_Init(hinstance, wndproc)) {
 		Sys_Print("Error while initializing the renderer");
@@ -127,19 +130,37 @@ void Com_Frame() {
 	mat_rot_z[2][1] = 0.0f;
 	mat_rot_z[2][2] = 1.0f;
 
+	player_md.world_pos[0] = mov_x + 50.0f * sin(DEG2RAD(yaw));
+	player_md.world_pos[1] = global_renderer_state.current_view.world_orientation.origin[1] - 25.0f;
+	player_md.world_pos[2] = mov_z + 50.0f * cos(DEG2RAD(yaw));
+
 	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
 	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
 
+	int num_polys = md.num_polys;
+	for (int i = 0; i < num_polys; ++i) {
+		md.poly_array[i].state = md.poly_array[i].state & (~POLY_STATE_BACKFACE);
+		md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
+
+		player_md.poly_array[i].state = md.poly_array[i].state & (~POLY_STATE_BACKFACE);
+		player_md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
+	}
 	R_BeginFrame(&md);
 	R_TransformModelToWorld(&md); 
+	R_TransformModelToWorld(&player_md); 
 	R_SetupEulerView(0.0f, yaw, 0.0f, mov_x, 0.0f, mov_z);
-	R_SetupFrustum(90.0f, 50.0f, 500.0f);
+	R_SetupFrustum(90.0f, 50.0f, 500.0f);					// we should only compute the plane normals every frame
 	md.state = R_CullPointAndRadius(md.world_pos, 1.0f);	// radius value is for testing for now
 	R_CullBackFaces(&md);
+	R_CullBackFaces(&player_md);
 	R_TransformWorldToView(&md);
+	R_TransformWorldToView(&player_md);
 	R_TransformViewToClip(&md);
+	R_TransformViewToClip(&player_md);
 	R_TransformClipToScreen(&md);
+	R_TransformClipToScreen(&player_md);
 	R_DrawMesh(&md);
+	R_DrawMesh(&player_md);
 
 	//R_DrawGradient(&global_renderer_state.vid_sys);
 	R_EndFrame();

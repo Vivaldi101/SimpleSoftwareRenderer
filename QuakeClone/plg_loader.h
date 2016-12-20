@@ -2,5 +2,5 @@
 #include "renderer_local.h"
 #include "win_local.h"
 
-// just for time being the func takes the polygon mesh
-extern void	PLG_InitParsing(const char *plg_file_name, MeshData *md);
+// just for time being the func takes the general polygon mesh and the player
+extern void	PLG_InitParsing(const char *plg_file_name, MeshData *md, MeshData *player_md);

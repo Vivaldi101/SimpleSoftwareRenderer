@@ -161,7 +161,7 @@ static b32 PLG_LoadMeshData(MeshData *md, FILE *fp, Vec3 world_pos, Vec3 scale, 
 	return true;
 }
 
-void PLG_InitParsing(const char *plg_file_name, MeshData *md) {
+void PLG_InitParsing(const char *plg_file_name, MeshData *md, MeshData *player_md) {
 	// just for prototyping purposes
 	// fixme: replace the CRT file i/o with win32 api
 	FILE *fp;
@@ -182,6 +182,10 @@ void PLG_InitParsing(const char *plg_file_name, MeshData *md) {
 	Vector3Init(rot, 0.0f, 0.0f, 0.0f);
 
 	PLG_LoadMeshData(md, fp, world_pos, scale, rot);
+
+	memcpy(player_md, md, sizeof(MeshData));
+	Vector3Init(player_md->world_pos, 400.0f, -50.0f, 400.0f);
+
 
 	if (fp) {
 		Sys_Print("\nClosing PLG file\n");
