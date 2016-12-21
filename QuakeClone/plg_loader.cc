@@ -175,7 +175,7 @@ void PLG_InitParsing(const char *plg_file_name, MeshData *md, MeshData *player_m
 	Sys_Print("\nOpening PLG file\n");
 
 	Vec3 world_pos;
-	Vector3Init(world_pos, 0.0f, 0.0f, 40.0f);
+	Vector3Init(world_pos, 0.0f, 0.0f, 80.0f);
 	Vec3 scale;
 	Vector3Init(scale, 1.0f, 1.0f, 1.0f);
 	Vec3 rot;

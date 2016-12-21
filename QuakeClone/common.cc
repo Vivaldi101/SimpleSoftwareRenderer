@@ -177,19 +177,19 @@ void Com_Frame() {
 	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
 	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
 
-	md.world_pos[0] = 3.0f * cos(DEG2RAD(view_angle));
-	md.world_pos[2] = 3.0f * sin(DEG2RAD(view_angle));
+	//md.world_pos[0] = 3.0f * cos(DEG2RAD(view_angle));
+	//md.world_pos[2] = 3.0f * sin(DEG2RAD(view_angle));
 
-	if (++view_angle >= 360.0f) {
-		view_angle = 0.0f;
-	}
+	//if (++view_angle >= 360.0f) {
+	//	view_angle = 0.0f;
+	//}
 
 	R_BeginFrame(&md);
 	R_TransformModelToWorld(&md); 
 	R_TransformModelToWorld(&player_md); 
 	R_SetupEulerView(0.0f, yaw, 0.0f, mov_x, 0.0f, mov_z);
 	R_SetupFrustum(90.0f, 50.0f, 500.0f);					// we should only compute the plane normals every frame
-	md.state = R_CullPointAndRadius(md.world_pos, 1.0f);	// radius value is for testing for now
+	md.state = R_CullPointAndRadius(md.world_pos);	// radius value is for testing for now
 	R_CullBackFaces(&md);
 	R_CullBackFaces(&player_md);
 	R_TransformWorldToView(&md);
@@ -211,7 +211,7 @@ void Com_Frame() {
 	last_time = now_time;
 	{
 		char buffer[64];
-		//sprintf_s(buffer, "Player theta: %f\n", player_theta);
+		sprintf_s(buffer, "Cam origin: %f\n", global_renderer_state.current_view.world_orientation.origin[2]);
 		OutputDebugStringA(buffer);
 	}
 }

@@ -30,7 +30,7 @@ b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into 
 	memset(&global_renderer_state, 0, sizeof(RendererState));
 	RendererState *rs = &global_renderer_state;
 	// should be 1920 / 2, 1080 / 2
-	Vid_CreateWindow(rs, 1920, 1080, wndproc, hinstance);	
+	Vid_CreateWindow(rs, 1920 / 2, 1080 / 2, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
@@ -106,23 +106,23 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 
 	// FIXME: top and bottom plane normals
 	// top plane normal
-	Vec3 tpn;
-	Vector3Init(tpn, 0, vs->viewplane_height / 2.0f, vs->view_dist_h);
-	PerpOperator(tpn, 2, 1);
-	vs->frustum_planes[FRUSTUM_PLANE_INDEX_TOP].unit_normal = tpn;
+	//Vec3 tpn;
+	//Vector3Init(tpn, 0, vs->viewplane_height / 2.0f, vs->view_dist_h);
+	//PerpOperator(tpn, 2, 1);
+	//vs->frustum_planes[FRUSTUM_PLANE_INDEX_TOP].unit_normal = tpn;
 
-	// bottom plane normal
-	Vec3 bpn;
-	Vector3Init(bpn, 0, -(vs->viewplane_height) / 2.0f, vs->view_dist_h);
-	PerpOperator(bpn, 1, 2);
-	vs->frustum_planes[FRUSTUM_PLANE_INDEX_BOTTOM].unit_normal = bpn;
+	//// bottom plane normal
+	//Vec3 bpn;
+	//Vector3Init(bpn, 0, -(vs->viewplane_height) / 2.0f, vs->view_dist_h);
+	//PerpOperator(bpn, 1, 2);
+	//vs->frustum_planes[FRUSTUM_PLANE_INDEX_BOTTOM].unit_normal = bpn;
 
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		vs->frustum_planes[i].unit_normal = Vector3Normalize(&vs->frustum_planes[i].unit_normal);
 		vs->frustum_planes[i].dist = Vector3DotProduct(vs->frustum_planes[i].unit_normal, vs->world_orientation.origin);
-		//if (vs->frustum_planes[i].dist < 0.0f) {
-		//	int x = 42;
-		//}
+		if (vs->frustum_planes[i].dist < 0.0f) {
+			int x = 42;
+		}
 		vs->frustum_planes[i].type = PLANE_NON_AXIAL;
 	}
 
@@ -299,12 +299,14 @@ void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {
 }
 
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
-	FrustumClippingState cull_state[NUM_FRUSTUM_PLANES] = {CULL_IN, CULL_IN, CULL_IN, CULL_IN};
+	FrustumClippingState cull_state[NUM_FRUSTUM_PLANES] = {CULL_IN, CULL_IN};
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = global_renderer_state.current_view.frustum_planes[i];
+		Vec3 n = pl.unit_normal;
+		r32 dist = -pl.dist;
+		r32 eq = (((n[0]*pt[0])+(n[2]*pt[2])) + dist);
 
-		r32 dist = Vector3DotProduct(pt, pl.unit_normal) - pl.dist;
-		if (dist > radius) {
+		if (eq > 0.0f) {
 			//Sys_Print("Point center is outside of a plane\n");
 			//if (dot - radius > 0.0f) {
 			//	Sys_Print("Point with radius is outside of the frustum\n");
@@ -315,16 +317,18 @@ FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
 			//}
 			//Sys_Print("Point is culled!\n");
 			//return CULL_IN;
-			cull_state[i] = CULL_OUT;
-		}  
+			//cull_state[i] = CULL_OUT;
+			Sys_Print("Culling!!\n");
+			return CULL_OUT;
+		}    
 	}
 
-	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-		if (cull_state[i] == CULL_OUT) {
-			Sys_Print("Point is culled!!\n");
-			return CULL_OUT;
-		}
-	}
+	//for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
+	//	if (cull_state[i] == CULL_OUT) {
+	//		Sys_Print("Point is culled!!\n");
+	//		return CULL_OUT;
+	//	}
+	//}
 
 	Sys_Print("NO culling!!\n");
 	return CULL_IN;
