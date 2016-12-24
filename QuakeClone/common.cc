@@ -187,9 +187,8 @@ void Com_Frame() {
 	R_BeginFrame(&md);
 	R_TransformModelToWorld(&md); 
 	R_TransformModelToWorld(&player_md); 
-	R_SetupEulerView(0.0f, yaw, 0.0f, mov_x, 0.0f, mov_z);
-	R_SetupFrustum(90.0f, 50.0f, 500.0f);					// we should only compute the plane normals every frame
-	md.state = R_CullPointAndRadius(md.world_pos);	// radius value is for testing for now
+	R_RenderView();
+	md.state = R_CullPointAndRadius(md.world_pos);			
 	R_CullBackFaces(&md);
 	R_CullBackFaces(&player_md);
 	R_TransformWorldToView(&md);

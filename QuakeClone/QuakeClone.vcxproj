@@ -134,6 +134,7 @@
     <ClCompile Include="math.cc" />
     <ClCompile Include="plg_loader.cc" />
     <ClCompile Include="renderer_cmds.cc" />
+    <ClCompile Include="renderer_init.cc" />
     <ClCompile Include="renderer_main.cc" />
     <ClCompile Include="win_console.cc" />
     <ClCompile Include="win_input.cc" />

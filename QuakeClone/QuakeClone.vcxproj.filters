@@ -87,5 +87,8 @@
     <ClCompile Include="math.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="renderer_init.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

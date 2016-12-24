@@ -68,4 +68,19 @@ struct RenderList {
 	LinkedPoly	poly_data[256];
 };
 
+enum EntityType {
+	RT_POLY,
+	RT_SPRITE,
+	RT_PORTALSURFACE,		// doesn't draw anything, just info for portals
+
+	RT_MAX_REF_ENTITY_TYPE
+};
+
+struct RefDef {
+	int			x, y, width, height;
+	float		fov_x, fov_y;
+	Vec3		view_org;
+	Vec3		view_axis[3];		// transformation matrix
+};
+
 #endif	// Header guard

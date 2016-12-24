@@ -136,7 +136,7 @@ MATHLIB
 #define Matrix3x3Init(m)			(Vector3Init((m)[0],0,0,0), Vector3Init((m)[1],0,0,0), Vector3Init((m)[2],0,0,0))
 #define Matrix4x4Init(m)			(Vector4Init((m)[0],0,0,0,0), Vector4Init((m)[1],0,0,0,0), Vector4Init((m)[2],0,0,0,0), Vector4Init((m)[3],0,0,0,0))
 
-#define PerpOperator(v, x, y)		{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		// x and y define the plane of v
+#define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		// x and y define the plane of v
 //#define InvPerpOperator(v, x, y)	{r32 t = (v)[(x)]; (v)[(x)] = ((v)[(y)]), (v)[(y)] = (-t);}
 #define Negate(n)					((n) = -(n))
 #define Vector3Negate(v)			(Negate((v)[0]), Negate((v)[1]), Negate((v)[2]))
@@ -156,7 +156,37 @@ union Vec4 {
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
 
-static inline Vec3 CrossProduct(Vec3 v1, Vec3 v2) {
+inline Vec3 operator +(Vec3 a, Vec3 b) {
+	Vec3 v = {};
+
+	v[0] = a[0] + b[0];
+	v[1] = a[1] + b[1];
+	v[2] = a[2] + b[2];
+
+	return v;
+}
+
+inline Vec3 operator -(Vec3 a, Vec3 b) {
+	Vec3 v = {};
+
+	v[0] = a[0] - b[0];
+	v[1] = a[1] - b[1];
+	v[2] = a[2] - b[2];
+
+	return v;
+}
+
+inline Vec3 operator *(Vec3 a, r32 s) {
+	Vec3 v = {};
+
+	v[0] = a[0] * s;
+	v[1] = a[1] * s;
+	v[2] = a[2] * s;
+
+	return v;
+}
+
+static inline Vec3 Vector3CrossProduct(Vec3 v1, Vec3 v2) {
 	Vec3 cross = {};
 
 	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
@@ -192,25 +222,42 @@ static inline Vec3 Vector3Normalize(const Vec3 *v) {
 	return n;
 }
 
-static inline Vec3 Vector3Inverse(const Vec3 *v) {
-	Vec3 i = {};
+static inline Vec3 Vector3Normalize(Vec3 v) {
+	Vec3 n = {};
+	r32	len, ilen;
 
-	i[0] = -(*v)[0];
-	i[1] = -(*v)[1];
-	i[2] = -(*v)[2];
+	len = Vector3DotProduct(v, v);
+	len = sqrt(len);
 
-	return i;
+	if (len) {
+		ilen = 1 / len;
+		n[0] = v[0] * ilen;
+		n[1] = v[1] * ilen;
+		n[2] = v[2] * ilen;
+	}
+		
+	return n;
 }
 
-static inline Vec4 Vector4Inverse(const Vec4 *v) {
-	Vec4 i = {};
-
-	i[0] = -(*v)[0];
-	i[1] = -(*v)[1];
-	i[2] = -(*v)[2];
-
-	return i;
-}
+//static inline Vec3 Vector3Inverse(const Vec3 *v) {
+//	Vec3 i = {};
+//
+//	i[0] = -(*v)[0];
+//	i[1] = -(*v)[1];
+//	i[2] = -(*v)[2];
+//
+//	return i;
+//}
+//
+//static inline Vec4 Vector4Inverse(const Vec4 *v) {
+//	Vec4 i = {};
+//
+//	i[0] = -(*v)[0];
+//	i[1] = -(*v)[1];
+//	i[2] = -(*v)[2];
+//
+//	return i;
+//}
 
 static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	Vec3 v = {};

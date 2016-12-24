@@ -45,8 +45,8 @@ enum FrustumClippingState {
 enum { 
 	FRUSTUM_PLANE_INDEX_LEFT = 0, 
 	FRUSTUM_PLANE_INDEX_RIGHT,
-	//FRUSTUM_PLANE_INDEX_TOP,
-	//FRUSTUM_PLANE_INDEX_BOTTOM,
+	FRUSTUM_PLANE_INDEX_TOP,
+	FRUSTUM_PLANE_INDEX_BOTTOM,
 
 	NUM_FRUSTUM_PLANES
 };
@@ -107,8 +107,7 @@ extern unsigned global_8to24able[256];
 
 
 b32	R_Init(void *hinstance, void *wndproc); 
-
-void R_DrawGradient(VidSystem *vid_sys);
+void R_RenderView(/*viewParms_t *parms*/);
 
 void R_EndFrame();
 void R_BeginFrame(MeshData *md);
