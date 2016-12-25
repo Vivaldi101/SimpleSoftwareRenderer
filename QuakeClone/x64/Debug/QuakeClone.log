@@ -1,4 +1,4 @@
-﻿Build started 25/12/2016 03:40:52.
+﻿Build started 25/12/2016 04:45:09.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
@@ -6,12 +6,12 @@
          F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /Od /D _MBCS /Gm /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt renderer_main.cc
          renderer_main.cc
      1>renderer_main.cc(41): warning C4189: 'x' : local variable is initialized but not referenced
-     1>renderer_main.cc(112): warning C4189: 'x' : local variable is initialized but not referenced
-     1>renderer_main.cc(107): warning C4189: 'x' : local variable is initialized but not referenced
-     1>renderer_main.cc(233): warning C4189: 'x' : local variable is initialized but not referenced
-     1>renderer_main.cc(523): warning C4189: 'x' : local variable is initialized but not referenced
-     1>f:\code\quakeclone\quakeclone\renderer_main.cc(378): warning C4701: potentially uninitialized local variable 'y' used
-     1>f:\code\quakeclone\quakeclone\renderer_main.cc(377): warning C4701: potentially uninitialized local variable 'x' used
+     1>renderer_main.cc(122): warning C4189: 'x' : local variable is initialized but not referenced
+     1>renderer_main.cc(117): warning C4189: 'x' : local variable is initialized but not referenced
+     1>renderer_main.cc(243): warning C4189: 'x' : local variable is initialized but not referenced
+     1>renderer_main.cc(533): warning C4189: 'x' : local variable is initialized but not referenced
+     1>f:\code\quakeclone\quakeclone\renderer_main.cc(388): warning C4701: potentially uninitialized local variable 'y' used
+     1>f:\code\quakeclone\quakeclone\renderer_main.cc(387): warning C4701: potentially uninitialized local variable 'x' used
        Link:
          F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\cvar.obj
@@ -39,4 +39,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.57
+Time Elapsed 00:00:00.72

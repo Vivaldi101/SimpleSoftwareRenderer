@@ -30,7 +30,7 @@ b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into 
 	memset(&global_renderer_state, 0, sizeof(RendererState));
 	RendererState *rs = &global_renderer_state;
 	// should be 1920 / 2, 1080 / 2
-	Vid_CreateWindow(rs, 800, 600, wndproc, hinstance);	
+	Vid_CreateWindow(rs, 800, 800, wndproc, hinstance);	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
@@ -66,20 +66,30 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 	vw_sys->z_near = z_near;
 	vw_sys->z_far = z_far;
 
-	// these are the same, should only need one of them
 	view_dir[0] = RAD2DEG(acos(Vector3DotProduct(axis[0], basis[0]))); 
+	view_dir[1] = RAD2DEG(acos(Vector3DotProduct(axis[1], basis[1]))); 
 	view_dir[2] = RAD2DEG(acos(Vector3DotProduct(axis[2], basis[2]))); 
 
-	r32 yaw = (vw_sys->fov_h * 0.5f) + view_dir[0];
+	r32 yaw = DEG2RAD(view_dir[0] - (vw_sys->fov_h * 0.5f));
 
 	// left plane normal
 	Vec3 lpn = {};
-	Vector3Init(lpn, -sin(DEG2RAD(yaw)) * (vw_sys->viewplane_width * 0.5f), 0, cos(DEG2RAD(yaw)) * vw_sys->view_dist_h); 
+	Vector3Init(lpn, sin(yaw) * 1.0f, 0, cos((yaw)) * 1.0f); 
+	Perp(lpn, 2, 0);
+
+	yaw = DEG2RAD(view_dir[0] + (vw_sys->fov_h * 0.5f));
 
 	// right plane normal
 	Vec3 rpn = {};
-	Vector3Init(rpn, sin(DEG2RAD(yaw)) * (vw_sys->viewplane_width * 0.5f), 0, cos(DEG2RAD(yaw)) * vw_sys->view_dist_h); 
-	//Perp(lpn, 0, 2);
+	Vector3Init(rpn, sin(yaw) * 1.0f, 0, cos((yaw)) * 1.0f); 
+	Perp(rpn, 0, 2);
+
+	yaw = DEG2RAD(view_dir[1] + (vw_sys->fov_v * 0.5f));
+
+	// top plane normal
+	Vec3 tpn = {};
+	Vector3Init(tpn, sin(yaw) * 1.0f, 0, cos((yaw)) * 1.0f); 
+	Perp(tpn, 0, 2);
 	//vw_sys->frustum_planes[FRUSTUM_PLANE_INDEX_LEFT].unit_normal = lpn;
 
 	//// cos and sin of right clipping plane
@@ -584,7 +594,7 @@ void R_RenderView(/*viewParms_t *parms*/) {
 	if (!first_draw) {
 		first_draw = true;
 		Vector3Init(global_renderer_state.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-		Vector3Init(global_renderer_state.current_view.target, 0.0f, 0.0f, 100.0f);
+		Vector3Init(global_renderer_state.current_view.target, 0.0f, 10.0f, 100.0f);
 		global_renderer_state.current_view.aspect_ratio = (r32)global_renderer_state.vid_sys.width / (r32)global_renderer_state.vid_sys.height;
 
 		global_renderer_state.current_view.viewplane_width = 2.0f;	// normalized viewplane
@@ -610,7 +620,7 @@ void R_RenderView(/*viewParms_t *parms*/) {
 	// set viewParms.world
 
 	R_RotateForViewer();
-	R_SetupFrustum(60.0f, 50.0f, 500.0f);					
+	R_SetupFrustum(90.0f, 50.0f, 500.0f);					
 
 
 	//R_GenerateDrawSurfs();
