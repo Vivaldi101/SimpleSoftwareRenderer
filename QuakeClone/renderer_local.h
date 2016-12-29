@@ -30,6 +30,10 @@
 #define POLY_ATTR_SHADE_MODE_GOURAUD	0x0080
 #define POLY_ATTR_SHADE_MODE_PHONG		0x0100
 
+/*
+**	END OF POLYGON CONSTANTS
+*/
+
 enum VertexTransformState {
 	LOCAL_ONLY = 0,
 	TRANSFORMED_ONLY,
@@ -43,17 +47,14 @@ enum FrustumClippingState {
 };
 
 enum { 
-	FRUSTUM_PLANE_INDEX_LEFT = 0, 
-	FRUSTUM_PLANE_INDEX_RIGHT,
-	FRUSTUM_PLANE_INDEX_TOP,
-	FRUSTUM_PLANE_INDEX_BOTTOM,
+	FRUSTUM_PLANE_LEFT = 0, 
+	FRUSTUM_PLANE_RIGHT,
+	FRUSTUM_PLANE_TOP,
+	FRUSTUM_PLANE_BOTTOM,
 
 	NUM_FRUSTUM_PLANES
 };
 
-/*
-**	END OF POLYGON CONSTANTS
-*/
 
 struct VidSystem {
 	byte *			buffer;		// invisible buffer
@@ -88,7 +89,7 @@ struct ViewSystem {
 	r32				view_dist_h, view_dist_v;	// FIXME: maybe only need the view_dist_h, rename it to just "view_dist"
 
 
-	Plane			frustum_planes[4];		// order of left, right, top, bottom
+	Plane			frustum[4];			// order of left, right, top, bottom, FIXME: add near and far z
 	r32				z_far, z_near;
 
 	r32				aspect_ratio;
@@ -120,6 +121,7 @@ void R_TransformWorldToView(MeshData *md);
 void R_TransformViewToClip(MeshData *md);
 void R_TransformClipToScreen(MeshData *md);
 void R_DrawMesh(MeshData *md);
+void R_DrawGradient(VidSystem *vid_sys);
 
 void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius = 0.0f);

@@ -13,9 +13,12 @@ static MeshData md;
 static MeshData player_md;
 
 // just for prototyping purposes
-static r32 yaw = 0.0f;
-static r32 mov_x = 0.0f;
-static r32 mov_z = 0.0f;
+//static r32 yaw = 0.0f;
+//static r32 mov_x = 0.0f;
+//static r32 mov_z = 0.0f;
+static r32 turn = 0.0f;
+static r32 up_down = 0.0f;
+static r32 walk = 5.0f;
 static Vec3 mat_rot_y[3];
 
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
@@ -30,7 +33,8 @@ void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 }
 
 static void ProcessEvent(SysEvent se) {
-	// just for prototyping purposes
+
+	// ALL of this is just for prototyping purposes
 	if (se.ev_value == VK_ESCAPE) {
 		//Sys_Print(se.ev_value);
 		Sys_Quit();
@@ -38,44 +42,57 @@ static void ProcessEvent(SysEvent se) {
 
 	if (se.ev_value == VK_UP) {
 		//fwd += 5.0f;
-		mov_x += (2.0f * sin(DEG2RAD(yaw)));
-		mov_z += (2.0f * cos(DEG2RAD(yaw)));
+		//mov_x += (2.0f * sin(DEG2RAD(yaw)));
+		//mov_z += (2.0f * cos(DEG2RAD(yaw)));
+		global_renderer_state.current_view.world_orientation.origin = 
+			global_renderer_state.current_view.world_orientation.origin + (global_renderer_state.current_view.world_orientation.dir * walk);
 	} else if (se.ev_value == VK_DOWN) {
-		//fwd -= 5.0f;
-		mov_x -= (2.0f * sin(DEG2RAD(yaw)));
-		mov_z -= (2.0f * cos(DEG2RAD(yaw)));
+		global_renderer_state.current_view.world_orientation.origin = 
+			global_renderer_state.current_view.world_orientation.origin + (-global_renderer_state.current_view.world_orientation.dir * walk);
 	}
 
 	if (se.ev_value == VK_RIGHT) {
-		yaw += 5.0f;
-		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
-		mat_rot_y[0][1] = 0.0f;
-		mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
+		turn += 5.0f;
+		global_renderer_state.current_view.world_orientation.dir[0] = (sinf(DEG2RAD(turn)));
+		global_renderer_state.current_view.world_orientation.dir[2] = (cosf(DEG2RAD(turn)));
+		//mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		//mat_rot_y[0][1] = 0.0f;
+		//mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
 
-		mat_rot_y[1][0] = 0.0f;
-		mat_rot_y[1][1] = 1.0f;
-		mat_rot_y[1][2] = 0.0f;
+		//mat_rot_y[1][0] = 0.0f;
+		//mat_rot_y[1][1] = 1.0f;
+		//mat_rot_y[1][2] = 0.0f;
 
-		mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
-		mat_rot_y[2][1] = 0.0f;
-		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
-		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
+		//mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
+		//mat_rot_y[2][1] = 0.0f;
+		//mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		//R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
 	} else if (se.ev_value == VK_LEFT) {
-		yaw -= 5.0f;
-		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
-		mat_rot_y[0][1] = 0.0f;
-		mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
+		turn -= 5.0f;
+		global_renderer_state.current_view.world_orientation.dir[0] = (sinf(DEG2RAD(turn)));
+		global_renderer_state.current_view.world_orientation.dir[2] = (cosf(DEG2RAD(turn)));
+		//mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		//mat_rot_y[0][1] = 0.0f;
+		//mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
 
-		mat_rot_y[1][0] = 0.0f;
-		mat_rot_y[1][1] = 1.0f;
-		mat_rot_y[1][2] = 0.0f;
+		//mat_rot_y[1][0] = 0.0f;
+		//mat_rot_y[1][1] = 1.0f;
+		//mat_rot_y[1][2] = 0.0f;
 
-		mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
-		mat_rot_y[2][1] = 0.0f;
-		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
-		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
+		//mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
+		//mat_rot_y[2][1] = 0.0f;
+		//mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		//R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
 	}
-
+	if (se.ev_value == VK_SPACE) {
+		up_down += 5.0f;
+		global_renderer_state.current_view.world_orientation.dir[1] = (sinf(DEG2RAD(up_down)));
+		global_renderer_state.current_view.world_orientation.dir[2] = (cosf(DEG2RAD(up_down)));
+	} else if (se.ev_value == VK_CONTROL) {
+		up_down -= 5.0f;
+		global_renderer_state.current_view.world_orientation.dir[1] = (sinf(DEG2RAD(up_down)));
+		global_renderer_state.current_view.world_orientation.dir[2] = (cosf(DEG2RAD(up_down)));
+	}
 }
 void Com_RunEventLoop() {
 	SysEvent se;
@@ -170,9 +187,13 @@ void Com_Frame() {
 		player_md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
 	}
 
-	player_md.world_pos[0] = mov_x + (40.0f * sin(DEG2RAD(yaw)));
-	player_md.world_pos[1] = global_renderer_state.current_view.world_orientation.origin[1] - 25.0f;
-	player_md.world_pos[2] = mov_z + (40.0f * cos(DEG2RAD(yaw)));
+	//player_md.world_pos[0] = mov_x + (40.0f * sin(DEG2RAD(yaw)));
+	//player_md.world_pos[1] = global_renderer_state.current_view.world_orientation.origin[1] - 25.0f;
+	//player_md.world_pos[2] = mov_z + (40.0f * cos(DEG2RAD(yaw)));
+
+	player_md.world_pos = 
+		global_renderer_state.current_view.world_orientation.origin + (global_renderer_state.current_view.world_orientation.dir * 40.0f);
+	player_md.world_pos[1] -= 20.0f;
 
 	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
 	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
@@ -210,7 +231,7 @@ void Com_Frame() {
 	last_time = now_time;
 	{
 		char buffer[64];
-		sprintf_s(buffer, "Cam origin: %f\n", global_renderer_state.current_view.world_orientation.origin[2]);
+		sprintf_s(buffer, "Turn: %f\n", turn);
 		OutputDebugStringA(buffer);
 	}
 }

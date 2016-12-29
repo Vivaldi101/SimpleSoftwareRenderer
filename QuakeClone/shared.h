@@ -140,6 +140,7 @@ MATHLIB
 //#define InvPerpOperator(v, x, y)	{r32 t = (v)[(x)]; (v)[(x)] = ((v)[(y)]), (v)[(y)] = (-t);}
 #define Negate(n)					((n) = -(n))
 #define Vector3Negate(v)			(Negate((v)[0]), Negate((v)[1]), Negate((v)[2]))
+#define Square(s)					((s) * (s))
 
 union Vec3 {
 	struct {	r32 x, y, z;		} v;
@@ -162,6 +163,16 @@ inline Vec3 operator +(Vec3 a, Vec3 b) {
 	v[0] = a[0] + b[0];
 	v[1] = a[1] + b[1];
 	v[2] = a[2] + b[2];
+
+	return v;
+}
+
+inline Vec3 operator -(Vec3 a) {
+	Vec3 v = {};
+
+	v[0] = -a[0]; 
+	v[1] = -a[1];
+	v[2] = -a[2];
 
 	return v;
 }
