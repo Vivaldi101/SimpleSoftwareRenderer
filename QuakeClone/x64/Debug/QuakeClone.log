@@ -1,13 +1,32 @@
-﻿Build started 27/12/2016 22:14:09.
-     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
-     1>InitializeBuildStatus:
+﻿Build started 04/01/2017 01:27:45.
+     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (rebuild target(s)).
+     1>_PrepareForClean:
+         Deleting file "x64\Debug\QuakeClone.lastbuildstate".
+       InitializeBuildStatus:
          Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /Od /D _MBCS /Gm /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt renderer_main.cc
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /Od /D _MBCS /Gm /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc cvar.cc input.cc math.cc plg_loader.cc renderer_cmds.cc renderer_init.cc renderer_main.cc win_console.cc win_input.cc win_shared.cc win_main.cc win_main_window.cc win_renderer_dib.cc win_wndproc.cc
+         win_wndproc.cc
+         win_renderer_dib.cc
+     1>win_renderer_dib.cc(92): warning C4244: '=' : conversion from 'int' to 'WORD', possible loss of data
+         win_main_window.cc
+         win_main.cc
+         win_shared.cc
+         win_input.cc
+         win_console.cc
          renderer_main.cc
      1>renderer_main.cc(41): warning C4189: 'x' : local variable is initialized but not referenced
      1>renderer_main.cc(211): warning C4189: 'x' : local variable is initialized but not referenced
      1>renderer_main.cc(501): warning C4189: 'x' : local variable is initialized but not referenced
+         renderer_init.cc
+         renderer_cmds.cc
+         plg_loader.cc
+         math.cc
+         input.cc
+         cvar.cc
+         common.cc
+     1>common.cc(227): warning C4189: 'frame_msec' : local variable is initialized but not referenced
+         Generating Code...
      1>f:\code\quakeclone\quakeclone\renderer_main.cc(356): warning C4701: potentially uninitialized local variable 'y' used
      1>f:\code\quakeclone\quakeclone\renderer_main.cc(355): warning C4701: potentially uninitialized local variable 'x' used
        Link:
@@ -26,15 +45,14 @@
          x64\Debug\win_main_window.obj
          x64\Debug\win_renderer_dib.obj
          x64\Debug\win_wndproc.obj
-         LINK : F:\code\QuakeClone\x64\Debug\QuakeClone.exe not found or not built by the last incremental link; performing full link
          QuakeClone.vcxproj -> F:\code\QuakeClone\x64\Debug\QuakeClone.exe
        Manifest:
          C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe;#1" /manifest x64\Debug\QuakeClone.exe.intermediate.manifest
        FinalizeBuildStatus:
          Deleting file "x64\Debug\QuakeClone.unsuccessfulbuild".
          Touching "x64\Debug\QuakeClone.lastbuildstate".
-     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (rebuild target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.60
+Time Elapsed 00:00:03.62

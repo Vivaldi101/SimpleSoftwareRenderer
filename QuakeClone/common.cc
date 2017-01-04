@@ -55,34 +55,34 @@ static void ProcessEvent(SysEvent se) {
 		turn += 5.0f;
 		global_renderer_state.current_view.world_orientation.dir[0] = (sinf(DEG2RAD(turn)));
 		global_renderer_state.current_view.world_orientation.dir[2] = (cosf(DEG2RAD(turn)));
-		//mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
-		//mat_rot_y[0][1] = 0.0f;
-		//mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
+		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		mat_rot_y[0][1] = 0.0f;
+		mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
 
-		//mat_rot_y[1][0] = 0.0f;
-		//mat_rot_y[1][1] = 1.0f;
-		//mat_rot_y[1][2] = 0.0f;
+		mat_rot_y[1][0] = 0.0f;
+		mat_rot_y[1][1] = 1.0f;
+		mat_rot_y[1][2] = 0.0f;
 
-		//mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
-		//mat_rot_y[2][1] = 0.0f;
-		//mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
-		//R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
+		mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
+		mat_rot_y[2][1] = 0.0f;
+		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
 	} else if (se.ev_value == VK_LEFT) {
 		turn -= 5.0f;
 		global_renderer_state.current_view.world_orientation.dir[0] = (sinf(DEG2RAD(turn)));
 		global_renderer_state.current_view.world_orientation.dir[2] = (cosf(DEG2RAD(turn)));
-		//mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
-		//mat_rot_y[0][1] = 0.0f;
-		//mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
+		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		mat_rot_y[0][1] = 0.0f;
+		mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
 
-		//mat_rot_y[1][0] = 0.0f;
-		//mat_rot_y[1][1] = 1.0f;
-		//mat_rot_y[1][2] = 0.0f;
+		mat_rot_y[1][0] = 0.0f;
+		mat_rot_y[1][1] = 1.0f;
+		mat_rot_y[1][2] = 0.0f;
 
-		//mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
-		//mat_rot_y[2][1] = 0.0f;
-		//mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
-		//R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
+		mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
+		mat_rot_y[2][1] = 0.0f;
+		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
 	}
 	if (se.ev_value == VK_SPACE) {
 		up_down += 5.0f;
@@ -187,9 +187,6 @@ void Com_Frame() {
 		player_md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
 	}
 
-	//player_md.world_pos[0] = mov_x + (40.0f * sin(DEG2RAD(yaw)));
-	//player_md.world_pos[1] = global_renderer_state.current_view.world_orientation.origin[1] - 25.0f;
-	//player_md.world_pos[2] = mov_z + (40.0f * cos(DEG2RAD(yaw)));
 
 	player_md.world_pos = 
 		global_renderer_state.current_view.world_orientation.origin + (global_renderer_state.current_view.world_orientation.dir * 40.0f);

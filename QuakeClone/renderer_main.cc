@@ -562,7 +562,7 @@ void R_RenderView() {
 	if (!first_draw) {
 		first_draw = true;
 		Vector3Init(global_renderer_state.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-		Vector3Init(global_renderer_state.current_view.target, -1.0f, 0.0f, 1.0f);
+		Vector3Init(global_renderer_state.current_view.target, 0.0f, 0.0f, 1.0f);
 		global_renderer_state.current_view.world_orientation.dir = (global_renderer_state.current_view.target);
 		global_renderer_state.current_view.aspect_ratio = (r32)global_renderer_state.vid_sys.width / (r32)global_renderer_state.vid_sys.height;
 
