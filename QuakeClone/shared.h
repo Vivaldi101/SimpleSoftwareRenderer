@@ -280,9 +280,12 @@ static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	return v;
 }
 
-void MatrixMultiply(Vec3 (*lhs)[3], Vec3 (*rhs)[3], Vec3 (*result)[3]);
-void MatrixMultiply(Vec4 (*lhs)[4], Vec4 (*rhs)[4], Vec4 (*result)[4]);
-void MatrixMultiply(Vec4 *lhs, Vec4 (*rhs)[4], Vec4 *result);
+//void MatrixMultiply(Vec3 (*lhs)[3], Vec3 (*rhs)[3], Vec3 (*result)[3]);
+//void MatrixMultiply(Vec4 (*lhs)[4], Vec4 (*rhs)[4], Vec4 (*result)[4]);
+//void MatrixMultiply(Vec4 *lhs, Vec4 (*rhs)[4], Vec4 *result);
+void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
+void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
+void Mat3x3Mul(r32 out[3][3], const r32 a[3][3], const r32 b[3][3]);
 
 struct Orientation {
 	Vec3	origin;			// in world coordinates

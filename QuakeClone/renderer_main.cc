@@ -200,16 +200,14 @@ void R_TransformWorldToView(MeshData *md) {
 	if (!(md->state & CULL_OUT)) {
 		int num_verts = md->num_verts;
 		for (int i = 0; i < num_verts; ++i) {
-			Vec4 vert, tmp;
+			r32 vert[4], tmp[4];
 			Vector3Copy(vert, md->trans_vertex_array[i]);
-			vert.v.w = 1;
+			vert[3] = 1.0f;
 
-			MatrixMultiply(&vert, &global_renderer_state.current_view.world_view_matrix, &tmp);  
+			Mat1x4Mul(tmp, vert, global_renderer_state.current_view.world_view_matrix);  
 			Vector3Copy(md->trans_vertex_array[i], tmp);
 		}
-	} else {
-		int x = 42;
-	}
+	} 
 }
 
 void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {

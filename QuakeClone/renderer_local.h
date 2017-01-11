@@ -73,9 +73,9 @@ struct VidSystem {
 };
 
 struct ViewSystem {
-	Vec4			world_view_matrix[4];
-	Vec4			view_perspective_matrix[4];
-	Vec4			perspective_screen_matrix[4];
+	r32				world_view_matrix[4][4];
+	//Vec4			view_perspective_matrix[4];
+	//Vec4			perspective_screen_matrix[4];
 
 	Orientation		world_orientation;
 	Orientation		debug_orientation;
