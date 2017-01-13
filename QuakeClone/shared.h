@@ -26,9 +26,6 @@ typedef u32 b32;
 typedef float	r32;
 typedef double	r64;
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846f	// matches value in gcc v2 math.h
-#endif
 
 // angle indexes
 enum {
@@ -75,20 +72,31 @@ static inline r32 RAD2DEG(r32 a) {
 #define RGB_32(A,R,G,B) (((A & 255) << 24) + ((R & 255) << 16) + ((G & 255) << 8) + ((B) & 255))
 #define RGB_16_565(R,G,B) ((((R) & 31) << 11) + (((G) & 63) << 5) + ((B) & 31))
 
+// alignment
+#define ALIGNUP(Address, Alignment) \
+    (((size_t)Address) + ((Alignment)-1) & (~((Alignment)-1)))
+
+#define MISALIGNAMOUNT(Address, Alignment) \
+    ((((size_t)Alignment)-1) & Address)
+
+#define ALIGNDOWN(Address, Alignment) \
+    (((Address - ((((size_t)Alignment)-1) & Address))))
+
+
 // nothing outside the Cvar_*() functions should modify these fields!
-struct Cvar {
-	char *		name;
-	char *		string;
-	char *		reset_string;		// cvar_restart will reset to this value
-	char *		latched_string;		// for CVAR_LATCH vars
-	int			flags;
-	b32			modified;			// set each time the cvar is changed
-	int			modification_count;	// incremented each time the cvar is changed
-	float		value;				// atof( string )
-	int			integer;			// atoi( string )
-	Cvar *		next;
-	Cvar *		hash_next;
-};
+//struct Cvar {
+//	char *		name;
+//	char *		string;
+//	char *		reset_string;		// cvar_restart will reset to this value
+//	char *		latched_string;		// for CVAR_LATCH vars
+//	int			flags;
+//	b32			modified;			// set each time the cvar is changed
+//	int			modification_count;	// incremented each time the cvar is changed
+//	float		value;				// atof( string )
+//	int			integer;			// atoi( string )
+//	Cvar *		next;
+//	Cvar *		hash_next;
+//};
 
 #define	MAX_CVAR_VALUE_STRING 256
 
@@ -116,6 +124,10 @@ MATHLIB
 
 ==============================================================
 */
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f	// matches value in gcc v2 math.h
+#endif
 
 #define Vector3Init(v, x, y, z)		((v)[0] = (x), (v)[1] = (y), (v)[2] = (z))
 #define Vector4Init(v, x, y, z, w)	((v)[0] = (x), (v)[1] = (y), (v)[2] = (z), (v)[3] = (w))
@@ -280,9 +292,6 @@ static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	return v;
 }
 
-//void MatrixMultiply(Vec3 (*lhs)[3], Vec3 (*rhs)[3], Vec3 (*result)[3]);
-//void MatrixMultiply(Vec4 (*lhs)[4], Vec4 (*rhs)[4], Vec4 (*result)[4]);
-//void MatrixMultiply(Vec4 *lhs, Vec4 (*rhs)[4], Vec4 *result);
 void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
 void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
 void Mat3x3Mul(r32 out[3][3], const r32 a[3][3], const r32 b[3][3]);
@@ -300,5 +309,29 @@ struct Plane {
 	byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
 	byte	pad[2];			// for 4 byte alignment
 };
+
+/*
+==============================================================
+
+MEMORY MANAGEMENT
+
+==============================================================
+*/
+
+#define LIST_ROW_SIZE	4088	// size of a row of entries in table
+
+
+struct ListAllocator {
+	byte *	data;
+	size_t	num_bytes;
+	int		num_rows;
+};
+
+static void Com_InitMemory(ListAllocator **list, size_t num_bytes);
+
+void InitListAllocator(ListAllocator **list, size_t num_bytes);
+void DestroyListAllocator(ListAllocator *list);
+void *Allocate(ListAllocator *list, size_t num_bytes);
+void Free(ListAllocator *list, void **ptr);
 
 #endif	// Header guard

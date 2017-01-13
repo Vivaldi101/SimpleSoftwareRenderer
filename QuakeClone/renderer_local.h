@@ -107,25 +107,25 @@ extern RendererState global_renderer_state;
 extern unsigned global_8to24able[256]; 
 
 
-b32	R_Init(void *hinstance, void *wndproc); 
+void R_Init(void *hinstance, void *wndproc); 
 void R_RenderView(/*viewParms_t *parms*/);
 
 void R_EndFrame();
-void R_BeginFrame(MeshData *md);
+void R_BeginFrame(MeshObject *md);
 
 void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far);
 void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
 
-void R_TransformModelToWorld(MeshData *md, VertexTransformState ts = LOCAL_TO_TRANSFORMED);
-void R_TransformWorldToView(MeshData *md);
-void R_TransformViewToClip(MeshData *md);
-void R_TransformClipToScreen(MeshData *md);
-void R_DrawMesh(MeshData *md);
+void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts = LOCAL_TO_TRANSFORMED);
+void R_TransformWorldToView(MeshObject *md);
+void R_TransformViewToClip(MeshObject *md);
+void R_TransformClipToScreen(MeshObject *md);
+void R_DrawMesh(MeshObject *md);
 void R_DrawGradient(VidSystem *vid_sys);
 
 void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius = 0.0f);
-void R_CullBackFaces(MeshData *md);
+void R_CullBackFaces(MeshObject *md);
 
 
 #endif	// Header guard

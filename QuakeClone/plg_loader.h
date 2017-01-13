@@ -3,4 +3,4 @@
 #include "win_local.h"
 
 // just for time being the func takes the general polygon mesh and the player
-extern void	PLG_InitParsing(const char *plg_file_name, MeshData *md, MeshData *player_md);
+extern void	PLG_InitParsing(const char *plg_file_name, MeshObject *md, MeshObject *player_md);

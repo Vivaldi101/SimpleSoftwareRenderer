@@ -78,10 +78,10 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <DisableSpecificWarnings>4100; 4101; 4706; 4201</DisableSpecificWarnings>
-      <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -136,6 +136,7 @@
     <ClCompile Include="renderer_cmds.cc" />
     <ClCompile Include="renderer_init.cc" />
     <ClCompile Include="renderer_main.cc" />
+    <ClCompile Include="segregated_list.cc" />
     <ClCompile Include="win_console.cc" />
     <ClCompile Include="win_input.cc" />
     <ClCompile Include="win_shared.cc" />

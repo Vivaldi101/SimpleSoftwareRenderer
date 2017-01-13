@@ -51,52 +51,52 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 	}
 }
 
-static b32 PLG_LoadMeshData(MeshData *md, FILE *fp, Vec3 world_pos, Vec3 scale, Vec3 rot) {
+static b32 PLG_LoadMeshObject(MeshObject *md, FILE **fp, Vec3 world_pos, Vec3 scale, Vec3 rot) {
 	char buffer[MAX_PLG_LINE_LEN];
 	const char *parsed_string;
 
-	// zero out the mesh
-	memset(md, 0, sizeof(MeshData));
-	md->state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
-	md->world_pos = world_pos;
+	md->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
+	md->status.world_pos = world_pos;
+
+	MeshData *mesh = md->mesh;
 
 	// get the object desc
-	if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, fp))) {
+	if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 		Sys_Print("Error while reading lines from an opened PLG file, it should be a name of the mesh to be loaded,"
 				  "number of verts and number polys");
 		return false;
 	}
 
-	sscanf_s(parsed_string, "%s %d %d", md->name, sizeof(md->name), &md->num_verts, &md->num_polys);
+	sscanf_s(parsed_string, "%s %d %d", md->status.name, sizeof(md->status.name), &md->status.num_verts, &md->status.num_polys);
 
-	int num_verts = md->num_verts;
+	int num_verts = md->status.num_verts;
 	for (int i = 0; i < num_verts; ++i) {
-		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, fp))) {
+		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("Error while reading lines from an opened PLG file, it should be a vertex in the x y z order");
 			return false;
 		}
 
 		sscanf_s(parsed_string, "%f %f %f",
-				 &md->local_vertex_array[i].v.x,
-				 &md->local_vertex_array[i].v.y,
-				 &md->local_vertex_array[i].v.z);
+				 &mesh->local_verts->vert_array[i].v.x,
+				 &mesh->local_verts->vert_array[i].v.y,
+				 &mesh->local_verts->vert_array[i].v.z);
 		//md->local_vertex_list[i].v.w = 1.0f;		disabled the Vec4 for now
 
-		md->local_vertex_array[i].v.x *= scale.v.x;
-		md->local_vertex_array[i].v.y *= scale.v.y;
-		md->local_vertex_array[i].v.z *= scale.v.z;
+		mesh->local_verts->vert_array[i].v.x *= scale.v.x;
+		mesh->local_verts->vert_array[i].v.y *= scale.v.y;
+		mesh->local_verts->vert_array[i].v.z *= scale.v.z;
 	}
 
-	// TODO: compute the avg and max radius for md here
+	// TODO: compute the avg and max radius for mesh object here
 
 	int poly_num_verts = 0;
 
 	int poly_surface_desc = 0;
 	char tmp_poly_surface_desc[8];
 
-	int num_polys = md->num_polys;
+	int num_polys = md->status.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
-		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, fp))) {
+		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("Error while reading lines from an opened PLG file," 
 					  "it should be a 16 bit value in the form of PLG/X format: CSSD | RRRR| GGGG | BBBB");
 			return false;
@@ -106,9 +106,9 @@ static b32 PLG_LoadMeshData(MeshData *md, FILE *fp, Vec3 world_pos, Vec3 scale, 
 				 tmp_poly_surface_desc,
 				 sizeof(tmp_poly_surface_desc),
 				 &poly_num_verts,
-				 &md->poly_array[i].vert_indices[0],
-				 &md->poly_array[i].vert_indices[1],
-				 &md->poly_array[i].vert_indices[2]);
+				 &mesh->polys->poly_array[i].vert_indices[0],
+				 &mesh->polys->poly_array[i].vert_indices[1],
+				 &mesh->polys->poly_array[i].vert_indices[2]);
 
 		if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
 			sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
@@ -116,54 +116,55 @@ static b32 PLG_LoadMeshData(MeshData *md, FILE *fp, Vec3 world_pos, Vec3 scale, 
 			poly_surface_desc = atoi(tmp_poly_surface_desc);
 		}
 
-		md->poly_array[i].vertex_list = md->local_vertex_array;
+		mesh->polys->poly_array[i].vertex_list = mesh->local_verts->vert_array;
 
 		if (poly_surface_desc & PLX_2SIDED_FLAG) {
-			md->poly_array[i].attr |= POLY_ATTR_2SIDED;
+			//md->poly_array[i].attr |= POLY_ATTR_2SIDED;
 		}
 
 		if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
-			md->poly_array[i].attr |= POLY_ATTR_RGB16;
+			//md->poly_array[i].attr |= POLY_ATTR_RGB16;
 			int red = (poly_surface_desc & 0x0f00) >> 8;
 			int green = (poly_surface_desc & 0x00f0) >> 4;
 			int blue = (poly_surface_desc & 0x000f);
 
-			md->poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
+			mesh->polys->poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
 		} else {
-			md->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
-			md->poly_array[i].color = poly_surface_desc & 0x00ff;
+			//md->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
+			mesh->polys->poly_array[i].color = poly_surface_desc & 0x00ff;
 		}
 
 		int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
 
 		switch (shade_mode) {
 			case PLX_SHADE_MODE_PURE_FLAG: {
-				md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PURE;
+				//md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PURE;
 			} break;
 			case PLX_SHADE_MODE_FLAT_FLAG: {
-				md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_FLAT;
+				//md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_FLAT;
 			} break;
 			case PLX_SHADE_MODE_GOURAUD_FLAG: {
-				md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_GOURAUD;
+				//md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_GOURAUD;
 			} break;
 			case PLX_SHADE_MODE_PHONG_FLAG: {
-				md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PHONG;
+				//md->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PHONG;
 			} break;
 			default: {
 				Sys_Print("\nShading mode is invalid, it should be 1 of: 0x0000, 0x2000, 0x4000, 0x6000\n");
 			}
 		}
 
-		md->poly_array[i].state = POLY_STATE_ACTIVE;
+		mesh->polys->poly_array[i].state = POLY_STATE_ACTIVE;
 	}
 
 	Sys_Print("\nMesh data loading complete\n");
+	fseek(*fp, 0, SEEK_SET);
 	return true;
 }
 
-void PLG_InitParsing(const char *plg_file_name, MeshData *md, MeshData *player_md) {
+void PLG_InitParsing(const char *plg_file_name, MeshObject *md, MeshObject *player_md) {
 	// just for prototyping purposes
-	// fixme: replace the CRT file i/o with win32 api
+	// FIXME: replace the CRT file i/o with win32 api
 	FILE *fp;
 	fopen_s(&fp, plg_file_name, "r");
 
@@ -181,10 +182,10 @@ void PLG_InitParsing(const char *plg_file_name, MeshData *md, MeshData *player_m
 	Vec3 rot;
 	Vector3Init(rot, 0.0f, 0.0f, 0.0f);
 
-	PLG_LoadMeshData(md, fp, world_pos, scale, rot);
+	PLG_LoadMeshObject(md, &fp, world_pos, scale, rot);
 
-	memcpy(player_md, md, sizeof(MeshData));
-	Vector3Init(player_md->world_pos, 400.0f, -50.0f, 400.0f);
+	Vector3Init(world_pos, 400.0f, -50.0f, 400.0f);
+	PLG_LoadMeshObject(player_md, &fp, world_pos, scale, rot);
 
 
 	if (fp) {

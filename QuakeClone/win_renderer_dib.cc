@@ -126,7 +126,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	if (!vid_sys->win_handles.dib_section) {
 		//ri.Con_Printf( PRINT_ALL, "DIB_Init() - CreateDIBSection failed\n" );
 		Sys_Print("\nCouldn't create the dib section\n");
-		//goto fail;
+		return false;
 	}
 
 	if (win_dib_info->bmiHeader.biHeight > 0) {
@@ -163,8 +163,4 @@ b32 DIB_Init(VidSystem *vid_sys) {
 
 	Sys_Print("\nDIB init done\n");
 	return true;
-
-//fail:
-	//return false;
-	//DIB_Shutdown();
 }

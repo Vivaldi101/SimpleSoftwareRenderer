@@ -6,7 +6,7 @@ struct Poly {
 	Vec3 *		vertex_list;	// points to the mesh containing the poly
 
 	int			state;
-	int			attr;
+	//int			attr;
 	u32			color;
 
 	int			vert_indices[3];
@@ -25,42 +25,58 @@ struct LinkedPoly {
 	LinkedPoly *	prev;
 };
 
+struct VertexGroup {
+	Vec3	vert_array[85];	
+};
+
+struct PolyGroup {
+	Poly	poly_array[64];	
+};
+
+struct MeshData {
+	VertexGroup	*	local_verts;		// original
+	VertexGroup	* 	trans_verts;		// transformed
+
+	PolyGroup *		polys;
+};
 // not self contained
 // general poly mesh
-struct MeshData {
-	int		id;
-	char	name[64];
+struct MeshObject {
+	struct {
+		int		id;
+		char	name[32];
 
-	int		state;
-	int		attr;
+		int		state;
+		int		attr;
 
-	r32		avg_radius;
-	r32		max_radius;
+		r32		avg_radius;
+		r32		max_radius;
 
-	Vec3	world_pos;
-	Vec3	dir;
-	Vec3	ux, uy, uz;
+		Vec3	world_pos;
+		Vec3	dir;
+		Vec3	ux, uy, uz;
 
-	int		num_verts;
-	int		num_polys;
+		int		num_verts;
+		int		num_polys;
+	} status;
 
-	// FIXME: array constants into macros, 
-	// and the lists with proper memory management
+	MeshData *	mesh;
+
+	//Vec3	local_vertex_array[85];	// original
+	//Vec3	trans_vertex_array[85];	// transformed
+
+	//Poly	poly_array[32];
 	 
-	Vec3	local_vertex_array[120];	// original
-	Vec3	trans_vertex_array[120];	// transformed
-
-	Poly	poly_array[40];
 };
 
 // master poly list
+// FIXME: push the structure onto a memory stack
 struct RenderList {
 	int		state;
 	int		attr;
 	int		num_polys;
 
 	// FIXME: array constants into macros, 
-	// and the lists with proper memory management
 
 	/*LinkedPoly *	poly_ptrs[256];*/
 	// could also use the poly_ptrs instead
@@ -76,11 +92,11 @@ enum EntityType {
 	RT_MAX_REF_ENTITY_TYPE
 };
 
-struct RefDef {
-	int			x, y, width, height;
-	float		fov_x, fov_y;
-	Vec3		view_org;
-	Vec3		view_axis[3];		// transformation matrix
-};
+//struct RefDef {
+//	int			x, y, width, height;
+//	float		fov_x, fov_y;
+//	Vec3		view_org;
+//	Vec3		view_axis[3];		// transformation matrix
+//};
 
 #endif	// Header guard

@@ -1,7 +1,7 @@
 #include "shared.h"
 #include "renderer_local.h"
 
-void R_BeginFrame(MeshData *md) {
+void R_BeginFrame(MeshObject *md) {
 	// extern void Draw_BuildGammaTable( void );
 	
 	//int num_polys = md->num_polys;

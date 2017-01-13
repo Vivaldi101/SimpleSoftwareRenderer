@@ -3,7 +3,7 @@
 
 
 #define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
-void Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, void *hinstance) {
+b32 Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, void *hinstance) {
 	//cvar		*vid_xpos, *vid_ypos, *vid_fullscreen;
 
 	// FIXME: make these memsets
@@ -26,8 +26,7 @@ void Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, v
     wc.lpszClassName = WINDOW_CLASS_NAME;
 
     if (!RegisterClass (&wc) ) {
-		//ri.Sys_Error (ERR_FATAL, "Couldn't register window class");
-		abort();
+		return false;
 	}
 
 	r.left = 0;
@@ -57,8 +56,7 @@ void Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, v
 	vid_sys.height = height;
 
 	if (!vid_sys.win_handles.window) {
-		Sys_Print("Couldn't create the main window!\n");
-		abort();	// For now
+		return false;
 	}
 	
 	ShowWindow(vid_sys.win_handles.window, SW_SHOWNORMAL);
@@ -69,6 +67,8 @@ void Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, v
 	Sys_Print("Main window created!\n");
 
 	memcpy(&rs->vid_sys, &vid_sys, sizeof(vid_sys));
+
+	return true;
 	//global_vid_sys.win_handles = s_win_handles;
 
 	// let the sound and input subsystems know about the new window

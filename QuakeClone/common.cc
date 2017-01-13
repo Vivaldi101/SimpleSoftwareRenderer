@@ -2,34 +2,39 @@
 #include "plg_loader.h"
 #include "win_renderer.h"	// FIXME: Not include here
 
-int global_com_frame_time;
-int global_com_frame_msec;
-
 static int s_global_game_time_residual;
 static int s_global_game_frame;
 
 // just for prototyping purposes
-static MeshData md;
-static MeshData player_md;
+static MeshObject *md;
+static MeshObject *player_md;
 
 // just for prototyping purposes
-//static r32 yaw = 0.0f;
-//static r32 mov_x = 0.0f;
-//static r32 mov_z = 0.0f;
 static r32 turn = 0.0f;
 static r32 up_down = 0.0f;
 static r32 walk = 5.0f;
 static Vec3 mat_rot_y[3];
 
+static ListAllocator *global_main_list_allocator;
+
 void Com_Init(int argc, char **argv, void *hinstance, void *wndproc) {
 	Sys_Init();
+	Com_InitMemory(&global_main_list_allocator, 128 * LIST_ROW_SIZE);
+	md = (MeshObject *)Allocate(global_main_list_allocator, sizeof(MeshObject));
+	md->mesh = (MeshData *)Allocate(global_main_list_allocator, sizeof(MeshData));
+	md->mesh->local_verts = (VertexGroup *)Allocate(global_main_list_allocator, sizeof(VertexGroup));
+	md->mesh->trans_verts = (VertexGroup *)Allocate(global_main_list_allocator, sizeof(VertexGroup));
+	md->mesh->polys = (PolyGroup *)Allocate(global_main_list_allocator, sizeof(PolyGroup));
 
-	PLG_InitParsing("poly_data.plg", &md, &player_md);
+	player_md = (MeshObject *)Allocate(global_main_list_allocator, sizeof(MeshObject));
+	player_md->mesh = (MeshData *)Allocate(global_main_list_allocator, sizeof(MeshData));
+	player_md->mesh->local_verts = (VertexGroup *)Allocate(global_main_list_allocator, sizeof(VertexGroup));
+	player_md->mesh->trans_verts = (VertexGroup *)Allocate(global_main_list_allocator, sizeof(VertexGroup));
+	player_md->mesh->polys = (PolyGroup *)Allocate(global_main_list_allocator, sizeof(PolyGroup));
 
-	if (!R_Init(hinstance, wndproc)) {
-		Sys_Print("Error while initializing the renderer");
-		Sys_Quit();
-	}
+	PLG_InitParsing("poly_data.plg", md, player_md);
+
+	R_Init(hinstance, wndproc);
 }
 
 static void ProcessEvent(SysEvent se) {
@@ -66,7 +71,7 @@ static void ProcessEvent(SysEvent se) {
 		mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
 		mat_rot_y[2][1] = 0.0f;
 		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
-		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
+		R_RotatePoints(&mat_rot_y, player_md->mesh->local_verts->vert_array, player_md->status.num_verts); 
 	} else if (se.ev_value == VK_LEFT) {
 		turn -= 5.0f;
 		global_renderer_state.current_view.world_orientation.dir[0] = (sinf(DEG2RAD(turn)));
@@ -82,7 +87,7 @@ static void ProcessEvent(SysEvent se) {
 		mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
 		mat_rot_y[2][1] = 0.0f;
 		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
-		R_RotatePoints(&mat_rot_y, player_md.local_vertex_array, player_md.num_verts); 
+		R_RotatePoints(&mat_rot_y, player_md->mesh->local_verts->vert_array, player_md->status.num_verts); 
 	}
 	if (se.ev_value == VK_SPACE) {
 		up_down += 5.0f;
@@ -178,47 +183,50 @@ void Com_Frame() {
 	mat_rot_z[2][2] = 1.0f;
 
 
-	int num_polys = md.num_polys;
+	int num_polys = md->status.num_polys;
+	Poly *polys = md->mesh->polys->poly_array;
 	for (int i = 0; i < num_polys; ++i) {
-		md.poly_array[i].state = md.poly_array[i].state & (~POLY_STATE_BACKFACE);
-		md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
+		polys[i].state = polys[i].state & (~POLY_STATE_BACKFACE);
+		polys[i].state = polys[i].state & (~CULL_OUT);
 
-		player_md.poly_array[i].state = md.poly_array[i].state & (~POLY_STATE_BACKFACE);
-		player_md.poly_array[i].state = md.poly_array[i].state & (~CULL_OUT);
+		polys[i].state = polys[i].state & (~POLY_STATE_BACKFACE);
+		polys[i].state = polys[i].state & (~CULL_OUT);
 	}
 
+	num_polys = player_md->status.num_polys;
+	polys = player_md->mesh->polys->poly_array;
+	for (int i = 0; i < num_polys; ++i) {
+		polys[i].state = polys[i].state & (~POLY_STATE_BACKFACE);
+		polys[i].state = polys[i].state & (~CULL_OUT);
 
-	player_md.world_pos = 
+		polys[i].state = polys[i].state & (~POLY_STATE_BACKFACE);
+		polys[i].state = polys[i].state & (~CULL_OUT);
+	}
+
+	player_md->status.world_pos = 
 		global_renderer_state.current_view.world_orientation.origin + (global_renderer_state.current_view.world_orientation.dir * 40.0f);
-	player_md.world_pos[1] -= 20.0f;
+	player_md->status.world_pos[1] -= 20.0f;
 
-	R_RotatePoints(&mat_rot_z, md.local_vertex_array, md.num_verts); 
-	R_RotatePoints(&mat_rot_x, md.local_vertex_array, md.num_verts); 
+	R_RotatePoints(&mat_rot_z, md->mesh->local_verts->vert_array, md->status.num_verts); 
+	R_RotatePoints(&mat_rot_x, md->mesh->local_verts->vert_array, md->status.num_verts); 
 
-	//md.world_pos[0] = 3.0f * cos(DEG2RAD(view_angle));
-	//md.world_pos[2] = 3.0f * sin(DEG2RAD(view_angle));
 
-	//if (++view_angle >= 360.0f) {
-	//	view_angle = 0.0f;
-	//}
-
-	R_BeginFrame(&md);
-	R_TransformModelToWorld(&md); 
-	R_TransformModelToWorld(&player_md); 
+	R_BeginFrame(md);
+	R_TransformModelToWorld(md); 
+	R_TransformModelToWorld(player_md); 
 	R_RenderView();
-	md.state = R_CullPointAndRadius(md.world_pos);			
-	R_CullBackFaces(&md);
-	R_CullBackFaces(&player_md);
-	R_TransformWorldToView(&md);
-	R_TransformWorldToView(&player_md);
-	R_TransformViewToClip(&md);
-	R_TransformViewToClip(&player_md);
-	R_TransformClipToScreen(&md);
-	R_TransformClipToScreen(&player_md);
-	R_DrawMesh(&md);
-	R_DrawMesh(&player_md);
+	md->status.state = R_CullPointAndRadius(md->status.world_pos);			
+	R_CullBackFaces(md);
+	R_CullBackFaces(player_md);
+	R_TransformWorldToView(md);
+	R_TransformWorldToView(player_md);
+	R_TransformViewToClip(md);
+	R_TransformViewToClip(player_md);
+	R_TransformClipToScreen(md);
+	R_TransformClipToScreen(player_md);
+	R_DrawMesh(md);
+	R_DrawMesh(player_md);
 
-	//R_DrawGradient(&global_renderer_state.vid_sys);
 	R_EndFrame();
 
 	// time debugging, first frame will be zero
@@ -247,6 +255,7 @@ SysEvent Com_GetEvent() {
 		global_com_eventail++;
 		return global_com_event_queue[(global_com_eventail - 1) & (MAX_COM_QUED_EVENTS - 1)];
 	}
+
 	return Sys_GetEvent();
 }
 
@@ -259,6 +268,13 @@ inline int Com_ModifyFrameMsec(int frame_msec) {
 	return frame_msec;
 }
 
+static void Com_InitMemory(ListAllocator **list, size_t num_bytes) {
+	InitListAllocator(list, num_bytes); 
+	if (!global_main_list_allocator->data) {
+		Sys_Print("Failed to allocate the requested memory\n");
+		Sys_Quit();
+	}
+}
 #if 0
 void Com_Memset (void* dest, const int val, const size_t count) {
 	unsigned int fill_val;

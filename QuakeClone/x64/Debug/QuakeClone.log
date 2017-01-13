@@ -1,33 +1,11 @@
-﻿Build started 11/01/2017 16:47:16.
-     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (rebuild target(s)).
-     1>_PrepareForClean:
-         Deleting file "x64\Debug\QuakeClone.lastbuildstate".
-       InitializeBuildStatus:
-         Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
+﻿Build started 13/01/2017 03:13:59.
+     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "x64\Debug\QuakeClone.unsuccessfulbuild".
        ClCompile:
-         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /Od /D _MBCS /Gm /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc cvar.cc input.cc math.cc plg_loader.cc renderer_cmds.cc renderer_init.cc renderer_main.cc win_console.cc win_input.cc win_shared.cc win_main.cc win_main_window.cc win_renderer_dib.cc win_wndproc.cc
-         win_wndproc.cc
-         win_renderer_dib.cc
-     1>win_renderer_dib.cc(92): warning C4244: '=' : conversion from 'int' to 'WORD', possible loss of data
-         win_main_window.cc
-         win_main.cc
-         win_shared.cc
-         win_input.cc
-         win_console.cc
-         renderer_main.cc
-     1>renderer_main.cc(41): warning C4189: 'x' : local variable is initialized but not referenced
-     1>renderer_main.cc(499): warning C4189: 'x' : local variable is initialized but not referenced
-         renderer_init.cc
-         renderer_cmds.cc
-         plg_loader.cc
-         math.cc
-         input.cc
-         cvar.cc
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc
          common.cc
-     1>common.cc(227): warning C4189: 'frame_msec' : local variable is initialized but not referenced
-         Generating Code...
-     1>f:\code\quakeclone\quakeclone\renderer_main.cc(354): warning C4701: potentially uninitialized local variable 'y' used
-     1>f:\code\quakeclone\quakeclone\renderer_main.cc(353): warning C4701: potentially uninitialized local variable 'x' used
+     1>common.cc(235): warning C4189: 'frame_msec' : local variable is initialized but not referenced
        Link:
          F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\cvar.obj
@@ -37,6 +15,7 @@
          x64\Debug\renderer_cmds.obj
          x64\Debug\renderer_init.obj
          x64\Debug\renderer_main.obj
+         x64\Debug\segregated_list.obj
          x64\Debug\win_console.obj
          x64\Debug\win_input.obj
          x64\Debug\win_shared.obj
@@ -44,14 +23,15 @@
          x64\Debug\win_main_window.obj
          x64\Debug\win_renderer_dib.obj
          x64\Debug\win_wndproc.obj
+         LINK : F:\code\QuakeClone\x64\Debug\QuakeClone.exe not found or not built by the last incremental link; performing full link
          QuakeClone.vcxproj -> F:\code\QuakeClone\x64\Debug\QuakeClone.exe
        Manifest:
          C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe;#1" /manifest x64\Debug\QuakeClone.exe.intermediate.manifest
        FinalizeBuildStatus:
          Deleting file "x64\Debug\QuakeClone.unsuccessfulbuild".
          Touching "x64\Debug\QuakeClone.lastbuildstate".
-     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (rebuild target(s)).
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:03.17
+Time Elapsed 00:00:00.81

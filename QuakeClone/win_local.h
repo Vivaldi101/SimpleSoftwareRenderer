@@ -1,5 +1,5 @@
-#ifndef QC_WIN_LOCAL_H
-#define QC_WIN_LOCAL_H
+#ifndef WIN_LOCAL_H
+#define WIN_LOCAL_H
 
 #ifndef INITGUID
 #define INITGUID
@@ -34,7 +34,7 @@ extern void	In_Activate(b32 active);
 extern void	In_Frame();
 
 // Windows
-extern void Vid_CreateWindow(struct RendererState *rs, int width, int height, void *wndproc, void *hinstance);
+extern b32 Vid_CreateWindow(struct RendererState *rs, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
 // Events

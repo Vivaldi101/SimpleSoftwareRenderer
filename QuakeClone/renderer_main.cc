@@ -25,22 +25,20 @@ void R_DrawGradient(VidSystem *vid_sys) {
 }
 #endif
 
-b32 R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
+void R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
 
 	memset(&global_renderer_state, 0, sizeof(RendererState));
 	RendererState *rs = &global_renderer_state;
 	// should be 1920 / 2, 1080 / 2
-	Vid_CreateWindow(rs, 800, 600, wndproc, hinstance);	
+	if (!Vid_CreateWindow(rs, 800, 600, wndproc, hinstance)) {
+		Sys_Print("Error while creating the window");
+		Sys_Quit();
+	}	
 
 	if (!DIB_Init(&rs->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
 		Sys_Quit();
 	}
-
-
-	int x = 42;
-
-	return true;
 } 
 
 #if 1
@@ -196,30 +194,33 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_or
 // FIXME: maybe use 1x4 by 4x4 matrix multiply
 // memcpy all the verts to a temp buffer and transform
 // with an invisible homogeneous 1
-void R_TransformWorldToView(MeshData *md) {
-	if (!(md->state & CULL_OUT)) {
-		int num_verts = md->num_verts;
+void R_TransformWorldToView(MeshObject *md) {
+	if (!(md->status.state & CULL_OUT)) {
+		int num_verts = md->status.num_verts;
+		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 		for (int i = 0; i < num_verts; ++i) {
 			r32 vert[4], tmp[4];
-			Vector3Copy(vert, md->trans_vertex_array[i]);
+			Vector3Copy(vert, trans_verts[i]);
 			vert[3] = 1.0f;
 
 			Mat1x4Mul(tmp, vert, global_renderer_state.current_view.world_view_matrix);  
-			Vector3Copy(md->trans_vertex_array[i], tmp);
+			Vector3Copy(trans_verts[i], tmp);
 		}
 	} 
 }
 
-void R_TransformModelToWorld(MeshData *md, VertexTransformState ts) {
-	int num_verts = md->num_verts;
+void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts) {
+	int num_verts = md->status.num_verts;
+	Vec3 *local_verts = md->mesh->local_verts->vert_array;
+	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
 	if (ts == LOCAL_TO_TRANSFORMED) {
 		for (int i = 0; i < num_verts; ++i) {
-			Vector3Add(md->local_vertex_array[i], md->world_pos, md->trans_vertex_array[i]);
+			Vector3Add(local_verts[i], md->status.world_pos, trans_verts[i]);
 		}
 	} else if (ts == TRANSFORMED_ONLY) {
 		for (int i = 0; i < num_verts; ++i) {
-			Vector3Add(md->trans_vertex_array[i], md->world_pos, md->trans_vertex_array[i]);
+			Vector3Add(trans_verts[i], md->status.world_pos, trans_verts[i]);
 		}
 	}
 }
@@ -260,29 +261,31 @@ FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
 	//return CULL_OUT;
 }
 
-void R_TransformViewToClip(MeshData *md) {
-	if (!(md->state & CULL_OUT)) {
-		int num_verts = md->num_verts;
+void R_TransformViewToClip(MeshObject *md) {
+	if (!(md->status.state & CULL_OUT)) {
+		int num_verts = md->status.num_verts;
+		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
 		r32 dist = global_renderer_state.current_view.view_dist_h;
 		r32 z;
 		for (int i = 0; i < num_verts; ++i) {
-			z = md->trans_vertex_array[i].v.z;
-			md->trans_vertex_array[i].v.x = (md->trans_vertex_array[i].v.x * dist) / z; 
-			md->trans_vertex_array[i].v.y = (md->trans_vertex_array[i].v.y * dist) / z; 
+			z = trans_verts[i].v.z;
+			trans_verts[i].v.x = (trans_verts[i].v.x * dist) / z; 
+			trans_verts[i].v.y = (trans_verts[i].v.y * dist) / z; 
 		}
 	}
 }
 
-void R_TransformClipToScreen(MeshData *md) {
-	if (!(md->state & CULL_OUT)) {
-		int num_verts = md->num_verts;
+void R_TransformClipToScreen(MeshObject *md) {
+	if (!(md->status.state & CULL_OUT)) {
+		int num_verts = md->status.num_verts;
+		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
 		r32 screen_width_factor = (0.5f * global_renderer_state.current_view.viewport_width) - 0.5f;
 		r32 screen_height_factor = (0.5f * global_renderer_state.current_view.viewport_height) - 0.5f;
 		for (int i = 0; i < num_verts; ++i) {
-			md->trans_vertex_array[i].v.x = screen_width_factor + (md->trans_vertex_array[i].v.x * screen_width_factor);
-			md->trans_vertex_array[i].v.y = screen_height_factor - (md->trans_vertex_array[i].v.y * screen_height_factor);
+			trans_verts[i].v.x = screen_width_factor + (trans_verts[i].v.x * screen_width_factor);
+			trans_verts[i].v.y = screen_height_factor - (trans_verts[i].v.y * screen_height_factor);
 		}
 	}
 }
@@ -425,36 +428,38 @@ static void R_DrawLine(int x0, int y0, int x1, int y1, u32 color) {
 	}
 }
 
-void R_DrawMesh(MeshData *md) {
-	if (!(md->state & CULL_OUT)) {
-		int num_polys = md->num_polys;
+void R_DrawMesh(MeshObject *md) {
+	if (!(md->status.state & CULL_OUT)) {
+		int num_polys = md->status.num_polys;
+		Poly *polys = md->mesh->polys->poly_array;
+		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
 		for (int i = 0; i < num_polys; ++i) {
-			if ((md->poly_array[i].state & POLY_STATE_BACKFACE)) {
+			if ((polys[i].state & POLY_STATE_BACKFACE)) {
 				continue;
 			}
 
-			int v0 = md->poly_array[i].vert_indices[0];
-			int v1 = md->poly_array[i].vert_indices[1];
-			int v2 = md->poly_array[i].vert_indices[2];
+			int v0 = polys[i].vert_indices[0];
+			int v1 = polys[i].vert_indices[1];
+			int v2 = polys[i].vert_indices[2];
 
-			R_DrawLine((int)md->trans_vertex_array[v0].v.x,
-					   (int)md->trans_vertex_array[v0].v.y,
-					   (int)md->trans_vertex_array[v1].v.x,
-					   (int)md->trans_vertex_array[v1].v.y,
-					   md->poly_array[i].color);
+			R_DrawLine((int)trans_verts[v0].v.x,
+					   (int)trans_verts[v0].v.y,
+					   (int)trans_verts[v1].v.x,
+					   (int)trans_verts[v1].v.y,
+					   polys[i].color);
 
-			R_DrawLine((int)md->trans_vertex_array[v1].v.x,
-					   (int)md->trans_vertex_array[v1].v.y,
-					   (int)md->trans_vertex_array[v2].v.x,
-					   (int)md->trans_vertex_array[v2].v.y,
-					   md->poly_array[i].color);
+			R_DrawLine((int)trans_verts[v1].v.x,
+					   (int)trans_verts[v1].v.y,
+					   (int)trans_verts[v2].v.x,
+					   (int)trans_verts[v2].v.y,
+					   polys[i].color);
 
-			R_DrawLine((int)md->trans_vertex_array[v2].v.x,
-					   (int)md->trans_vertex_array[v2].v.y,
-					   (int)md->trans_vertex_array[v0].v.x,
-					   (int)md->trans_vertex_array[v0].v.y,
-					   md->poly_array[i].color);
+			R_DrawLine((int)trans_verts[v2].v.x,
+					   (int)trans_verts[v2].v.y,
+					   (int)trans_verts[v0].v.x,
+					   (int)trans_verts[v0].v.y,
+					   polys[i].color);
 
 			//R_DrawLine((int)global_renderer_state.current_view.debug_orientation.origin[0],
 			//		   (int)global_renderer_state.current_view.debug_orientation.origin[1], 
@@ -477,23 +482,25 @@ void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points) {
 	}
 }
 
-void R_CullBackFaces(MeshData *md) {
-	if (!(md->state & CULL_OUT)) {
+void R_CullBackFaces(MeshObject *md) {
+	if (!(md->status.state & CULL_OUT)) {
+		int num_polys = md->status.num_polys;
+		Poly *polys = md->mesh->polys->poly_array;
+		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
-		int num_polys = md->num_polys;
 		for (int i = 0; i < num_polys; ++i) {
-			if ((md->poly_array[i].state & POLY_STATE_BACKFACE) || !(md->poly_array[i].state & POLY_STATE_ACTIVE)) {
+			if ((polys[i].state & POLY_STATE_BACKFACE) || !(polys[i].state & POLY_STATE_ACTIVE)) {
 				continue;
 			}
 
-			int v0 = md->poly_array[i].vert_indices[0];
-			int v1 = md->poly_array[i].vert_indices[1];
-			int v2 = md->poly_array[i].vert_indices[2];
+			int v0 = polys[i].vert_indices[0];
+			int v1 = polys[i].vert_indices[1];
+			int v2 = polys[i].vert_indices[2];
 
-			Vec3 u = Vector3Build(md->trans_vertex_array[v0], md->trans_vertex_array[v1]);
-			Vec3 v = Vector3Build(md->trans_vertex_array[v0], md->trans_vertex_array[v2]);
+			Vec3 u = Vector3Build(trans_verts[v0], trans_verts[v1]);
+			Vec3 v = Vector3Build(trans_verts[v0], trans_verts[v2]);
 			Vec3 n = Vector3CrossProduct(u, v);
-			Vec3 view = Vector3Build(global_renderer_state.current_view.world_orientation.origin, md->trans_vertex_array[v0]);
+			Vec3 view = Vector3Build(global_renderer_state.current_view.world_orientation.origin, trans_verts[v0]);
 
 			if (global_renderer_state.current_view.world_orientation.origin[2] > 0.0f) {
 				int x = 42;
@@ -502,7 +509,7 @@ void R_CullBackFaces(MeshData *md) {
 			r32 dot = Vector3DotProduct(view, n);
 
 			if (dot <= 0.0f) {
-				md->poly_array[i].state |= POLY_STATE_BACKFACE;
+				polys[i].state |= POLY_STATE_BACKFACE;
 			}
 		}
 	}
