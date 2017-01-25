@@ -1,5 +1,6 @@
 #ifndef SHARED_H
 #define SHARED_H
+
 #include <stdio.h>
 #include <string.h>
 #include <cstdint>
@@ -19,7 +20,7 @@ typedef uint64_t u64;
 
 typedef unsigned char byte;
 
-// 32 bit bool for alignment
+// 32 bit bool for word alignment
 typedef u32 b32;
 
 // typedefs for single and double floating points
@@ -72,6 +73,17 @@ static inline r32 RAD2DEG(r32 a) {
 #define RGB_32(A,R,G,B) (((A & 255) << 24) + ((R & 255) << 16) + ((G & 255) << 8) + ((B) & 255))
 #define RGB_16_565(R,G,B) ((((R) & 31) << 11) + (((G) & 63) << 5) + ((B) & 31))
 
+inline u16 RGB_888To565(int r, int g, int b) {
+    // builds a 5.6.5 format 16 bit pixel
+    // assumes input is in 8.8.8 format
+
+    r >>= 3; 
+	g >>= 2; 
+	b >>= 3;
+
+    return RGB_16_565(r, g, b);
+} 
+
 // alignment
 #define ALIGNUP(Address, Alignment) \
     (((size_t)Address) + ((Alignment)-1) & (~((Alignment)-1)))
@@ -98,22 +110,11 @@ static inline r32 RAD2DEG(r32 a) {
 //	Cvar *		hash_next;
 //};
 
-#define	MAX_CVAR_VALUE_STRING 256
+// max values
+#define	MAX_CVAR_VALUE_STRING	256
+#define	MAX_ENTITIES			1023		// can't be increased without changing drawsurf bit packing
 
-inline u16 RGB_888To565(int r, int g, int b) {
-    // builds a 5.6.5 format 16 bit pixel
-    // assumes input is in 8.8.8 format
-
-    r >>= 3; 
-	g >>= 2; 
-	b >>= 3;
-
-    return RGB_16_565(r, g, b);
-} 
-
-
-
-// Util tools
+// util tools
 #define ARRAY_COUNT(arr) ((sizeof(arr)) / (sizeof(*(arr))))
 #define XOR_SWAP(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
 
@@ -262,26 +263,6 @@ static inline Vec3 Vector3Normalize(Vec3 v) {
 	return n;
 }
 
-//static inline Vec3 Vector3Inverse(const Vec3 *v) {
-//	Vec3 i = {};
-//
-//	i[0] = -(*v)[0];
-//	i[1] = -(*v)[1];
-//	i[2] = -(*v)[2];
-//
-//	return i;
-//}
-//
-//static inline Vec4 Vector4Inverse(const Vec4 *v) {
-//	Vec4 i = {};
-//
-//	i[0] = -(*v)[0];
-//	i[1] = -(*v)[1];
-//	i[2] = -(*v)[2];
-//
-//	return i;
-//}
-
 static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	Vec3 v = {};
 
@@ -292,9 +273,10 @@ static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	return v;
 }
 
-void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
-void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
-void Mat3x3Mul(r32 out[3][3], const r32 a[3][3], const r32 b[3][3]);
+extern void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
+extern void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
+extern void Mat3x3Mul(r32 out[3][3], const r32 a[3][3], const r32 b[3][3]);
+extern void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]);
 
 struct Orientation {
 	Vec3	origin;			// in world coordinates
@@ -313,25 +295,9 @@ struct Plane {
 /*
 ==============================================================
 
-MEMORY MANAGEMENT
+GENERAL
 
 ==============================================================
 */
-
-#define LIST_ROW_SIZE	4088	// size of a row of entries in table
-
-
-struct ListAllocator {
-	byte *	data;
-	size_t	num_bytes;
-	int		num_rows;
-};
-
-static void Com_InitMemory(ListAllocator **list, size_t num_bytes);
-
-void InitListAllocator(ListAllocator **list, size_t num_bytes);
-void DestroyListAllocator(ListAllocator *list);
-void *Allocate(ListAllocator *list, size_t num_bytes);
-void Free(ListAllocator *list, void **ptr);
 
 #endif	// Header guard

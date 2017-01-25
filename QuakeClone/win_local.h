@@ -1,50 +1,45 @@
 #ifndef WIN_LOCAL_H
 #define WIN_LOCAL_H
 
-#ifndef INITGUID
-#define INITGUID
-#endif
-
 #include <Windows.h>
 #include "shared.h"
 
-
-// Console system
+// console system
 extern void	Sys_CreateConsole();
 extern void	Sys_DestroyConsole();
 extern void Sys_Print(const char *msg);
 extern void Sys_Sleep(DWORD ms);
-extern void Conbuf_AppendText(const char *msg);
+extern void Con_AppendText(const char *msg);
 
-// Com System
+// com system
 extern void Sys_Init();
 extern void Sys_Quit();
 
-// Input system
+// input system
 extern void In_Activate(b32 active);
 extern void In_MouseEvent(int mstate);
 
 extern void	In_Init();
 extern void	In_Shutdown();
 
-
 extern void	In_DeactivateMouse();
 
 extern void	In_Activate(b32 active);
 extern void	In_Frame();
 
-// Windows
-extern b32 Vid_CreateWindow(struct RendererState *rs, int width, int height, void *wndproc, void *hinstance);
+// window creation
+#define WINDOW_WIDTH	800
+#define WINDOW_HEIGHT	600
+extern b32 Vid_CreateWindow(struct Renderer *ren, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
-// Events
-void Sys_QueEvent(int time, enum SysEventType type, int value, int value2, int data_len, void *data);
-
+// events
+extern void Sys_QueEvent(int time, enum SysEventType ev_type, int value, int value2, int data_len, void *data);
 
 LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
 struct WinVars {
 	void *			wndproc;
-	HINSTANCE		reflib_library;		// Handle to refresh DLL 
+	HINSTANCE		reflib_library;		// handle to refresh DLL 
 	b32				reflib_active;
 
 	HWND			hwnd;
@@ -58,4 +53,4 @@ struct WinVars {
 	u32				sys_msg_time;
 };
 extern WinVars global_win_vars;
-#endif	// Header guard
+#endif	// header guard

@@ -2,10 +2,8 @@
 #include "win_renderer.h"
 #include "plg_loader.h"
 
-unsigned global_8to24able[256];
-RendererState global_renderer_state;
 
-#if 1
+#if 0
 void R_DrawGradient(VidSystem *vid_sys) {
 	u32 width		= vid_sys->width;
 	u32 height		= vid_sys->height;
@@ -25,25 +23,56 @@ void R_DrawGradient(VidSystem *vid_sys) {
 }
 #endif
 
-void R_Init(void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
-
-	memset(&global_renderer_state, 0, sizeof(RendererState));
-	RendererState *rs = &global_renderer_state;
+void R_InitRenderer(Renderer *ren, void *hinstance, void *wndproc) {	// FIXME: Rendering functions into own .dll
 	// should be 1920 / 2, 1080 / 2
-	if (!Vid_CreateWindow(rs, 800, 600, wndproc, hinstance)) {
+	if (!Vid_CreateWindow(ren, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window");
 		Sys_Quit();
 	}	
 
-	if (!DIB_Init(&rs->vid_sys)) {
+	if (!DIB_Init(&ren->vid_sys)) {
 		Sys_Print("Error while initializing the DIB");
 		Sys_Quit();
 	}
 } 
 
-#if 1
+void R_SetupProjection() {
+	ViewSystem *vw_sys = &global_renderer->current_view;
+	r32 aspect_ratio = vw_sys->aspect_ratio;
+	r32 fov_y = vw_sys->fov_y;
+	r32 m00 = (1.0f / tan(DEG2RAD(fov_y / 2.0f))) / aspect_ratio;
+	r32 m11 = 1.0f / tan(DEG2RAD(fov_y / 2.0f));
+	r32 projection_matrix[16];
+
+	projection_matrix[0] = m00;
+	projection_matrix[4] = 0.0f;
+	projection_matrix[8] = 0.0f;
+	projection_matrix[12] = 0.0f;
+
+	projection_matrix[1] = 0.0f;
+	projection_matrix[5] = m11;
+	projection_matrix[9] = 0.0f;
+	projection_matrix[13] = 0.0f;
+
+	projection_matrix[2] = 0.0f;
+	projection_matrix[6] = 0.0f;
+	projection_matrix[10] = 1.0f;
+	projection_matrix[14] = 0.0f;
+
+	projection_matrix[3] = 0.0f;
+	projection_matrix[7] = 0.0f;
+	projection_matrix[11] = 1.0f;
+	projection_matrix[15] = 0.0f;
+
+	memcpy(vw_sys->projection_matrix, projection_matrix, sizeof(projection_matrix));
+	// dynamically compute far clip plane distance
+	//SetFarClip();
+
+}
+
+#if 0
 void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
-	ViewSystem *vw_sys = &global_renderer_state.current_view;
+	ViewSystem *vw_sys = &global_renderer.current_view;
 	Vec3 origin = vw_sys->world_orientation.origin;
 	vw_sys->z_near = z_near;
 	vw_sys->z_far = z_far;
@@ -91,6 +120,48 @@ void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far) {
 #endif
 
 #if 0
+void R_SetupFrustum() {
+	ViewSystem *vw_sys = &global_renderer.current_view;
+	r32 fov_x = vw_sys->fov_x;
+	r32 fov_y = vw_sys->fov_y;
+	Vec3 origin = vw_sys->world_orientation.origin;
+
+	Plane frustum[4];
+	Vec3 axis[3];
+
+	memcpy(&axis, &vw_sys->world_orientation.axis, sizeof(axis));
+
+	r32 ang = DEG2RAD(fov_x * 0.5f);
+	r32 xs = sinf(ang);
+	r32 xc = cosf(ang);
+
+	Vector3Scale(axis[0], xs, frustum[0].unit_normal);
+	Vector3MA(frustum[0].unit_normal, xc, axis[2], frustum[0].unit_normal);
+
+	Vector3Scale(axis[2], xs, frustum[1].unit_normal);
+	Vector3MA(frustum[1].unit_normal, -xc, axis[0], frustum[1].unit_normal);
+
+	ang = DEG2RAD(fov_y * 0.5f);
+	xs = sinf(ang);
+	xc = cosf(ang);
+
+	Vector3Scale(axis[1], xs, frustum[2].unit_normal);
+	Vector3MA(frustum[2].unit_normal, xc, axis[2], frustum[2].unit_normal);
+
+	Vector3Scale(axis[2], xs, frustum[3].unit_normal);
+	Vector3MA(frustum[3].unit_normal, -xc, axis[1], frustum[3].unit_normal);
+
+	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
+		frustum[i].unit_normal = Vector3Normalize(frustum[i].unit_normal);
+		frustum[i].dist = Vector3DotProduct(frustum[i].unit_normal, origin);
+		frustum[i].type = PLANE_NON_AXIAL;
+	}
+
+	memcpy(&vw_sys->frustum, &frustum, sizeof(frustum));
+}
+#endif
+
+#if 0
 void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z) {
 	Vec4 inv_trans_mat[4]; 
 	Vec4 final[4];
@@ -102,8 +173,8 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_or
 	Vec4 tmp3[4];
 	Vec4 tmp4[4];
 
-	ViewSystem *vs = &global_renderer_state.current_view;
-	Matrix4x4SetIdentity(vs->world_view_matrix);
+	ViewSystem *vs = &global_renderer.current_view;
+	Matrix4x4SetIdentity(vs->view_matrix);
 	Matrix4x4SetIdentity(vs->view_perspective_matrix);
 	Matrix4x4SetIdentity(vs->perspective_screen_matrix);
 	Vector3Init(vs->world_orientation.origin, view_orig_x, view_orig_y, view_orig_z);
@@ -111,7 +182,7 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_or
 	Vec3 origin;
 	Vector3Copy(origin, vs->world_orientation.origin);
 	Vector3Negate(origin);
-	Matrix3x3SetIdentity(global_renderer_state.current_view.world_orientation.axis);
+	Matrix3x3SetIdentity(global_renderer.current_view.world_orientation.axis);
 
 
 	Matrix4x4SetIdentity(inv_trans_mat);
@@ -175,7 +246,7 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_or
 	//}
 
 	//Vector3Copy(tmp2[3], origin);
-	//memcpy(vs->world_view_matrix, &tmp2, sizeof(tmp2));
+	//memcpy(vs->view_matrix, &tmp2, sizeof(tmp2));
 
 
 	//Negate(rot_y[0].v.z);
@@ -187,15 +258,12 @@ void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_or
 	MatrixMultiply(&inv_trans_mat, &rot_x, &tmp3);
 	MatrixMultiply(&tmp3, &rot_y, &tmp4);
 	MatrixMultiply(&tmp4, &rot_z, &final);
-	memcpy(vs->world_view_matrix, &final, sizeof(final));
+	memcpy(vs->view_matrix, &final, sizeof(final));
 }
 #endif
 
-// FIXME: maybe use 1x4 by 4x4 matrix multiply
-// memcpy all the verts to a temp buffer and transform
-// with an invisible homogeneous 1
 void R_TransformWorldToView(MeshObject *md) {
-	if (!(md->status.state & CULL_OUT)) {
+	if (!(md->status.state & FCS_CULL_OUT)) {
 		int num_verts = md->status.num_verts;
 		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 		for (int i = 0; i < num_verts; ++i) {
@@ -203,7 +271,7 @@ void R_TransformWorldToView(MeshObject *md) {
 			Vector3Copy(vert, trans_verts[i]);
 			vert[3] = 1.0f;
 
-			Mat1x4Mul(tmp, vert, global_renderer_state.current_view.world_view_matrix);  
+			Mat1x4Mul(tmp, vert, global_renderer->current_view.view_matrix);  
 			Vector3Copy(trans_verts[i], tmp);
 		}
 	} 
@@ -214,11 +282,11 @@ void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts) {
 	Vec3 *local_verts = md->mesh->local_verts->vert_array;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
-	if (ts == LOCAL_TO_TRANSFORMED) {
+	if (ts == VTS_LOCAL_TO_TRANSFORMED) {
 		for (int i = 0; i < num_verts; ++i) {
 			Vector3Add(local_verts[i], md->status.world_pos, trans_verts[i]);
 		}
-	} else if (ts == TRANSFORMED_ONLY) {
+	} else if (ts == VTS_TRANSFORMED_ONLY) {
 		for (int i = 0; i < num_verts; ++i) {
 			Vector3Add(trans_verts[i], md->status.world_pos, trans_verts[i]);
 		}
@@ -227,7 +295,7 @@ void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts) {
 
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-		Plane pl = global_renderer_state.current_view.frustum[i];
+		Plane pl = global_renderer->current_view.frustum[i];
 		r32 dist = Vector3DotProduct(pt, pl.unit_normal) - pl.dist;
 
 		if (dist < 0.0f) {
@@ -243,7 +311,7 @@ FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
 			//return CULL_IN;
 			//cull_state[i] = CULL_OUT;
 			Sys_Print("Culling!!\n");
-			return CULL_OUT;
+			return FCS_CULL_OUT;
 			
 		} 
 	}
@@ -256,36 +324,49 @@ FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius) {
 	//}
 
 	Sys_Print("NO culling!!\n");
-	return CULL_IN;
+	return FCS_CULL_IN;
 	//Sys_Print("Point is on a plane of the frustum\n");
 	//return CULL_OUT;
 }
 
 void R_TransformViewToClip(MeshObject *md) {
-	if (!(md->status.state & CULL_OUT)) {
+	if (!(md->status.state & FCS_CULL_OUT)) {
 		int num_verts = md->status.num_verts;
 		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+		r32 (*m)[4] = global_renderer->current_view.projection_matrix;
+		r32 in[4];
+		r32 out[4];
 
-		r32 dist = global_renderer_state.current_view.view_dist_h;
+		//r32 dist = global_renderer.current_view.view_dist;
 		r32 z;
 		for (int i = 0; i < num_verts; ++i) {
-			z = trans_verts[i].v.z;
-			trans_verts[i].v.x = (trans_verts[i].v.x * dist) / z; 
-			trans_verts[i].v.y = (trans_verts[i].v.y * dist) / z; 
+			// FIXME: macro
+			in[0] = trans_verts[i][0];
+			in[1] = trans_verts[i][1];
+			in[2] = trans_verts[i][2];
+			in[3] = 1.0f;
+
+			Mat1x4Mul(out, in, m);  
+			trans_verts[i][0] = out[0] / out[3];
+			trans_verts[i][1] = out[1] / out[3];
+			trans_verts[i][2] = out[2] / out[3];
+			//z = trans_verts[i].v.z;
+			//trans_verts[i].v.x = (trans_verts[i].v.x * dist) / z; 
+			//trans_verts[i].v.y = (trans_verts[i].v.y * dist) / z; 
 		}
 	}
 }
 
 void R_TransformClipToScreen(MeshObject *md) {
-	if (!(md->status.state & CULL_OUT)) {
+	if (!(md->status.state & FCS_CULL_OUT)) {
 		int num_verts = md->status.num_verts;
 		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
-		r32 screen_width_factor = (0.5f * global_renderer_state.current_view.viewport_width) - 0.5f;
-		r32 screen_height_factor = (0.5f * global_renderer_state.current_view.viewport_height) - 0.5f;
+		r32 screen_width_factor = (0.5f * global_renderer->current_view.viewport_width) - 0.5f;
+		r32 screen_height_factor = (0.5f * global_renderer->current_view.viewport_height) - 0.5f;
 		for (int i = 0; i < num_verts; ++i) {
-			trans_verts[i].v.x = screen_width_factor + (trans_verts[i].v.x * screen_width_factor);
-			trans_verts[i].v.y = screen_height_factor - (trans_verts[i].v.y * screen_height_factor);
+			trans_verts[i][0] = screen_width_factor + (trans_verts[i][0] * screen_width_factor);
+			trans_verts[i][1] = screen_height_factor - (trans_verts[i][1] * screen_height_factor);
 		}
 	}
 }
@@ -301,12 +382,12 @@ static int R_GetLineClipCode(int x, int y) {
 
 	if (x < 0) {													// to the left of clip window
 		code |= LEFT;
-	} else if (x >= global_renderer_state.vid_sys.width) {			// to the right of clip window
+	} else if (x >= global_renderer->vid_sys.width) {			// to the right of clip window
 		code |= RIGHT;
 	}
 	if (y < 0) {													// below the clip window
 		code |= BOTTOM;
-	} else if (y >= global_renderer_state.vid_sys.height) {			// above the clip window
+	} else if (y >= global_renderer->vid_sys.height) {			// above the clip window
 		code |= TOP;
 	}
 
@@ -337,13 +418,13 @@ static void R_DrawLine(int x0, int y0, int x1, int y1, u32 color) {
 			int chosen_code = outcode0 ? outcode0 : outcode1;
 
 			if (chosen_code & TOP) {           // point is above the clip rectangle
-				y = (r32)global_renderer_state.vid_sys.height - 1.0f;
+				y = (r32)global_renderer->vid_sys.height - 1.0f;
 				x = (1.0f / m) * (y - y0) + x0;
 			} else if (chosen_code & BOTTOM) { // point is below the clip rectangle
 				y = 0.0f;
 				x = (1.0f / m) * (y - y0) + x0;
 			} else if (chosen_code & RIGHT) {  // point is to the right of clip rectangle
-				x = (r32)global_renderer_state.vid_sys.width - 1.0f;
+				x = (r32)global_renderer->vid_sys.width - 1.0f;
 				y = m * (x - x0) + y0;
 			} else if (chosen_code & LEFT) {   // point is to the left of clip rectangle
 				x = 0.0f;
@@ -368,7 +449,7 @@ static void R_DrawLine(int x0, int y0, int x1, int y1, u32 color) {
 		// FIXME: improve on this
 		int dx			= abs(x1 - x0);
 		int dy			= abs(y1 - y0);
-		int pitch		= global_renderer_state.vid_sys.pitch / global_renderer_state.vid_sys.bpp;
+		int pitch		= global_renderer->vid_sys.pitch / global_renderer->vid_sys.bpp;
 		int numerator	= 0;
 
 		int denominator;	
@@ -411,7 +492,7 @@ static void R_DrawLine(int x0, int y0, int x1, int y1, u32 color) {
 			add			= dx;
 		}
 		numerator = denominator / 2;
-		u32 *line = (u32*)global_renderer_state.vid_sys.buffer;
+		u32 *line = (u32*)global_renderer->vid_sys.buffer;
 		line = (line + (pitch * y0)) + x0;
 
 		for (int i = 0; i < num_pixels; ++i) {
@@ -429,7 +510,7 @@ static void R_DrawLine(int x0, int y0, int x1, int y1, u32 color) {
 }
 
 void R_DrawMesh(MeshObject *md) {
-	if (!(md->status.state & CULL_OUT)) {
+	if (!(md->status.state & FCS_CULL_OUT)) {
 		int num_polys = md->status.num_polys;
 		Poly *polys = md->mesh->polys->poly_array;
 		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
@@ -461,8 +542,8 @@ void R_DrawMesh(MeshObject *md) {
 					   (int)trans_verts[v0].v.y,
 					   polys[i].color);
 
-			//R_DrawLine((int)global_renderer_state.current_view.debug_orientation.origin[0],
-			//		   (int)global_renderer_state.current_view.debug_orientation.origin[1], 
+			//R_DrawLine((int)global_renderer->current_view.debug_orientation.origin[0],
+			//		   (int)global_renderer.current_view.debug_orientation.origin[1], 
 			//		   (int)md->trans_vertex_array[v1][0], (int)md->trans_vertex_array[v1][1], 0xff);
 		}
 
@@ -483,7 +564,7 @@ void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points) {
 }
 
 void R_CullBackFaces(MeshObject *md) {
-	if (!(md->status.state & CULL_OUT)) {
+	if (!(md->status.state & FCS_CULL_OUT)) {
 		int num_polys = md->status.num_polys;
 		Poly *polys = md->mesh->polys->poly_array;
 		Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
@@ -500,11 +581,7 @@ void R_CullBackFaces(MeshObject *md) {
 			Vec3 u = Vector3Build(trans_verts[v0], trans_verts[v1]);
 			Vec3 v = Vector3Build(trans_verts[v0], trans_verts[v2]);
 			Vec3 n = Vector3CrossProduct(u, v);
-			Vec3 view = Vector3Build(global_renderer_state.current_view.world_orientation.origin, trans_verts[v0]);
-
-			if (global_renderer_state.current_view.world_orientation.origin[2] > 0.0f) {
-				int x = 42;
-			}
+			Vec3 view = Vector3Build(global_renderer->current_view.world_orientation.origin, trans_verts[v0]);
 
 			r32 dot = Vector3DotProduct(view, n);
 
@@ -516,7 +593,7 @@ void R_CullBackFaces(MeshObject *md) {
 }
 
 void R_RotateForViewer() {
-	ViewSystem *vw_sys = &global_renderer_state.current_view;
+	ViewSystem *vw_sys = &global_renderer->current_view;
 	r32		view_matrix[16];
 	Vec3	origin;
 
@@ -539,19 +616,19 @@ void R_RotateForViewer() {
 	vw_sys->world_orientation.axis[1] = v;
 	vw_sys->world_orientation.axis[2] = n;
 
-	view_matrix[0] = vw_sys->world_orientation.axis[0][0];
-	view_matrix[4] = vw_sys->world_orientation.axis[0][1];
-	view_matrix[8] = vw_sys->world_orientation.axis[0][2];
+	view_matrix[0] = u[0];
+	view_matrix[4] = u[1];
+	view_matrix[8] = u[2];
 	view_matrix[12] = -(Vector3DotProduct(u, origin));
 
-	view_matrix[1] = vw_sys->world_orientation.axis[1][0];
-	view_matrix[5] = vw_sys->world_orientation.axis[1][1];
-	view_matrix[9] = vw_sys->world_orientation.axis[1][2];
+	view_matrix[1] = v[0];
+	view_matrix[5] = v[1];
+	view_matrix[9] = v[2];
 	view_matrix[13] = -(Vector3DotProduct(v, origin));
 
-	view_matrix[2] = vw_sys->world_orientation.axis[2][0];
-	view_matrix[6] = vw_sys->world_orientation.axis[2][1];
-	view_matrix[10] = vw_sys->world_orientation.axis[2][2];
+	view_matrix[2] = n[0];
+	view_matrix[6] = n[1];
+	view_matrix[10] = n[2];
 	view_matrix[14] = -(Vector3DotProduct(n, origin));
 
 	view_matrix[3] = 0.0f;
@@ -559,22 +636,34 @@ void R_RotateForViewer() {
 	view_matrix[11] = 0.0f;
 	view_matrix[15] = 1.0f;
 
-	memcpy(vw_sys->world_view_matrix, view_matrix, sizeof(view_matrix));
+	memcpy(vw_sys->view_matrix, view_matrix, sizeof(view_matrix));
 }
 
 void R_RenderView() {
 	static b32 first_draw = false;
 	if (!first_draw) {
 		first_draw = true;
-		Vector3Init(global_renderer_state.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-		Vector3Init(global_renderer_state.current_view.target, 0.0f, 0.0f, 1.0f);
-		global_renderer_state.current_view.world_orientation.dir = (global_renderer_state.current_view.target);
-		global_renderer_state.current_view.aspect_ratio = (r32)global_renderer_state.vid_sys.width / (r32)global_renderer_state.vid_sys.height;
 
-		global_renderer_state.current_view.viewplane_width = 2.0f;	// normalized viewplane
-		global_renderer_state.current_view.viewplane_height = global_renderer_state.current_view.viewplane_width / global_renderer_state.current_view.aspect_ratio;
-		global_renderer_state.current_view.viewport_width = (r32)global_renderer_state.vid_sys.width;		
-		global_renderer_state.current_view.viewport_height = (r32)global_renderer_state.vid_sys.height;	
+		Vector3Init(global_renderer->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
+		Vector3Init(global_renderer->current_view.target, 0.0f, 0.0f, 1.0f);
+
+		global_renderer->current_view.world_orientation.dir = (global_renderer->current_view.target);
+		global_renderer->current_view.aspect_ratio = (r32)global_renderer->vid_sys.width / (r32)global_renderer->vid_sys.height;
+
+		global_renderer->current_view.viewplane_width = 2.0f;	// normalized viewplane
+		global_renderer->current_view.viewplane_height = 2.0f;
+
+		global_renderer->current_view.fov_y = 75.0f;
+		//r32 half_tan = tan(DEG2RAD(global_renderer->current_view.fov_y / 2.0f));
+		//global_renderer->current_view.view_dist = (->lobal_renderer_state.current_view.viewplane_height / 2.0f) / half_tan;
+		//global_renderer.current_view.fov_x = RAD2DEG(atan((global_renderer.current_view.viewplane_width / 2.0f) / global_renderer.current_view.view_dist)) * 2.0f;
+
+		// FIXME: compute dynamically
+		global_renderer->current_view.z_near = 50.0f;
+		global_renderer->current_view.z_far = 500.0f;
+
+		global_renderer->current_view.viewport_width = (r32)global_renderer->vid_sys.width;		
+		global_renderer->current_view.viewport_height = (r32)global_renderer->vid_sys.height;	
 	}
 
 	//if ( parms->viewportWidth <= 0 || parms->viewportHeight <= 0 ) {
@@ -594,7 +683,8 @@ void R_RenderView() {
 	// set viewParms.world
 
 	R_RotateForViewer();
-	R_SetupFrustum(90.0f, 50.0f, 500.0f);					
+	//R_SetupFrustum();					
+	R_SetupProjection();
 
 
 	//R_GenerateDrawSurfs();

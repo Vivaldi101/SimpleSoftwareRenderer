@@ -3,7 +3,7 @@
 
 
 #define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
-b32 Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, void *hinstance) {
+b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *hinstance) {
 	//cvar		*vid_xpos, *vid_ypos, *vid_fullscreen;
 
 	// FIXME: make these memsets
@@ -13,7 +13,7 @@ b32 Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, vo
 	VidSystem	vid_sys;
 	memset(&vid_sys, 0, sizeof(vid_sys));
 
-	RECT		r;
+	RECT		rect;
 	int			x, y, w, h;
 	int			ex_style = WS_EX_TOPMOST;
 	int			style_bits = 0;
@@ -29,15 +29,15 @@ b32 Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, vo
 		return false;
 	}
 
-	r.left = 0;
-	r.top = 0;
-	r.right  = width;
-	r.bottom = height;
+	rect.left = 0;
+	rect.top = 0;
+	rect.right  = width;
+	rect.bottom = height;
 
-	AdjustWindowRect(&r, style_bits, FALSE);
+	AdjustWindowRect(&rect, style_bits, FALSE);
 
-	w = r.right - r.left;
-	h = r.bottom - r.top;
+	w = rect.right - rect.left;
+	h = rect.bottom - rect.top;
 	//x = vid_xpos->value;
 	//y = vid_ypos->value;
 	x = 0;
@@ -66,7 +66,7 @@ b32 Vid_CreateWindow(RendererState *rs, int width, int height, void *wndproc, vo
 
 	Sys_Print("Main window created!\n");
 
-	memcpy(&rs->vid_sys, &vid_sys, sizeof(vid_sys));
+	memcpy(&ren->vid_sys, &vid_sys, sizeof(vid_sys));
 
 	return true;
 	//global_vid_sys.win_handles = s_win_handles;

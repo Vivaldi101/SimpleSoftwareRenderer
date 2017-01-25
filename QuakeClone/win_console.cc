@@ -42,7 +42,7 @@ struct WinConData {
 };
 static WinConData s_global_wcd;
 static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
-#define QCIMER_ID 1
+#define TIMER_ID 1
 	char *cmd_string;
 	static b32 sime_polarity = false;
 
@@ -134,7 +134,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 			//s_global_wcd.hbm_clearbitmap = LoadBitmap(global_win_vars.hinstance, MAKEINTRESOURCE( IDB_BITMAP2 ) );
 			s_global_wcd.hbr_edit_background = CreateSolidBrush(RGB( 0x00, 0x00, 0xB0));
 			s_global_wcd.hbr_error_background = CreateSolidBrush(RGB( 0xFF, 0x00, 0x00));
-			SetTimer(hwnd, QCIMER_ID, 1000, NULL);
+			SetTimer(hwnd, TIMER_ID, 1000, NULL);
 		} break;
 	#endif
 	#if 1
@@ -187,7 +187,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 			return DefWindowProc( hwnd, umsg, wparam, lparam );
 	#endif
 		case WM_TIMER: {
-			if (wparam == QCIMER_ID) {
+			if (wparam == TIMER_ID) {
 				sime_polarity = (b32)(!sime_polarity);
 				if (s_global_wcd.hwnd_errorbox) {
 					InvalidateRect(s_global_wcd.hwnd_errorbox, NULL, FALSE);
@@ -200,7 +200,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
     return DefWindowProc( hwnd, umsg, wparam, lparam );
 }
 
-void Conbuf_AppendText(const char *msg) {
+void Con_AppendText(const char *msg) {
 #define CONSOLE_BUFFER_SIZE	16384
 	char buffer[CONSOLE_BUFFER_SIZE * 2];	// why is it multiplied by two
 
@@ -389,9 +389,11 @@ void Sys_ShowConsole(int vis_level, b32 quit_on_close) {
 		case 1: {
 			ShowWindow(s_global_wcd.hwnd, SW_SHOWNORMAL);
 			SendMessage(s_global_wcd.hwnd_buffer, EM_LINESCROLL, 0, 0xffff );
+			Sys_Print("Console created");
 		} break;
 		case 2:
 			ShowWindow(s_global_wcd.hwnd, SW_MINIMIZE); {
+			Sys_Print("Console minimized");
 		} break;
 		default: {
 			Sys_Print("\nInvalid vis_level sent to Sys_ShowConsole\n");

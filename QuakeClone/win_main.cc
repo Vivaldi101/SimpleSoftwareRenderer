@@ -10,16 +10,18 @@ WinVars global_win_vars;
 static WINDOWPLACEMENT global_window_pos = { sizeof(global_window_pos) };
 
 void Sys_Init() {
+	// does all the system specific init stuff
 }
 
 void Sys_Quit() {
 	Sys_DestroyConsole();
+	// FIXME: maybe free the list and stack allocators
 	timeEndPeriod(1);
 	exit(0);
 }
 
 void Sys_Print(const char *msg) {
-	Conbuf_AppendText(msg);
+	Con_AppendText(msg);
 }
 
 void Sys_Sleep(DWORD ms) {
@@ -80,7 +82,7 @@ static void ParseCommandLine(char *cmd_line) {
 static SysEvent global_sys_event_queue[MAX_SYS_QUED_EVENTS];
 static int global_sys_event_head, global_sys_eventail;
 
-void Sys_QueEvent(int time, SysEventType type, int value, int value2, int data_len, void *data) {
+void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int data_len, void *data) {
 	SysEvent *ev = &global_sys_event_queue[global_sys_event_head & MASK_SYS_QUED_EVENTS];
 
 	if ( global_sys_event_head - global_sys_eventail >= MAX_SYS_QUED_EVENTS ) {
@@ -99,7 +101,7 @@ void Sys_QueEvent(int time, SysEventType type, int value, int value2, int data_l
 	}
 
 	ev->ev_time = time;
-	ev->ev_type = type;
+	ev->ev_type = ev_type;
 	ev->ev_value = value;
 	ev->ev_value2 = value2;
 	ev->ev_data_len = data_len;
@@ -189,21 +191,19 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	ParseCommandLine(cmd_line);
 	Sys_CreateConsole();
 	Sys_ShowConsole(1, true);
-	Sys_Print("Console created");
 
 	// Initial time resolution and base
 	timeBeginPeriod(1);
 	Sys_GetMilliseconds();
 
-	Com_Init(s_global_sys_argc, s_global_sys_argv, global_win_vars.hinstance, global_win_vars.wndproc);
-
+	EngineData ed = Com_InitEngine(global_win_vars.hinstance, global_win_vars.wndproc);
 
 	for (;;) {
 		//startime = Sys_GetMilliseconds();
 		// Run 1 frame of input
 		//In_Frame();
 		// Run 1 frame of update and render
-		Com_Frame();
+		Com_RunFrame(&ed);
 		//endime = Sys_GetMilliseconds();
 		//globalotal_msec += (endime - startime);
 		//global_frame_counter++;

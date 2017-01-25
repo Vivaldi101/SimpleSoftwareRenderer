@@ -1,5 +1,5 @@
-#ifndef QC_SOFTR_LOCAL_H
-#define QC_SOFTR_LOCAL_H
+#ifndef RENDERER_LOCAL_H
+#define RENDERER_LOCAL_H
 
 #include "shared.h"
 #include "renderer_types.h"
@@ -35,15 +35,15 @@
 */
 
 enum VertexTransformState {
-	LOCAL_ONLY = 0,
-	TRANSFORMED_ONLY,
-	LOCAL_TO_TRANSFORMED
+	VTS_LOCAL_ONLY = 0,
+	VTS_TRANSFORMED_ONLY,
+	VTS_LOCAL_TO_TRANSFORMED
 };
 
 enum FrustumClippingState {
-	CULL_IN = 0,	// completely unclipped
-	CULL_CLIP,		// clipped by one or more planes
-	CULL_OUT		// completely outside the clipping planes
+	FCS_CULL_IN = 0,	// completely unclipped
+	FCS_CULL_CLIP,		// clipped by one or more planes
+	FCS_CULL_OUT		// completely outside the clipping planes
 };
 
 enum { 
@@ -73,8 +73,8 @@ struct VidSystem {
 };
 
 struct ViewSystem {
-	r32				world_view_matrix[4][4];
-	//Vec4			view_perspective_matrix[4];
+	r32				view_matrix[4][4];
+	r32				projection_matrix[4][4];
 	//Vec4			perspective_screen_matrix[4];
 
 	Orientation		world_orientation;
@@ -85,8 +85,8 @@ struct ViewSystem {
 	r32				viewport_width, viewport_height;
 	r32				viewplane_width, viewplane_height;
 
-	r32				fov_h, fov_v;
-	r32				view_dist_h, view_dist_v;	// FIXME: maybe only need the view_dist_h, rename it to just "view_dist"
+	r32				fov_x, fov_y;
+	r32				view_dist;	
 
 
 	Plane			frustum[4];			// order of left, right, top, bottom, FIXME: add near and far z
@@ -97,35 +97,36 @@ struct ViewSystem {
 	int				state, attr;
 };
 
-struct RendererState {
+struct Renderer {
 	VidSystem 		vid_sys;
 	ViewSystem		current_view;	
 };
-extern RendererState global_renderer_state;
+//extern Renderer *global_renderer;
 
 
-extern unsigned global_8to24able[256]; 
+//extern unsigned global_8to24able[256]; 
 
 
-void R_Init(void *hinstance, void *wndproc); 
-void R_RenderView(/*viewParms_t *parms*/);
+extern void R_InitRenderer(Renderer *ren, void *hinstance, void *wndproc); 
+extern void R_RenderView();
 
-void R_EndFrame();
-void R_BeginFrame(MeshObject *md);
+extern void R_EndFrame();
+extern void R_BeginFrame();
 
-void R_SetupFrustum(r32 fov_h, r32 z_near, r32 z_far);
-void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
+extern void R_SetupFrustum();
+extern void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
+extern void R_SetupProjection();
 
-void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts = LOCAL_TO_TRANSFORMED);
-void R_TransformWorldToView(MeshObject *md);
-void R_TransformViewToClip(MeshObject *md);
-void R_TransformClipToScreen(MeshObject *md);
-void R_DrawMesh(MeshObject *md);
-void R_DrawGradient(VidSystem *vid_sys);
+extern void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts = VTS_LOCAL_TO_TRANSFORMED);
+extern void R_TransformWorldToView(MeshObject *md);
+extern void R_TransformViewToClip(MeshObject *md);
+extern void R_TransformClipToScreen(MeshObject *md);
+extern void R_DrawMesh(MeshObject *md);
+extern void R_DrawGradient(VidSystem *vid_sys);
 
-void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
+extern void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
 FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius = 0.0f);
-void R_CullBackFaces(MeshObject *md);
+extern void R_CullBackFaces(MeshObject *md);
 
 
 #endif	// Header guard

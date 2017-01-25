@@ -301,13 +301,13 @@ LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) 
 				if ((key == VK_RETURN) && alt_down) {
 					Sys_ToggleFullscreen(window);
 				}
-				Sys_QueEvent(global_win_vars.sys_msg_time, SE_KEY, (int)key, 0, 0, 0);
+				Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)key, 0, 0, 0);
 			}
 
 		} break;
 
 		case WM_CHAR: {
-			Sys_QueEvent(global_win_vars.sys_msg_time, SE_CHAR, (int)wparam, 0, 0, 0);
+			Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
 		} break;
 	}
 	

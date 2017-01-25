@@ -1,75 +1,16 @@
 #include "shared.h"
 #include "renderer_local.h"
 
-void R_BeginFrame(MeshObject *md) {
-	// extern void Draw_BuildGammaTable( void );
-	
-	//int num_polys = md->num_polys;
-	//for (int i = 0; i < num_polys; ++i) {
-	//	md->poly_array[i].state = md->poly_array[i].state & (~POLY_STATE_BACKFACE);
-	//	md->poly_array[i].state = md->poly_array[i].state & (~CULL_OUT);
-	//}
+void R_BeginFrame() {
 	// clean up the framebuffer
-	void *buffer = global_renderer_state.vid_sys.buffer;
-	int pitch = global_renderer_state.vid_sys.pitch;
-	int height = global_renderer_state.vid_sys.height;
+	void *buffer = global_renderer->vid_sys.buffer;
+	int pitch = global_renderer->vid_sys.pitch;
+	int height = global_renderer->vid_sys.height;
 	memset(buffer, 0, pitch * height);
-#if 0
-	/*
-	** rebuild the gamma correction palette if necessary
-	*/
-	if ( vid_gamma->modified )
-	{
-		Draw_BuildGammaTable();
-		R_GammaCorrectAndSetPalette( ( const unsigned char * ) d_8to24table );
-
-		vid_gamma->modified = false;
-	}
-
-	while ( sw_mode->modified || vid_fullscreen->modified )
-	{
-		rserr err;
-
-		/*
-		** if this returns rserr_invalid_fullscreen then it set the mode but not as a
-		** fullscreen mode, e.g. 320x200 on a system that doesn't support that res
-		*/
-		if ( ( err = SWimp_SetMode( &vid.width, &vid.height, sw_mode->value, vid_fullscreen->value ) ) == rserr_ok )
-		{
-			R_InitGraphics( vid.width, vid.height );
-
-			sw_state.prev_mode = sw_mode->value;
-			vid_fullscreen->modified = false;
-			sw_mode->modified = false;
-		}
-		else
-		{
-			if ( err == rserr_invalid_mode )
-			{
-				ri.Cvar_SetValue( "sw_mode", sw_state.prev_mode );
-				ri.Con_Printf( PRINT_ALL, "ref_soft::R_BeginFrame() - could not set mode\n" );
-			}
-			else if ( err == rserr_invalid_fullscreen )
-			{
-				R_InitGraphics( vid.width, vid.height );
-
-				ri.Cvar_SetValue( "vid_fullscreen", 0);
-				ri.Con_Printf( PRINT_ALL, "ref_soft::R_BeginFrame() - fullscreen unavailable in this mode\n" );
-				sw_state.prev_mode = sw_mode->value;
-//				vid_fullscreen->modified = false;
-//				sw_mode->modified = false;
-			}
-			else
-			{
-				ri.Sys_Error( ERR_FATAL, "ref_soft::R_BeginFrame() - catastrophic mode change failure\n" );
-			}
-		}
-	}
-#endif
 }
 
 void R_EndFrame() {
-	if (!global_renderer_state.vid_sys.state.full_screen) {
+	if (!global_renderer->vid_sys.state.full_screen) {
 	//	
 		//printf(" sww_state.pDIBBase ok (%u).\n", sww_state.pDIBBase);
 
@@ -94,11 +35,11 @@ void R_EndFrame() {
 		}
 */		
 
-		BitBlt( global_renderer_state.vid_sys.win_handles.dc,
+		BitBlt( global_renderer->vid_sys.win_handles.dc,
 				0, 0,
-				global_renderer_state.vid_sys.width,
-				global_renderer_state.vid_sys.height,
-				global_renderer_state.vid_sys.win_handles.hdc_dib_section,
+				global_renderer->vid_sys.width,
+				global_renderer->vid_sys.height,
+				global_renderer->vid_sys.win_handles.hdc_dib_section,
 				0, 0, SRCCOPY );
 	}
 #if 0
@@ -173,13 +114,13 @@ void R_EndFrame() {
 void R_FadeScreen() {
 	int	t;
 
-	int w = global_renderer_state.vid_sys.width;
-	int h = global_renderer_state.vid_sys.height;
-	int pitch = global_renderer_state.vid_sys.pitch;
+	int w = global_renderer.vid_sys.width;
+	int h = global_renderer.vid_sys.height;
+	int pitch = global_renderer.vid_sys.pitch;
 
 	byte *buffer;
 	for (int y = 0; y < h; y++) {
-		buffer = global_renderer_state.vid_sys.buffer + (pitch * y);
+		buffer = global_renderer.vid_sys.buffer + (pitch * y);
 		t = (y & 1) << 1;
 
 		for (int x = 0; x < w; x++) {

@@ -1,5 +1,5 @@
-#ifndef QC_WIN_SHARED_H
-#define QC_WIN_SHARED_H
+#ifndef WIN_SHARED_H
+#define WIN_SHARED_H
 #include "win_local.h"
 
 struct WinHandles {

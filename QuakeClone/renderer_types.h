@@ -1,6 +1,8 @@
 #ifndef RENDERER_TYPES_H
 #define RENDERER_TYPES_H
 
+#include "shared.h"
+
 // based on a vertex list
 struct Poly {
 	Vec3 *		vertex_list;	// points to the mesh containing the poly
@@ -26,11 +28,11 @@ struct LinkedPoly {
 };
 
 struct VertexGroup {
-	Vec3	vert_array[85];	
+	Vec3	vert_array[85];		// cacheline friendly
 };
 
 struct PolyGroup {
-	Poly	poly_array[64];	
+	Poly	poly_array[64];		// cacheline friendly
 };
 
 struct MeshData {
@@ -59,18 +61,12 @@ struct MeshObject {
 		int		num_verts;
 		int		num_polys;
 	} status;
+	// FIXME: maybe remove the un-named struct status
 
 	MeshData *	mesh;
-
-	//Vec3	local_vertex_array[85];	// original
-	//Vec3	trans_vertex_array[85];	// transformed
-
-	//Poly	poly_array[32];
-	 
 };
 
 // master poly list
-// FIXME: push the structure onto a memory stack
 struct RenderList {
 	int		state;
 	int		attr;

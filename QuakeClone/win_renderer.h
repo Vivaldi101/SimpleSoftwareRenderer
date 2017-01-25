@@ -1,9 +1,8 @@
-#ifndef WIN_SOFTREND_H
-#define WIN_SOFTREND_H
+#ifndef WIN_RENDERER_H
+#define WIN_RENDERER_H
 #include "shared.h"
 #include "win_local.h"
 #include "renderer_local.h"
-#include <ddraw.h>
 
 /*
 ** Windows GDI

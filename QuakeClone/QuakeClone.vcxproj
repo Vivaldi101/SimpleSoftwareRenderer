@@ -136,7 +136,6 @@
     <ClCompile Include="renderer_cmds.cc" />
     <ClCompile Include="renderer_init.cc" />
     <ClCompile Include="renderer_main.cc" />
-    <ClCompile Include="segregated_list.cc" />
     <ClCompile Include="win_console.cc" />
     <ClCompile Include="win_input.cc" />
     <ClCompile Include="win_shared.cc" />
