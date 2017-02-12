@@ -6,21 +6,8 @@
 #define MAX_UPS 60
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
-struct GameData {
-	//drawSurf_t	drawSurfs[MAX_DRAWSURFS];
-	//dlight_t	dlights[MAX_DLIGHTS];
-	//trRefEntity_t	entities[MAX_ENTITIES];
-	// fixme: change MeshObject to Entity
-	MeshObject 	entities[MAX_ENTITIES];
-	int			num_entities;
-	Poly *		polys;			//[MAX_POLYS];
-	Vec3 *		poly_verts;		//[MAX_POLYVERTS];
-	//struct MeshData *	mesh_data;	// fixed num of verts and polys
-	//renderCommandList_t	commands;
-};
 
 struct EngineData {
-	GameData *				game_data;
 	struct Renderer *		renderer;
 	struct ListAllocator *	list_allocator;
 	struct StackBlock *		stack_allocator;
@@ -40,7 +27,7 @@ struct SysEvent {
 	enum SysEventType	ev_type;
 	int					ev_value, ev_value2;
 	int					ev_data_len;			// bytes of data pointed to by evPtr, for journaling
-	void				*ev_data;				// this must be manually freed if not NULL
+	void *				ev_data;				// this must be manually freed if not NULL
 };
 
 // Console
@@ -55,6 +42,9 @@ static inline int Com_ModifyFrameMsec(int frame_msec);
 extern EngineData Com_InitEngine(void *hinstance, void *wndproc);
 extern void Com_RunFrame(EngineData *ed);
 extern void Com_Quit();
+void *Allocate(ListAllocator *la, size_t num_bytes);
+void *Allocate(StackBlock *sb, size_t num_bytes);
+void Free(ListAllocator *la, void **ptr);
 
 // Events
 extern void Sys_GenerateEvents();

@@ -2,13 +2,9 @@
 #define RENDERER_LOCAL_H
 
 #include "shared.h"
+#include "common.h"
 #include "renderer_types.h"
 #include "win_shared.h"
-
-
-/*
-**	POLYGON CONSTANTS
-*/
 
 // FIXME: maybe move all the constants these into .cc file if only impl needs access
 
@@ -30,9 +26,10 @@
 #define POLY_ATTR_SHADE_MODE_GOURAUD	0x0080
 #define POLY_ATTR_SHADE_MODE_PHONG		0x0100
 
-/*
-**	END OF POLYGON CONSTANTS
-*/
+// max values
+
+#define	MAX_POLYS		600
+#define	MAX_POLYVERTS	3000
 
 enum VertexTransformState {
 	VTS_LOCAL_ONLY = 0,
@@ -57,8 +54,8 @@ enum {
 
 
 struct VidSystem {
-	byte *			buffer;		// invisible buffer
-	int				pitch;		// may be > width if displayed in a window
+	byte *			buffer;		
+	int				pitch;		
 	int				width;          
 	int				height;
 	int				bpp;
@@ -97,36 +94,50 @@ struct ViewSystem {
 	int				state, attr;
 };
 
+struct BackEnd {
+	//drawSurf_t	drawSurfs[MAX_DRAWSURFS];
+	//dlight_t	dlights[MAX_DLIGHTS];
+
+	// FIXME: change MeshObject to Entity
+	MeshObject 	entities[MAX_ENTITIES];
+	int			num_entities;
+	Poly *		polys;			//[MAX_POLYS];
+	Vec3 *		poly_verts;		//[MAX_POLYVERTS];
+	//struct MeshData *	mesh_data;	// fixed num of verts and polys
+	//renderCommandList_t	commands;
+};
+
 struct Renderer {
+	BackEnd *		back_end;
 	VidSystem 		vid_sys;
 	ViewSystem		current_view;	
 };
-//extern Renderer *global_renderer;
 
 
 //extern unsigned global_8to24able[256]; 
 
 
-extern void R_InitRenderer(Renderer *ren, void *hinstance, void *wndproc); 
-extern void R_RenderView();
+extern void R_Init(EngineData *ed, void *hinstance, void *wndproc); 
 
-extern void R_EndFrame();
-extern void R_BeginFrame();
+extern void R_GenerateDrawSurfs(Renderer *ren);
+extern void R_RenderView(Renderer *ren);
 
-extern void R_SetupFrustum();
-extern void R_SetupEulerView(r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
-extern void R_SetupProjection();
+extern void R_BeginFrame(Renderer *ren);
+extern void R_EndFrame(Renderer *ren);
 
-extern void R_TransformModelToWorld(MeshObject *md, VertexTransformState ts = VTS_LOCAL_TO_TRANSFORMED);
-extern void R_TransformWorldToView(MeshObject *md);
-extern void R_TransformViewToClip(MeshObject *md);
-extern void R_TransformClipToScreen(MeshObject *md);
-extern void R_DrawMesh(MeshObject *md);
-extern void R_DrawGradient(VidSystem *vid_sys);
+extern void R_SetupFrustum(Renderer *ren);
+extern void R_SetupEulerView(Renderer *ren, r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
+extern void R_SetupProjection(Renderer *ren);
 
-extern void R_RotatePoints(Vec3 (*rot_mat)[3], Vec3 *points, int num_points);
-FrustumClippingState R_CullPointAndRadius(Vec3 pt, r32 radius = 0.0f);
-extern void R_CullBackFaces(MeshObject *md);
+extern void R_TransformModelToWorld(Renderer *ren, MeshObject *md, VertexTransformState ts = VTS_LOCAL_TO_TRANSFORMED);
+extern void R_TransformWorldToView(Renderer *ren, MeshObject *md);
+extern void R_TransformViewToClip(Renderer *ren, MeshObject *md);
+extern void R_TransformClipToScreen(Renderer *ren, MeshObject *md);
+extern void R_DrawWireframeMesh(Renderer *ren, MeshObject *md);
+
+extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_points);
+FrustumClippingState R_CullPointAndRadius(Renderer *ren, Vec3 pt, r32 radius = 0.0f);
+extern void R_CullBackFaces(Renderer *ren, MeshObject *md);
 
 
 #endif	// Header guard

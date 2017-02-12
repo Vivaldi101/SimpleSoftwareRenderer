@@ -113,6 +113,11 @@ inline u16 RGB_888To565(int r, int g, int b) {
 // max values
 #define	MAX_CVAR_VALUE_STRING	256
 #define	MAX_ENTITIES			1023		// can't be increased without changing drawsurf bit packing
+// these are sort of arbitrary limits.
+// the limits apply to the sum of all scenes in a frame --
+// the main view, all the 3D icons, etc
+#define	MAX_POLYS		600
+#define	MAX_POLYVERTS	3000
 
 // util tools
 #define ARRAY_COUNT(arr) ((sizeof(arr)) / (sizeof(*(arr))))

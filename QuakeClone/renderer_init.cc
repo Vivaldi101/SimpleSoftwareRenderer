@@ -1,24 +1,22 @@
-void R_Init() {	
-#if 0
-	int	err;
-	int i;
-	byte *ptr;
+#include "win_renderer.h"
+#include "renderer_local.h"
 
-	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
+void R_Init(EngineData *ed, void *hinstance, void *wndproc) { 
+	ed->renderer = (Renderer *)Allocate(ed->stack_allocator, sizeof(Renderer));
+	ed->renderer->back_end = (BackEnd *)Allocate(ed->stack_allocator, sizeof(BackEnd));
+	ed->renderer->back_end->polys = (Poly *)Allocate(ed->stack_allocator, sizeof(Poly) * MAX_POLYS);
 
-	// clear all our internal state
-	memset( &tr, 0, sizeof( tr ) );
-	memset( &backEnd, 0, sizeof( backEnd ) );
-	memset( &tess, 0, sizeof( tess ) );
+	if (!Vid_CreateWindow(ed->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
+		Sys_Print("Error while creating the window\n");
+		Sys_Quit();
+	}	
 
-//	Swap_Init();
-
-	if ( (int)tess.xyz & 15 ) {
-		Com_Printf( "WARNING: tess.xyz not 16 byte aligned\n" );
+	if (!DIB_Init(&ed->renderer->vid_sys)) {
+		Sys_Print("Error while initializing the DIB\n");
+		Sys_Quit();
 	}
-	memset( tess.constantColor255, 255, sizeof( tess.constantColor255 ) );
-#endif
 
+	Sys_Print("Renderer init done\n");
 	//
 	// init function tables
 	//
@@ -45,54 +43,4 @@ void R_Init() {
 	//		tr.triangleTable[i] = -tr.triangleTable[i-FUNCTABLE_SIZE/2];
 	//	}
 	//}
-
-	//R_InitFogTable();
-
-	//R_NoiseInit();
-
-	//R_Register();
-
-#if 0
-	max_polys = r_maxpolys->integer;
-	if (max_polys < MAX_POLYS)
-		max_polys = MAX_POLYS;
-
-	max_polyverts = r_maxpolyverts->integer;
-	if (max_polyverts < MAX_POLYVERTS)
-		max_polyverts = MAX_POLYVERTS;
-
-	ptr = ri.Hunk_Alloc( sizeof( *backEndData[0] ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
-	backEndData[0] = (backEndData_t *) ptr;
-	backEndData[0]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[0] ));
-	backEndData[0]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[0] ) + sizeof(srfPoly_t) * max_polys);
-#endif
-
-	//if ( r_smp->integer ) {
-	//	ptr = ri.Hunk_Alloc( sizeof( *backEndData[1] ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
-	//	backEndData[1] = (backEndData_t *) ptr;
-	//	backEndData[1]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[1] ));
-	//	backEndData[1]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[1] ) + sizeof(srfPoly_t) * max_polys);
-	//} else {
-	//	backEndData[1] = NULL;
-	//}
-	//R_ToggleSmpFrame();
-
-	//InitOpenGL();
-
-	//R_InitImages();
-
-	//R_InitShaders();
-
-	//R_InitSkins();
-
-	//R_ModelInit();
-
-	//R_InitFreeType();
-
-
-	//err = qglGetError();
-	//if ( err != GL_NO_ERROR )
-	//	ri.Printf (PRINT_ALL, "glGetError() = 0x%x\n", err);
-
-	//ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 }

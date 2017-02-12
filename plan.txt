@@ -1,3 +1,0 @@
-atm do optimized memcpy and memset
-Remove crt as much as possible aka all string functions, memcpy, memset etc
-

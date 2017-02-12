@@ -89,7 +89,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		// get the buffer
 	win_dib_info->bmiHeader.biHeight        = -vid_sys->height;		// top down buffer
 	win_dib_info->bmiHeader.biPlanes        = 1;
-	win_dib_info->bmiHeader.biBitCount      = vid_sys->bpp * 8;
+	win_dib_info->bmiHeader.biBitCount      = (WORD)(vid_sys->bpp * 8);
 	win_dib_info->bmiHeader.biCompression   = BI_RGB;
 	win_dib_info->bmiHeader.biSizeImage     = 0;
 	win_dib_info->bmiHeader.biXPelsPerMeter = 0;
@@ -161,6 +161,5 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		//goto fail;
 	}
 
-	Sys_Print("\nDIB init done\n");
 	return true;
 }

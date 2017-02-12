@@ -5,6 +5,5 @@
 #include "renderer_local.h"
 #include "win_local.h"
 
-// just for time being the func takes the general polygon mesh and the player
-extern void	PLG_InitParsing(const char *plg_file_name, MeshObject *md, MeshObject *player_md);
+extern b32 PLG_LoadMeshObject(MeshObject *md, FILE **fp, Vec3 world_pos, r32 scale = 1.0f);
 #endif	// header guard

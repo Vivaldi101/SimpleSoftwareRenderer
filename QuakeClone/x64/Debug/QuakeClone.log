@@ -1,285 +1,38 @@
-﻿Build started 25/01/2017 15:49:27.
+﻿Build started 12/02/2017 21:06:53.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Touching "x64\Debug\QuakeClone.unsuccessfulbuild".
+         Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc plg_loader.cc renderer_cmds.cc renderer_main.cc win_main.cc win_main_window.cc win_renderer_dib.cc
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc
          common.cc
-         plg_loader.cc
-         renderer_cmds.cc
-         renderer_main.cc
-     1>renderer_cmds.cc(6): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(6): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(6): error C2228: left of '.buffer' must have class/struct/union
-     1>renderer_cmds.cc(7): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(7): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(7): error C2228: left of '.pitch' must have class/struct/union
-     1>renderer_cmds.cc(8): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(8): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(8): error C2228: left of '.height' must have class/struct/union
-     1>renderer_cmds.cc(13): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(13): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(13): error C2228: left of '.state' must have class/struct/union
-     1>renderer_cmds.cc(13): error C2228: left of '.full_screen' must have class/struct/union
-     1>renderer_cmds.cc(38): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(38): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(38): error C2228: left of '.win_handles' must have class/struct/union
-     1>renderer_cmds.cc(38): error C2228: left of '.dc' must have class/struct/union
-     1>renderer_cmds.cc(40): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(40): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(40): error C2228: left of '.width' must have class/struct/union
-     1>renderer_cmds.cc(41): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(41): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(41): error C2228: left of '.height' must have class/struct/union
-     1>renderer_cmds.cc(42): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_cmds.cc(42): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_cmds.cc(42): error C2228: left of '.win_handles' must have class/struct/union
-     1>renderer_cmds.cc(42): error C2228: left of '.hdc_dib_section' must have class/struct/union
-         win_main.cc
-     1>renderer_main.cc(32): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(33): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(38): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(38): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(45): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(45): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(279): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(279): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(279): error C2228: left of '.view_matrix' must have class/struct/union
-     1>renderer_main.cc(303): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(303): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(303): error C2228: left of '.frustum' must have class/struct/union
-     1>renderer_main.cc(341): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(341): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(341): error C2228: left of '.projection_matrix' must have class/struct/union
-     1>renderer_main.cc(370): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(370): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(370): error C2228: left of '.viewport_width' must have class/struct/union
-     1>renderer_main.cc(371): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(371): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(371): error C2228: left of '.viewport_height' must have class/struct/union
-     1>renderer_main.cc(390): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(390): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(390): error C2228: left of '.width' must have class/struct/union
-     1>renderer_main.cc(395): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(395): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(395): error C2228: left of '.height' must have class/struct/union
-     1>renderer_main.cc(426): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(426): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(426): error C2228: left of '.height' must have class/struct/union
-     1>renderer_main.cc(432): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(432): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(432): error C2228: left of '.width' must have class/struct/union
-     1>renderer_main.cc(457): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(457): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(457): error C2228: left of '.pitch' must have class/struct/union
-     1>renderer_main.cc(457): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(457): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(457): error C2228: left of '.bpp' must have class/struct/union
-     1>renderer_main.cc(500): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(500): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(500): error C2228: left of '.buffer' must have class/struct/union
-     1>renderer_main.cc(589): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(589): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(589): error C2228: left of '.world_orientation' must have class/struct/union
-     1>renderer_main.cc(589): error C2228: left of '.origin' must have class/struct/union
-     1>renderer_main.cc(601): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(601): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(652): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(652): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(652): error C2228: left of '.world_orientation' must have class/struct/union
-     1>renderer_main.cc(652): error C2228: left of '.origin' must have class/struct/union
-     1>renderer_main.cc(652): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(652): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(652): error C2228: left of '.world_orientation' must have class/struct/union
-     1>renderer_main.cc(652): error C2228: left of '.origin' must have class/struct/union
-     1>renderer_main.cc(652): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(652): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(652): error C2228: left of '.world_orientation' must have class/struct/union
-     1>renderer_main.cc(652): error C2228: left of '.origin' must have class/struct/union
-     1>renderer_main.cc(653): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(653): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(653): error C2228: left of '.target' must have class/struct/union
-     1>renderer_main.cc(653): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(653): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(653): error C2228: left of '.target' must have class/struct/union
-     1>renderer_main.cc(653): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(653): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(653): error C2228: left of '.target' must have class/struct/union
-     1>renderer_main.cc(655): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(655): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(655): error C2228: left of '.world_orientation' must have class/struct/union
-     1>renderer_main.cc(655): error C2228: left of '.dir' must have class/struct/union
-     1>renderer_main.cc(655): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(655): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(655): error C2228: left of '.target' must have class/struct/union
-     1>renderer_main.cc(656): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(656): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(656): error C2228: left of '.aspect_ratio' must have class/struct/union
-     1>renderer_main.cc(656): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(656): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(656): error C2228: left of '.width' must have class/struct/union
-     1>renderer_main.cc(656): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(656): error C2227: left of '->vid_sys' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(656): error C2228: left of '.height' must have class/struct/union
-     1>renderer_main.cc(658): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(658): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(658): error C2228: left of '.viewplane_width' must have class/struct/union
-     1>renderer_main.cc(659): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(659): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(659): error C2228: left of '.viewplane_height' must have class/struct/union
-     1>renderer_main.cc(661): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(661): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(661): error C2228: left of '.fov_y' must have class/struct/union
-     1>renderer_main.cc(667): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(667): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(667): error C2228: left of '.z_near' must have class/struct/union
-     1>renderer_main.cc(668): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(668): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>renderer_main.cc(668): error C2228: left of '.z_far' must have class/struct/union
-     1>renderer_main.cc(670): error C2065: 'global_renderer' : undeclared identifier
-     1>renderer_main.cc(670): fatal error C1003: error count exceeds 100; stopping compilation
-         win_main_window.cc
-     1>common.cc(480): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(480): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(480): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(480): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(481): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(481): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(481): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(481): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(481): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(481): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(481): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(481): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(483): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(483): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(483): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(483): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(484): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(484): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(484): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(484): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(484): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(484): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(484): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(484): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(489): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(489): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(489): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(489): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(490): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(490): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(490): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(490): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(505): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(505): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(505): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(505): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(506): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(506): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(506): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(506): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(522): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(522): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(522): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(522): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(523): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(523): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(523): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(523): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(526): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(526): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(526): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(526): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(527): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(527): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(527): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(527): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(632): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(632): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(632): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(632): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(632): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(632): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(632): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(632): error C2228: left of '.dir' must have class/struct/union
-     1>common.cc(664): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(664): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(664): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(664): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(665): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(665): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(665): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(665): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(666): error C2065: 'global_renderer' : undeclared identifier
-     1>common.cc(666): error C2227: left of '->current_view' must point to class/struct/union/generic type
-                 type is ''unknown-type''
-     1>common.cc(666): error C2228: left of '.world_orientation' must have class/struct/union
-     1>common.cc(666): error C2228: left of '.origin' must have class/struct/union
-     1>common.cc(666): error C2664: 'int sprintf_s(char *,size_t,const char *,...)' : cannot convert parameter 2 from 'const char [22]' to 'size_t'
-                 There is no context in which this conversion is possible
-         win_renderer_dib.cc
-     1>win_renderer_dib.cc(92): warning C4244: '=' : conversion from 'int' to 'WORD', possible loss of data
-     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)) -- FAILED.
+     1>common.cc(636): warning C4189: 'frame_msec' : local variable is initialized but not referenced
+     1>common.cc(14): warning C4505: 'NextPO2' : unreferenced local function has been removed
+     1>common.cc(60): warning C4505: 'DestroyListAllocator' : unreferenced local function has been removed
+       Link:
+         F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
+         x64\Debug\cvar.obj
+         x64\Debug\input.obj
+         x64\Debug\math.obj
+         x64\Debug\plg_loader.obj
+         x64\Debug\renderer_cmds.obj
+         x64\Debug\renderer_init.obj
+         x64\Debug\renderer_main.obj
+         x64\Debug\win_console.obj
+         x64\Debug\win_input.obj
+         x64\Debug\win_shared.obj
+         x64\Debug\win_main.obj
+         x64\Debug\win_main_window.obj
+         x64\Debug\win_renderer_dib.obj
+         x64\Debug\win_wndproc.obj
+         LINK : F:\code\QuakeClone\x64\Debug\QuakeClone.exe not found or not built by the last incremental link; performing full link
+         QuakeClone.vcxproj -> F:\code\QuakeClone\x64\Debug\QuakeClone.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe;#1" /manifest x64\Debug\QuakeClone.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "x64\Debug\QuakeClone.unsuccessfulbuild".
+         Touching "x64\Debug\QuakeClone.lastbuildstate".
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
 
-Build FAILED.
+Build succeeded.
 
-Time Elapsed 00:00:01.17
+Time Elapsed 00:00:01.01

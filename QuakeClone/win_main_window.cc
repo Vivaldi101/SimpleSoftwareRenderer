@@ -1,22 +1,20 @@
 #include "win_renderer.h"
+#include "renderer_local.h"
 #define	WINDOW_CLASS_NAME "QC"
 
 
 #define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
 b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *hinstance) {
-	//cvar		*vid_xpos, *vid_ypos, *vid_fullscreen;
-
-	// FIXME: make these memsets
-	WNDCLASS	wc;
+	WNDCLASS wc;
 	memset(&wc, 0, sizeof(wc));
 
-	VidSystem	vid_sys;
+	VidSystem vid_sys;
 	memset(&vid_sys, 0, sizeof(vid_sys));
 
-	RECT		rect;
-	int			x, y, w, h;
-	int			ex_style = WS_EX_TOPMOST;
-	int			style_bits = 0;
+	RECT rect;
+	int	x, y, w, h;
+	int	ex_style = WS_EX_TOPMOST;
+	int	style_bits = 0;
 
 	// Register the frame class 
     wc.lpfnWndProc   = (WNDPROC)wndproc;
@@ -38,8 +36,6 @@ b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *
 
 	w = rect.right - rect.left;
 	h = rect.bottom - rect.top;
-	//x = vid_xpos->value;
-	//y = vid_ypos->value;
 	x = 0;
 	y = 0;
 
@@ -69,9 +65,7 @@ b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *
 	memcpy(&ren->vid_sys, &vid_sys, sizeof(vid_sys));
 
 	return true;
-	//global_vid_sys.win_handles = s_win_handles;
 
 	// let the sound and input subsystems know about the new window
-	//ri.Vid_NewWindow (width, height);
 }
 

@@ -30,6 +30,9 @@
 
 #define MAX_PLG_LINE_LEN 256
 #define IS_EMPTY_CHAR(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\n' || (c) == '\t') 
+#define Swap(A, B) do { if (A != B) {A ^= B; B ^= A; A ^= B;} } while(0)
+
+
 static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 	int i;
 	size_t len;
@@ -51,7 +54,7 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 	}
 }
 
-static b32 PLG_LoadMeshObject(MeshObject *md, FILE **fp, Vec3 world_pos, Vec3 scale, Vec3 rot) {
+b32 PLG_LoadMeshObject(MeshObject *md, FILE **fp, Vec3 world_pos, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
 	const char *parsed_string;
 
@@ -82,12 +85,20 @@ static b32 PLG_LoadMeshObject(MeshObject *md, FILE **fp, Vec3 world_pos, Vec3 sc
 				 &mesh->local_verts->vert_array[i].v.z);
 		//md->local_vertex_list[i].v.w = 1.0f;		disabled the Vec4 for now
 
-		mesh->local_verts->vert_array[i].v.x *= scale.v.x;
-		mesh->local_verts->vert_array[i].v.y *= scale.v.y;
-		mesh->local_verts->vert_array[i].v.z *= scale.v.z;
+		mesh->local_verts->vert_array[i][0] *= scale;
+		mesh->local_verts->vert_array[i][1] *= scale;
+		mesh->local_verts->vert_array[i][2] *= scale;
+
+		// NOTE: convert from the ccw into cw vertex order for our left-handed system
+		r32 v0 = mesh->local_verts->vert_array[i][0];
+		r32 v2 = mesh->local_verts->vert_array[i][2];
+
+		mesh->local_verts->vert_array[i][0] = v2;
+		mesh->local_verts->vert_array[i][2] = v0;
 	}
 
-	// TODO: compute the avg and max radius for mesh object here
+
+	// FIXME: compute the avg and max radius for mesh object here
 
 	int poly_num_verts = 0;
 
@@ -162,34 +173,3 @@ static b32 PLG_LoadMeshObject(MeshObject *md, FILE **fp, Vec3 world_pos, Vec3 sc
 	return true;
 }
 
-void PLG_InitParsing(const char *plg_file_name, MeshObject *md, MeshObject *player_md) {
-	// just for prototyping purposes
-	// FIXME: replace the CRT file i/o with win32 api
-	FILE *fp;
-	fopen_s(&fp, plg_file_name, "r");
-
-	if (!fp) {
-		Sys_Print("\nCouldn't open file\n");
-		Sys_Quit();
-	}
-
-	Sys_Print("\nOpening PLG file\n");
-
-	Vec3 world_pos;
-	Vector3Init(world_pos, 0.0f, 0.0f, 80.0f);
-	Vec3 scale;
-	Vector3Init(scale, 1.0f, 1.0f, 1.0f);
-	Vec3 rot;
-	Vector3Init(rot, 0.0f, 0.0f, 0.0f);
-
-	PLG_LoadMeshObject(md, &fp, world_pos, scale, rot);
-
-	Vector3Init(world_pos, 400.0f, -50.0f, 400.0f);
-	PLG_LoadMeshObject(player_md, &fp, world_pos, scale, rot);
-
-
-	if (fp) {
-		Sys_Print("\nClosing PLG file\n");
-		fclose(fp);
-	}
-}

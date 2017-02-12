@@ -131,8 +131,8 @@ void Sys_PumpEvents() {
     MSG msg;
 
 	// pump the message loop
-	while( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE)) {
-		if (!GetMessage( &msg, NULL, 0, 0 )) {
+	while (PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE)) {
+		if (!GetMessage( &msg, NULL, 0, 0)) {
 			Sys_Quit();
 		}
 
@@ -153,7 +153,7 @@ void Sys_GenerateEvents() {
 	static int entered = false;
 	//char *s;
 
-	if ( entered ) {
+	if (entered) {
 		return;
 	}
 	entered = true;
@@ -181,7 +181,6 @@ void Sys_GenerateEvents() {
 	entered = false;
 }
 
-// WinMain
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
 
 	// just for prototyping purposes, will be moved elsewhere
