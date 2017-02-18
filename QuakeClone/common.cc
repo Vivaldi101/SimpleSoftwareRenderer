@@ -11,7 +11,7 @@ MEMORY MANAGEMENT
 ==============================================================
 */
 
-static u32 NextPO2(u32 v) {
+static inline u32 NextPO2(u32 v) {
 	v--;	// handle the zero case
 	v |= v >> 1;
 	v |= v >> 2;
@@ -43,7 +43,7 @@ static u32 NextPO2(u32 v) {
 
 struct ListAllocator {
 	byte *	data;
-	size_t	num_bytes;
+	size_t	max_size;
 	int		num_rows;
 	union {
 	} type;
@@ -59,7 +59,7 @@ static void InitColumn(ListAllocator *list, int index) {
 
 static void DestroyListAllocator(ListAllocator *list) {
 	list->num_rows = 0;
-	list->num_bytes = 0;
+	list->max_size = 0;
 	VirtualFree(list->data, 0, MEM_RELEASE);
 }
 
@@ -132,7 +132,7 @@ void Free(ListAllocator *la, void **ptr) {
 	index = index % LIST_ROW_SIZE;
 	*ptr = 0;
 
-	if (index >= 1 || index < la->num_bytes) {
+	if (index >= 1 || index < la->max_size) {
 		BLOCK_STATE(la->data, index) = FREE_BLOCK;
 		switch (index) {
 			case BYTE_INDEX_16: {
@@ -165,11 +165,13 @@ void Free(ListAllocator *la, void **ptr) {
 
 static ListAllocator *InitListMemory(size_t num_bytes) {
 	ListAllocator *la = (ListAllocator *)VirtualAlloc(0, num_bytes + sizeof(ListAllocator), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
 	if (!la) {
 		Sys_Print("Failed to init the fixed sized allocator\n");
 		Sys_Quit();
 	}
-	la->num_bytes = num_bytes;
+
+	la->max_size = num_bytes;
 	la->num_rows = (int)num_bytes / LIST_ROW_SIZE;
 	la->data = (byte *)la + sizeof(ListAllocator);
 
@@ -186,156 +188,35 @@ static ListAllocator *InitListMemory(size_t num_bytes) {
 }
 
 // stack based allocator
-// may get re-done api-wise
-#if 1
-#define	ALLOC_MAGIC			0x89537892
-#define	ALLOC_FREE_MAGIC	0x89537893
 
-enum StackAllocPref {
-	SAP_HIGH,
-	SAP_LOW,
-	SAP_ANY
-};
+// NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
+void *_Push_(MemoryStack *ma, size_t num_bytes) {
+	Assert((ma->bytes_used + num_bytes) <= ma->max_size);
+	void *ptr = ma->base_ptr + ma->bytes_used;
+	ma->bytes_used += num_bytes;
 
-struct StackHeader {
-	int	magic;
-	int	size;
-};
-
-struct StackUsed {
-	int		mark;
-	size_t	permanent;
-	size_t	temp;
-};
-
-struct StackBlock {
-	byte *			data;
-	StackBlock *	next;
-	StackUsed 		used;
-	size_t			total_size;
-	int				temp_highwater;
-	b32				is_temp_block_high;
-	//byte			printed;
-	//char *			label;
-	//char *			file;
-	//int				line;
-};
-
-//static StackUsed global_stack_low, global_stack_high;
-//static StackUsed *global_stack_permanent, *global_stack_temp;
-
-static void ClearStack(StackBlock *sb) {
-	sb->total_size = sb->used.permanent = sb->used.temp = 0;
-	sb->is_temp_block_high = true;
-//
-//#ifndef DEDICATED
-//	CL_ShutdownCGame();
-//	CL_ShutdownUI();
-//#endif
-//	SV_ShutdownGameProgs();
-//#ifndef DEDICATED
-//	CIN_CloseAllVideos();
-//#endif
-//	hunk_low.mark = 0;
-//	hunk_low.permanent = 0;
-//	hunk_low.temp = 0;
-//	hunk_low.tempHighwater = 0;
-//
-//	hunk_high.mark = 0;
-//	hunk_high.permanent = 0;
-//	hunk_high.temp = 0;
-//	hunk_high.tempHighwater = 0;
-//
-//	hunk_permanent = &hunk_low;
-//	hunk_temp = &hunk_high;
-//
-//	Com_Printf( "Hunk_Clear: reset the hunk ok\n" );
-//	VM_Clear();
-//#ifdef HUNK_DEBUG
-//	hunkblocks = NULL;
-//#endif
+	return ptr;
 }
 
-
-#ifdef ALLOC_DEBUG
-void *AllocateDebug( int size, ha_pref preference, char *label, char *file, int line ) {
-#else
-void *Allocate(StackBlock *sb, size_t num_bytes) {
-#endif
-	void *buffer = 0;
-
-	if (!sb->data) {
-		Sys_Print("Stack memory system not initialized\n");
-		Sys_Quit();
-	}
-//
-//	// can't do preference if there is any temp allocated
-//	if (preference == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
-//		Hunk_SwapBanks();
-//	} else {
-//		if (preference == h_low && hunk_permanent != &hunk_low) {
-//			Hunk_SwapBanks();
-//		} else if (preference == h_high && hunk_permanent != &hunk_high) {
-//			Hunk_SwapBanks();
-//		}
-//	}
-//
-//#ifdef ALLOC_DEBUG
-//	size += sizeof(hunkblock_t);
-//#endif
-//
-//	// round to cacheline
-//	size = (size+31)&~31;
-//
-	if (sb->used.permanent + sb->used.temp + num_bytes > sb->total_size) {
-#ifdef ALLOC_DEBUG
-		Hunk_Log();
-		Hunk_SmallLog();
-#endif
-		//Com_Error( ERR_DROP, "Hunk_Alloc failed on %i");
-		Sys_Print("Stack allocation failure!");
-	}
-
-	if (sb->is_temp_block_high) {
-		buffer = (void *)(sb->data + sb->used.permanent);
-		sb->used.permanent += num_bytes;
-	} else {
-		sb->used.permanent += num_bytes;
-		buffer = (void *)(sb->data + sb->total_size - sb->used.permanent);
-	}
-
-	return buffer;
+void _Pop_(MemoryStack *ma, size_t num_bytes) {
+	Assert(((int)ma->bytes_used - (int)num_bytes) >= 0);
+	memset(ma->base_ptr + ma->bytes_used - num_bytes, 0, num_bytes);
+	ma->bytes_used -= num_bytes;
 }
 
-void SlideOffStack(StackBlock *sb, void *ptr, size_t num_bytes) {
-	memset(ptr, 0, num_bytes);
-	size_t num_bytes_to_move = sb->total_size - num_bytes;
-	memmove(ptr, (byte *)ptr + num_bytes, num_bytes_to_move);
-	sb->used.permanent -= num_bytes;
-}
+static MemoryStack *InitStackMemory(size_t num_bytes) {
+	void *base = VirtualAlloc(0, num_bytes + sizeof(MemoryStack), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	MemoryStack *ma = (MemoryStack *)base;
+	ma->base_ptr = (byte *)(ma + 1);
+	ma->max_size = num_bytes;
+	ma->bytes_used = 0;
 
-#endif
-
-static StackBlock *InitStackMemory(size_t num_bytes) {
-	// make sure the file system has allocated and "not" freed any temp blocks
-	// this allows the config and product id files ( journal files too ) to be loaded
-	// by the file system without redunant routines in the file system utilizing different 
-	// memory systems
-
-	//if (FS_LoadStack() != 0) {
-	//	Com_Error( ERR_FATAL, "Hunk initialization failed. File system load stack not zero");
-	//}
-
-	StackBlock *sb = (StackBlock *)VirtualAlloc(0, num_bytes + sizeof(StackBlock), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	if (!sb) {
+	if (!ma) {
 		Sys_Print("Failed to init the stack allocator\n");
 		Sys_Quit();
 	}
-	ClearStack(sb);
-	sb->total_size = num_bytes;
-	sb->data = (byte *)sb + sizeof(StackBlock);
 
-	return sb;
+	return ma;
 }
 
 
@@ -357,24 +238,27 @@ static Vec3 mat_rot_y[3];
 static b32 paused;
 static b32 reset;
 
-EngineData Com_InitEngine(void *hinstance, void *wndproc) {
-	EngineData ed = {};
+Platform Com_InitEngine(void *hinstance, void *wndproc) {
+	Platform pf = {};
 	MeshObject *mo;
 	MeshObject *player_mo;
 
 	Sys_Init();
 
-	ed.list_allocator = InitListMemory(1024 * LIST_ROW_SIZE);
-	ed.stack_allocator = InitStackMemory(MEGABYTES(32));
-	R_Init(&ed, hinstance, wndproc);
+	pf.list_allocator = InitListMemory(1024 * LIST_ROW_SIZE);
+	pf.perm_data = InitStackMemory(MEGABYTES(16));
+
+	// FIXME: make a single double ended stack, with temp allocations coming from the other side
+	pf.temp_data = InitStackMemory(MEGABYTES(64));
+	R_Init(&pf, hinstance, wndproc);
 
 
 	// just for prototyping purposes
-	player_mo = (MeshObject *)Allocate(ed.list_allocator, sizeof(MeshObject));
-	player_mo->mesh = (MeshData *)Allocate(ed.list_allocator, sizeof(MeshData));
-	player_mo->mesh->local_verts = (VertexGroup *)Allocate(ed.list_allocator, sizeof(VertexGroup));
-	player_mo->mesh->trans_verts = (VertexGroup *)Allocate(ed.list_allocator, sizeof(VertexGroup));
-	player_mo->mesh->polys = (PolyGroup *)Allocate(ed.list_allocator, sizeof(PolyGroup));
+	player_mo = (MeshObject *)Allocate(pf.list_allocator, sizeof(MeshObject));
+	player_mo->mesh = (MeshData *)Allocate(pf.list_allocator, sizeof(MeshData));
+	player_mo->mesh->local_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
+	player_mo->mesh->trans_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
+	player_mo->mesh->polys = (PolyGroup *)Allocate(pf.list_allocator, sizeof(PolyGroup));
 
 	// FIXME: move file api elsewhere
 	// just for prototyping purposes
@@ -391,23 +275,23 @@ EngineData Com_InitEngine(void *hinstance, void *wndproc) {
 
 	Vec3 world_pos = {};
 	PLG_LoadMeshObject(player_mo, &fp, world_pos);
-	memcpy(&ed.renderer->back_end->entities[ed.renderer->back_end->num_entities++], player_mo, sizeof(MeshObject));
+	memcpy(&pf.renderer->back_end->entities[pf.renderer->back_end->num_entities++], player_mo, sizeof(MeshObject));
 
 	int num_entities = 5;
 	for (int i = 0; i < num_entities; ++i) {
 		// just for prototyping purposes
-		mo = (MeshObject *)Allocate(ed.list_allocator, sizeof(MeshObject));
-		mo->mesh = (MeshData *)Allocate(ed.list_allocator, sizeof(MeshData));
-		mo->mesh->local_verts = (VertexGroup *)Allocate(ed.list_allocator, sizeof(VertexGroup));
-		mo->mesh->trans_verts = (VertexGroup *)Allocate(ed.list_allocator, sizeof(VertexGroup));
-		mo->mesh->polys = (PolyGroup *)Allocate(ed.list_allocator, sizeof(PolyGroup));
+		mo = (MeshObject *)Allocate(pf.list_allocator, sizeof(MeshObject));
+		mo->mesh = (MeshData *)Allocate(pf.list_allocator, sizeof(MeshData));
+		mo->mesh->local_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
+		mo->mesh->trans_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
+		mo->mesh->polys = (PolyGroup *)Allocate(pf.list_allocator, sizeof(PolyGroup));
 
 
 		// FIXME: move elsewhere
 		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
 		PLG_LoadMeshObject(mo, &fp, world_pos);
 
-		memcpy(&ed.renderer->back_end->entities[ed.renderer->back_end->num_entities++], mo, sizeof(MeshObject));
+		memcpy(&pf.renderer->back_end->entities[pf.renderer->back_end->num_entities++], mo, sizeof(MeshObject));
 	}
 
 	if (fp) {
@@ -416,7 +300,7 @@ EngineData Com_InitEngine(void *hinstance, void *wndproc) {
 	}
 
 
-	return ed;
+	return pf;
 }
 
 static void ProcessEvent(SysEvent se) {
@@ -465,7 +349,7 @@ void Com_RunEventLoop() {
 	}
 }
 
-void Com_RunFrame(EngineData *ed) {
+void Com_RunFrame(Platform *pf) {
 	Sys_GenerateEvents();
 	Com_RunEventLoop();
 
@@ -515,7 +399,7 @@ void Com_RunFrame(EngineData *ed) {
 
 
 	// FIXME: will be move elsewhere
-	Renderer *ren = ed->renderer;
+	Renderer *ren = pf->renderer;
 
 	// movement testing
 	if (forward) {
@@ -580,8 +464,8 @@ void Com_RunFrame(EngineData *ed) {
 
 
 	// test stuff
-	MeshObject *mos = ed->renderer->back_end->entities;
-	int num_entities = ed->renderer->back_end->num_entities;
+	MeshObject *mos = pf->renderer->back_end->entities;
+	int num_entities = pf->renderer->back_end->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
 		MeshObject *current_mo = &mos[i];
 		int num_polys = current_mo->status.num_polys;

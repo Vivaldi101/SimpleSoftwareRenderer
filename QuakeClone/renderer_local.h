@@ -72,7 +72,7 @@ struct VidSystem {
 struct ViewSystem {
 	r32				view_matrix[4][4];
 	r32				projection_matrix[4][4];
-	//Vec4			perspective_screen_matrix[4];
+	r32				screen_matrix[4][4];
 
 	Orientation		world_orientation;
 	Orientation		debug_orientation;
@@ -84,7 +84,6 @@ struct ViewSystem {
 
 	r32				fov_x, fov_y;
 	r32				view_dist;	
-
 
 	Plane			frustum[4];			// order of left, right, top, bottom, FIXME: add near and far z
 	r32				z_far, z_near;
@@ -117,7 +116,7 @@ struct Renderer {
 //extern unsigned global_8to24able[256]; 
 
 
-extern void R_Init(EngineData *ed, void *hinstance, void *wndproc); 
+extern void R_Init(Platform *pf, void *hinstance, void *wndproc); 
 
 extern void R_GenerateDrawSurfs(Renderer *ren);
 extern void R_RenderView(Renderer *ren);

@@ -3,8 +3,8 @@
 #include "win_local.h"
 #include "plg_loader.h"
 
-static int	s_global_sys_argc;
-static char *s_global_sys_argv[MAX_NUM_ARGVS];
+static int	global_sys_argc;
+static char *global_sys_argv[MAX_NUM_ARGVS];
 
 WinVars global_win_vars;
 static WINDOWPLACEMENT global_window_pos = { sizeof(global_window_pos) };
@@ -51,17 +51,17 @@ void Sys_ToggleFullscreen(HWND window) {
 }
 
 static void ParseCommandLine(char *cmd_line) {
-	s_global_sys_argc = 1;
-	s_global_sys_argv[0] = "exe";
+	global_sys_argc = 1;
+	global_sys_argv[0] = "exe";
 
-	while (*cmd_line && (s_global_sys_argc < MAX_NUM_ARGVS)) {
+	while (*cmd_line && (global_sys_argc < MAX_NUM_ARGVS)) {
 		while (*cmd_line && ((*cmd_line <= 32) || (*cmd_line > 126))) {
 			++cmd_line;
 		}
 
 		if (*cmd_line) {
-			s_global_sys_argv[s_global_sys_argc] = cmd_line;
-			++s_global_sys_argc;
+			global_sys_argv[global_sys_argc] = cmd_line;
+			++global_sys_argc;
 
 			while (*cmd_line && ((*cmd_line > 32) && (*cmd_line <= 126))) {
 				cmd_line++;
@@ -150,13 +150,13 @@ void Sys_PumpEvents() {
 }
 
 void Sys_GenerateEvents() {
-	static int entered = false;
-	//char *s;
+	//static int entered = false;
+	////char *s;
 
-	if (entered) {
-		return;
-	}
-	entered = true;
+	//if (entered) {
+	//	return;
+	//}
+	//entered = true;
 
 	// pump the message loop
 	Sys_PumpEvents();
@@ -178,12 +178,11 @@ void Sys_GenerateEvents() {
 	}
 
 #endif
-	entered = false;
+	//entered = false;
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
 
-	// just for prototyping purposes, will be moved elsewhere
 	global_win_vars.hinstance = hinstance;
 	global_win_vars.wndproc = MainWndProc;
 
@@ -191,21 +190,16 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Sys_CreateConsole();
 	Sys_ShowConsole(1, true);
 
-	// Initial time resolution and base
+	// initial time resolution and base
 	timeBeginPeriod(1);
 	Sys_GetMilliseconds();
 
-	EngineData ed = Com_InitEngine(global_win_vars.hinstance, global_win_vars.wndproc);
+	Platform pf = Com_InitEngine(global_win_vars.hinstance, global_win_vars.wndproc);
 
 	for (;;) {
-		//startime = Sys_GetMilliseconds();
-		// Run 1 frame of input
+		// run 1 frame of input
 		//In_Frame();
-		// Run 1 frame of update and render
-		Com_RunFrame(&ed);
-		//endime = Sys_GetMilliseconds();
-		//globalotal_msec += (endime - startime);
-		//global_frame_counter++;
+		// run 1 frame of update and render
+		Com_RunFrame(&pf);
 	}
-	//Com_Quit();
 }

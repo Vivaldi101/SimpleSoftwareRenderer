@@ -7,10 +7,12 @@
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
 
-struct EngineData {
+struct Platform {
 	struct Renderer *		renderer;
+
 	struct ListAllocator *	list_allocator;
-	struct StackBlock *		stack_allocator;
+	struct MemoryStack *	perm_data;
+	struct MemoryStack *	temp_data; // offset into the perm_data			
 };
 
 enum SysEventType {
@@ -39,11 +41,10 @@ extern int Sys_GetMilliseconds();
 static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
-extern EngineData Com_InitEngine(void *hinstance, void *wndproc);
-extern void Com_RunFrame(EngineData *ed);
+extern Platform Com_InitEngine(void *hinstance, void *wndproc);
+extern void Com_RunFrame(Platform *pf);
 extern void Com_Quit();
 void *Allocate(ListAllocator *la, size_t num_bytes);
-void *Allocate(StackBlock *sb, size_t num_bytes);
 void Free(ListAllocator *la, void **ptr);
 
 // Events

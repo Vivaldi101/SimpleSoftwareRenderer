@@ -14,7 +14,7 @@ void IN_ClearKeyStates() {
 	}
 }
 
-void IN_HandleKeyEvent(int key, b32 down, unsigned time) {
+void IN_HandleKeyEvent(int key, b32 down, u32 time) {
 	char	*kb;
 	char	cmd[1024];
 

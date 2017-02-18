@@ -1,9 +1,9 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#include <stdio.h>
-#include <string.h>
 #include <cstdint>
+#include <stdio.h>		// FIXME: remove at some point
+#include <string.h>		// FIXME: remove at some point
 #include <math.h>		// FIXME: remove at some point
 
 
@@ -119,10 +119,6 @@ inline u16 RGB_888To565(int r, int g, int b) {
 #define	MAX_POLYS		600
 #define	MAX_POLYVERTS	3000
 
-// util tools
-#define ARRAY_COUNT(arr) ((sizeof(arr)) / (sizeof(*(arr))))
-#define XOR_SWAP(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
-
 /*
 ==============================================================
 
@@ -155,9 +151,6 @@ MATHLIB
 #define Matrix4x4Init(m)			(Vector4Init((m)[0],0,0,0,0), Vector4Init((m)[1],0,0,0,0), Vector4Init((m)[2],0,0,0,0), Vector4Init((m)[3],0,0,0,0))
 
 #define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		// x and y define the plane of v
-//#define InvPerpOperator(v, x, y)	{r32 t = (v)[(x)]; (v)[(x)] = ((v)[(y)]), (v)[(y)] = (-t);}
-#define Negate(n)					((n) = -(n))
-#define Vector3Negate(v)			(Negate((v)[0]), Negate((v)[1]), Negate((v)[2]))
 #define Square(s)					((s) * (s))
 
 union Vec3 {
@@ -304,5 +297,36 @@ GENERAL
 
 ==============================================================
 */
+
+// stack based allocator
+
+struct MemoryStack {
+	byte *	base_ptr;
+	size_t	max_size;
+	size_t	bytes_used;
+};
+
+// NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
+extern void *_Push_(MemoryStack *ma, size_t num_bytes);
+extern void _Pop_(MemoryStack *ma, size_t num_bytes);
+
+#define PushSize(arena, type, size) ((type *)_Push_(arena, size))  
+#define PushStruct(arena, type) ((type *)_Push_(arena, sizeof(type)))  
+#define PopStruct(arena, type) (_Pop_(arena, sizeof(type)))  
+
+#define PushArray(arena, count, type) ((type *)_Push_(arena, (count) * sizeof(type)))
+#define PopArray(arena, count, type) (_Pop_(arena, (count) * sizeof(type)))  
+
+// util tools
+#define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
+#define XorSwap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
+#define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
+
+// windows specific
+#ifdef _WIN32
+#include <Windows.h>
+#define InvalidCodePath do { MessageBoxA(0, "Invalid code path", 0, 0); Assert(0); } while(0)
+#define InvalidDefaultCase do { MessageBoxA(0, "Invalid default case", 0, 0); Assert(0); } while(0)
+#endif	// _WIN32
 
 #endif	// Header guard

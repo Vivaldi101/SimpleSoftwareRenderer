@@ -1,7 +1,6 @@
 #ifndef WIN_LOCAL_H
 #define WIN_LOCAL_H
 
-#include <Windows.h>
 #include "shared.h"
 
 // console system

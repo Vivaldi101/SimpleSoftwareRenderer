@@ -145,12 +145,12 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 
 	#if 1	// a single, large image
 			hdcScaled = CreateCompatibleDC( ( HDC ) wparam );
-			assert( hdcScaled != 0 );
+			Assert( hdcScaled != 0 );
 
 			if ( hdcScaled )
 			{
 				oldObject = SelectObject( ( HDC ) hdcScaled, s_wcd.hbmLogo );
-				assert( oldObject != 0 );
+				Assert( oldObject != 0 );
 				if ( oldObject )
 				{
 					StretchBlt( ( HDC ) wparam, 0, 0, s_wcd.windowWidth, s_wcd.windowHeight, 
@@ -174,7 +174,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 
 				hbrClearBrush = CreatePatternBrush( s_wcd.hbmClearBitmap );
 
-				assert( hbrClearBrush != 0 );
+				Assert( hbrClearBrush != 0 );
 
 				if ( hbrClearBrush )
 				{
@@ -208,7 +208,7 @@ void Con_AppendText(const char *msg) {
 	const char *temp_msg = msg;
 	int i = 0;
 
-	static u32 sotal_chars;
+	static u32 total_chars;
 	u32 buf_len;
 
 	//
@@ -254,14 +254,14 @@ void Con_AppendText(const char *msg) {
 	*b = 0;
 	buf_len = (u32)(b - buffer);
 
-	sotal_chars += buf_len;
+	total_chars += buf_len;
 
 	//
 	// replace selection instead of appending if we're overflowing
 	//
-	if (sotal_chars > 0x7fff) {
+	if (total_chars > 0x7fff) {
 		SendMessage( s_global_wcd.hwnd_buffer, EM_SETSEL, 0, -1 );
-		sotal_chars = buf_len;
+		total_chars = buf_len;
 	}
 
 	//

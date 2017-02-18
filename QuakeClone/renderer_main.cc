@@ -5,7 +5,9 @@
 void R_SetupProjection(Renderer *ren) {
 	r32 aspect_ratio = ren->current_view.aspect_ratio;
 	r32 fov_y = ren->current_view.fov_y;
-	r32 d = 1.0f / tan(DEG2RAD(fov_y / 2.0f));
+	r32 d = (ren->current_view.viewplane_width / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
+	ren->current_view.view_dist = d;
+
 	r32 m00 = 1.0f / aspect_ratio;
 	r32 projection_matrix[16];
 
@@ -537,9 +539,6 @@ void R_CullBackFaces(Renderer *ren, MeshObject *md) {
 		Vec3 n = Vector3CrossProduct(u, v);
 		Vec3 view = Vector3Build(trans_verts[v0], ren->current_view.world_orientation.origin);
 
-		//n = Vector3Normalize(n);
-		//view = Vector3Normalize(view);
-
 		r32 dot = Vector3DotProduct(view, n);
 
 		if (dot <= 0.0f) {
@@ -593,21 +592,6 @@ void R_RotateForViewer(Renderer *ren) {
 	memcpy(ren->current_view.view_matrix, view_matrix, sizeof(view_matrix));
 }
 
-void R_GenerateDrawSurfs(Renderer *ren) {
-	//R_AddWorldSurfaces ();
-
-	//R_AddPolygonSurfaces();
-
-	//// set the projection matrix with the minimum zfar
-	//// now that we have the world bounded
-	//// this needs to be done before entities are
-	//// added, because they use the projection
-	//// matrix for lod calculation
-	//R_SetupProjection ();
-
-	//R_AddEntitySurfaces ();
-}
-
 void R_RenderView(Renderer *ren) {
 	static b32 first_draw = false;
 	if (!first_draw) {
@@ -623,9 +607,6 @@ void R_RenderView(Renderer *ren) {
 		ren->current_view.viewplane_height = 2.0f;
 
 		ren->current_view.fov_y = 90.0f;
-		//r32 half_tan = tan(DEG2RAD(ren->current_view.fov_y / 2.0f));
-		//ren->current_view.view_dist = (->lobal_renderer_state.current_view.viewplane_height / 2.0f) / half_tan;
-		//ren.current_view.fov_x = RAD2DEG(atan((ren.current_view.viewplane_width / 2.0f) / ren.current_view.view_dist)) * 2.0f;
 
 		// FIXME: compute dynamically
 		ren->current_view.z_near = 50.0f;

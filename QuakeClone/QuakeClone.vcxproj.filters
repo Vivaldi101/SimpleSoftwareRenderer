@@ -37,10 +37,10 @@
     <ClInclude Include="plg_loader.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="renderer_public.h">
+    <ClInclude Include="renderer_types.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="renderer_types.h">
+    <ClInclude Include="render_group.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -88,6 +88,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="renderer_init.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="render_group.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

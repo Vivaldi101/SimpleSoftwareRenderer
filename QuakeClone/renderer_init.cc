@@ -1,17 +1,23 @@
+#include "shared.h"
+
 #include "win_renderer.h"
 #include "renderer_local.h"
+#include "render_group.h"
 
-void R_Init(EngineData *ed, void *hinstance, void *wndproc) { 
-	ed->renderer = (Renderer *)Allocate(ed->stack_allocator, sizeof(Renderer));
-	ed->renderer->back_end = (BackEnd *)Allocate(ed->stack_allocator, sizeof(BackEnd));
-	ed->renderer->back_end->polys = (Poly *)Allocate(ed->stack_allocator, sizeof(Poly) * MAX_POLYS);
+void R_Init(Platform *pf, void *hinstance, void *wndproc) { 
+	pf->renderer = PushStruct(pf->perm_data, Renderer);
+	pf->renderer->back_end = PushStruct(pf->perm_data, BackEnd);
+	pf->renderer->back_end->polys = PushArray(pf->perm_data, MAX_POLYS, Poly);
 
-	if (!Vid_CreateWindow(ed->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
+	AllocateRenderGroup(pf->temp_data, MEGABYTES(4));
+	
+
+	if (!Vid_CreateWindow(pf->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");
 		Sys_Quit();
 	}	
 
-	if (!DIB_Init(&ed->renderer->vid_sys)) {
+	if (!DIB_Init(&pf->renderer->vid_sys)) {
 		Sys_Print("Error while initializing the DIB\n");
 		Sys_Quit();
 	}

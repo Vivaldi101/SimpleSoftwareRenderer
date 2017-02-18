@@ -1,13 +1,35 @@
-﻿Build started 12/02/2017 21:06:53.
+﻿Build started 16/02/2017 14:07:49.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /errorReport:prompt common.cc cvar.cc input.cc math.cc plg_loader.cc render_group.cc renderer_cmds.cc renderer_init.cc renderer_main.cc win_console.cc win_input.cc win_main.cc win_main_window.cc win_renderer_dib.cc win_shared.cc win_wndproc.cc
          common.cc
-     1>common.cc(636): warning C4189: 'frame_msec' : local variable is initialized but not referenced
-     1>common.cc(14): warning C4505: 'NextPO2' : unreferenced local function has been removed
+         cvar.cc
+         input.cc
+         math.cc
+         plg_loader.cc
+         render_group.cc
+     1>common.cc(194): warning C4127: conditional expression is constant
+     1>common.cc(202): warning C4127: conditional expression is constant
+         renderer_cmds.cc
+     1>common.cc(520): warning C4189: 'frame_msec' : local variable is initialized but not referenced
      1>common.cc(60): warning C4505: 'DestroyListAllocator' : unreferenced local function has been removed
+         renderer_init.cc
+     1>render_group.cc(12): warning C4127: conditional expression is constant
+     1>render_group.cc(19): warning C4127: conditional expression is constant
+     1>render_group.cc(19): warning C4127: conditional expression is constant
+     1>render_group.cc(19): warning C4127: conditional expression is constant
+         renderer_main.cc
+         win_console.cc
+         win_input.cc
+         win_main.cc
+         win_main_window.cc
+     1>f:\code\quakeclone\quakeclone\renderer_main.cc(396): warning C4701: potentially uninitialized local variable 'y' used
+     1>f:\code\quakeclone\quakeclone\renderer_main.cc(395): warning C4701: potentially uninitialized local variable 'x' used
+         win_renderer_dib.cc
+         win_shared.cc
+         win_wndproc.cc
        Link:
          F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\cvar.obj
@@ -17,6 +39,7 @@
          x64\Debug\renderer_cmds.obj
          x64\Debug\renderer_init.obj
          x64\Debug\renderer_main.obj
+         x64\Debug\render_group.obj
          x64\Debug\win_console.obj
          x64\Debug\win_input.obj
          x64\Debug\win_shared.obj
@@ -35,4 +58,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.01
+Time Elapsed 00:00:02.03

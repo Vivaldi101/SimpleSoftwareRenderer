@@ -118,8 +118,8 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="keys.h" />
     <ClInclude Include="plg_loader.h" />
-    <ClInclude Include="renderer_public.h" />
     <ClInclude Include="renderer_types.h" />
+    <ClInclude Include="render_group.h" />
     <ClInclude Include="shared.h" />
     <ClInclude Include="keycodes.h" />
     <ClInclude Include="renderer_local.h" />
@@ -136,6 +136,7 @@
     <ClCompile Include="renderer_cmds.cc" />
     <ClCompile Include="renderer_init.cc" />
     <ClCompile Include="renderer_main.cc" />
+    <ClCompile Include="render_group.cc" />
     <ClCompile Include="win_console.cc" />
     <ClCompile Include="win_input.cc" />
     <ClCompile Include="win_shared.cc" />
