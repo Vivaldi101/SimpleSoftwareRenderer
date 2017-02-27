@@ -271,6 +271,7 @@ static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	return v;
 }
 
+extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
 extern void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
 extern void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
 extern void Mat3x3Mul(r32 out[3][3], const r32 a[3][3], const r32 b[3][3]);
@@ -307,8 +308,8 @@ struct MemoryStack {
 };
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
-extern void *_Push_(MemoryStack *ma, size_t num_bytes);
-extern void _Pop_(MemoryStack *ma, size_t num_bytes);
+extern void *_Push_(MemoryStack *ms, size_t num_bytes);
+extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 
 #define PushSize(arena, type, size) ((type *)_Push_(arena, size))  
 #define PushStruct(arena, type) ((type *)_Push_(arena, sizeof(type)))  
@@ -326,7 +327,9 @@ extern void _Pop_(MemoryStack *ma, size_t num_bytes);
 #ifdef _WIN32
 #include <Windows.h>
 #define InvalidCodePath do { MessageBoxA(0, "Invalid code path", 0, 0); Assert(0); } while(0)
-#define InvalidDefaultCase do { MessageBoxA(0, "Invalid default case", 0, 0); Assert(0); } while(0)
+//#define InvalidDefaultCase do { MessageBoxA(0, "Invalid default case", 0, 0); Assert(0); } while(0)
+#else
+#define InvalidCodePath do { Assert(0); } while(0)
 #endif	// _WIN32
 
 #endif	// Header guard

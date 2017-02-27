@@ -9,7 +9,6 @@
 
 struct Platform {
 	struct Renderer *		renderer;
-
 	struct ListAllocator *	list_allocator;
 	struct MemoryStack *	perm_data;
 	struct MemoryStack *	temp_data; // offset into the perm_data			

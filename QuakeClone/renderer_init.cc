@@ -2,15 +2,15 @@
 
 #include "win_renderer.h"
 #include "renderer_local.h"
-#include "render_group.h"
+#include "render_queue.h"
 
 void R_Init(Platform *pf, void *hinstance, void *wndproc) { 
 	pf->renderer = PushStruct(pf->perm_data, Renderer);
 	pf->renderer->back_end = PushStruct(pf->perm_data, BackEnd);
 	pf->renderer->back_end->polys = PushArray(pf->perm_data, MAX_POLYS, Poly);
 
-	AllocateRenderGroup(pf->temp_data, MEGABYTES(4));
-	
+	pf->renderer->queue = AllocateRenderQueue(pf->temp_data, MEGABYTES(4));
+	PlaceRenderCommand(pf->renderer->queue, ClearScreen);
 
 	if (!Vid_CreateWindow(pf->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");

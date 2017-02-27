@@ -107,9 +107,10 @@ struct BackEnd {
 };
 
 struct Renderer {
-	BackEnd *		back_end;
-	VidSystem 		vid_sys;
-	ViewSystem		current_view;	
+	struct RenderQueue *	queue;
+	BackEnd *				back_end;
+	VidSystem 				vid_sys;
+	ViewSystem				current_view;	
 };
 
 
@@ -121,11 +122,11 @@ extern void R_Init(Platform *pf, void *hinstance, void *wndproc);
 extern void R_GenerateDrawSurfs(Renderer *ren);
 extern void R_RenderView(Renderer *ren);
 
-extern void R_BeginFrame(Renderer *ren);
+extern void R_BeginFrame(Renderer *ren, byte fill_color);
 extern void R_EndFrame(Renderer *ren);
 
 extern void R_SetupFrustum(Renderer *ren);
-extern void R_SetupEulerView(Renderer *ren, r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
+//extern void R_SetupEulerView(Renderer *ren, r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
 extern void R_SetupProjection(Renderer *ren);
 
 extern void R_TransformModelToWorld(Renderer *ren, MeshObject *md, VertexTransformState ts = VTS_LOCAL_TO_TRANSFORMED);

@@ -389,7 +389,7 @@ void Sys_ShowConsole(int vis_level, b32 quit_on_close) {
 		case 1: {
 			ShowWindow(s_global_wcd.hwnd, SW_SHOWNORMAL);
 			SendMessage(s_global_wcd.hwnd_buffer, EM_LINESCROLL, 0, 0xffff );
-			Sys_Print("Console created");
+			Sys_Print("\nConsole created\n");
 		} break;
 		case 2:
 			ShowWindow(s_global_wcd.hwnd, SW_MINIMIZE); {

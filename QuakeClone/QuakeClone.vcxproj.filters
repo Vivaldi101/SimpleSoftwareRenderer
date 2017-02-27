@@ -40,7 +40,7 @@
     <ClInclude Include="renderer_types.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="render_group.h">
+    <ClInclude Include="render_queue.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -90,7 +90,7 @@
     <ClCompile Include="renderer_init.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="render_group.cc">
+    <ClCompile Include="render_queue.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

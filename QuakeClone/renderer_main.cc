@@ -11,7 +11,7 @@ void R_SetupProjection(Renderer *ren) {
 	r32 m00 = 1.0f / aspect_ratio;
 	r32 projection_matrix[16];
 
-	// FIXME: add depth buffer
+	// FIXME: add depth buffer and homogeneous clipping terms
 	projection_matrix[0] = m00;
 	projection_matrix[4] = 0.0f;
 	projection_matrix[8] = 0.0f;
@@ -33,9 +33,6 @@ void R_SetupProjection(Renderer *ren) {
 	projection_matrix[15] = 0.0f;
 
 	memcpy(ren->current_view.projection_matrix, projection_matrix, sizeof(projection_matrix));
-	// dynamically compute far clip plane distance
-	//SetFarClip();
-
 }
 
 #if 0
@@ -355,9 +352,9 @@ static int R_GetLineClipCode(Renderer *ren, int x, int y) {
 // Cohen–Sutherland 
 // FIXME: try Liang–Barsky or even Cyrus–Beck 
 static void R_DrawLine(Renderer *ren, int x0, int y0, int x1, int y1, u32 color) {
-	int outcode0	= R_GetLineClipCode(ren, x0, y0);
-	int outcode1	= R_GetLineClipCode(ren, x1, y1);
-	b32 accept		= false;
+	int outcode0 = R_GetLineClipCode(ren, x0, y0);
+	int outcode1 = R_GetLineClipCode(ren, x1, y1);
+	b32 accept = false;
 
 	for (;;) {
 		if (!(outcode0 | outcode1)) {		// Trivially accept 
@@ -467,6 +464,7 @@ static void R_DrawLine(Renderer *ren, int x0, int y0, int x1, int y1, u32 color)
 	}
 }
 
+// renders only triangles 
 void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
 	int num_polys = md->status.num_polys;
 	Poly *polys = md->mesh->polys->poly_array;
@@ -501,10 +499,6 @@ void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
 				   (int)trans_verts[v0].v.x,
 				   (int)trans_verts[v0].v.y,
 				   polys[i].color);
-
-		//R_DrawLine((int)ren->current_view.debug_orientation.origin[0],
-		//		   (int)ren.current_view.debug_orientation.origin[1], 
-		//		   (int)md->trans_vertex_array[v1][0], (int)md->trans_vertex_array[v1][1], 0xff);
 	}
 }
 
@@ -521,9 +515,10 @@ void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_points) {
 }
 
 void R_CullBackFaces(Renderer *ren, MeshObject *md) {
-	int num_polys = md->status.num_polys;
 	Poly *polys = md->mesh->polys->poly_array;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+	Vec3 p = {};
+	int num_polys = md->status.num_polys;
 
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE) || !(polys[i].state & POLY_STATE_ACTIVE)) {
@@ -537,7 +532,7 @@ void R_CullBackFaces(Renderer *ren, MeshObject *md) {
 		Vec3 u = Vector3Build(trans_verts[v0], trans_verts[v1]);
 		Vec3 v = Vector3Build(trans_verts[v0], trans_verts[v2]);
 		Vec3 n = Vector3CrossProduct(u, v);
-		Vec3 view = Vector3Build(trans_verts[v0], ren->current_view.world_orientation.origin);
+		Vec3 view = Vector3Build(trans_verts[v0], p);
 
 		r32 dot = Vector3DotProduct(view, n);
 

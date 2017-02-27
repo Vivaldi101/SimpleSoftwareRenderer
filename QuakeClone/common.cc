@@ -1,6 +1,6 @@
 #include "common.h"
+#include "render_queue.h"
 #include "plg_loader.h"
-#include "win_renderer.h"	// FIXME: Not include here
 
 
 /*
@@ -190,33 +190,33 @@ static ListAllocator *InitListMemory(size_t num_bytes) {
 // stack based allocator
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
-void *_Push_(MemoryStack *ma, size_t num_bytes) {
-	Assert((ma->bytes_used + num_bytes) <= ma->max_size);
-	void *ptr = ma->base_ptr + ma->bytes_used;
-	ma->bytes_used += num_bytes;
+void *_Push_(MemoryStack *ms, size_t num_bytes) {
+	Assert((ms->bytes_used + num_bytes) <= ms->max_size);
+	void *ptr = ms->base_ptr + ms->bytes_used;
+	ms->bytes_used += num_bytes;
 
 	return ptr;
 }
 
-void _Pop_(MemoryStack *ma, size_t num_bytes) {
-	Assert(((int)ma->bytes_used - (int)num_bytes) >= 0);
-	memset(ma->base_ptr + ma->bytes_used - num_bytes, 0, num_bytes);
-	ma->bytes_used -= num_bytes;
+void _Pop_(MemoryStack *ms, size_t num_bytes) {
+	Assert(((int)ms->bytes_used - (int)num_bytes) >= 0);
+	memset(ms->base_ptr + ms->bytes_used - num_bytes, 0, num_bytes);
+	ms->bytes_used -= num_bytes;
 }
 
 static MemoryStack *InitStackMemory(size_t num_bytes) {
 	void *base = VirtualAlloc(0, num_bytes + sizeof(MemoryStack), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	MemoryStack *ma = (MemoryStack *)base;
-	ma->base_ptr = (byte *)(ma + 1);
-	ma->max_size = num_bytes;
-	ma->bytes_used = 0;
+	MemoryStack *ms = (MemoryStack *)base;
+	ms->base_ptr = (byte *)(ms + 1);
+	ms->max_size = num_bytes;
+	ms->bytes_used = 0;
 
-	if (!ma) {
+	if (!ms) {
 		Sys_Print("Failed to init the stack allocator\n");
 		Sys_Quit();
 	}
 
-	return ma;
+	return ms;
 }
 
 
@@ -365,8 +365,9 @@ void Com_RunFrame(Platform *pf) {
 
 	// test stuff
 	r32 mat_rot_x[3][3];
+	r32 mat_rot_y[3][3];
 	r32 mat_rot_z[3][3];
-	static r32 rot_theta = DEG2RAD(-1.0f);
+	r32 rot_theta = DEG2RAD(-1.0f);
 	static r32 view_angle = 0.0f;
 
 	for (;;) {
@@ -397,9 +398,10 @@ void Com_RunFrame(Platform *pf) {
 		Sys_Sleep(0);
 	}
 
-
 	// FIXME: will be move elsewhere
 	Renderer *ren = pf->renderer;
+	RenderQueue *rq = pf->renderer->queue;
+	MeshObject *mos = pf->renderer->back_end->entities;
 
 	// movement testing
 	if (forward) {
@@ -416,15 +418,61 @@ void Com_RunFrame(Platform *pf) {
 
 	if (turn_left) {
 		yaw -= 5.0f;
-		ren->current_view.world_orientation.dir[0] = (sinf(DEG2RAD(yaw)));
-		ren->current_view.world_orientation.dir[2] = (cosf(DEG2RAD(yaw)));
+		//yaw = DEG2RAD(yaw);
+
+		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		mat_rot_y[0][1] = 0.0f;
+		mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
+
+		mat_rot_y[1][0] = 0.0f;
+		mat_rot_y[1][1] = 1.0f;
+		mat_rot_y[1][2] = 0.0f;
+
+		mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
+		mat_rot_y[2][1] = 0.0f;
+		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+
+		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+
+		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
+		Vec3 tmp;
+		//R_RotatePoints(mat_rot_y, verts, mos[0].status.num_verts); 
+		for (int i = 0; i < mos[0].status.num_verts; ++i) {
+			Mat1x3Mul(&tmp, &verts[i], mat_rot_y);
+			verts[i] = tmp;
+		}
+
 		turn_left = false;
 	}
 
 	if (turn_right) {
 		yaw += 5.0f;
-		ren->current_view.world_orientation.dir[0] = (sinf(DEG2RAD(yaw)));
-		ren->current_view.world_orientation.dir[2] = (cosf(DEG2RAD(yaw)));
+		//yaw = DEG2RAD(yaw);
+
+		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
+		mat_rot_y[0][1] = 0.0f;
+		mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
+
+		mat_rot_y[1][0] = 0.0f;
+		mat_rot_y[1][1] = 1.0f;
+		mat_rot_y[1][2] = 0.0f;
+
+		mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
+		mat_rot_y[2][1] = 0.0f;
+		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+
+		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+
+		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
+		Vec3 tmp;
+		//R_RotatePoints(mat_rot_y, verts, mos[0].status.num_verts); 
+		for (int i = 0; i < mos[0].status.num_verts; ++i) {
+			Mat1x3Mul(&tmp, &verts[i], mat_rot_y);
+			verts[i] = tmp;
+		}
+
 		turn_right = false;
 	}
 
@@ -464,7 +512,6 @@ void Com_RunFrame(Platform *pf) {
 
 
 	// test stuff
-	MeshObject *mos = pf->renderer->back_end->entities;
 	int num_entities = pf->renderer->back_end->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
 		MeshObject *current_mo = &mos[i];
@@ -479,15 +526,14 @@ void Com_RunFrame(Platform *pf) {
 		}
 	}
 
-	R_BeginFrame(ren);
+	ExecuteRenderQueue(rq, ren);
 	R_RenderView(ren);
 
 	// hacky player third person cam test stuff
-	// FIXME: 0 hardcoded index for player
+	// FIXME: 0 index hardcoded for player in the mos array
 	mos[0].status.world_pos = 
-		ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 45.0f);
+		ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 60.0f);
 	mos[0].status.world_pos[1] -= 20.0f;
-
 
 	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
@@ -495,15 +541,16 @@ void Com_RunFrame(Platform *pf) {
 		// FIXME: reduce the indirection overhead
 		Vec3 *verts = current_mo->mesh->local_verts->vert_array;
 
-		R_RotatePoints(mat_rot_z, verts, current_mo->status.num_verts); 
-		R_RotatePoints(mat_rot_x, verts, current_mo->status.num_verts); 
+		if (i != 0) {
+			R_RotatePoints(mat_rot_x, verts, current_mo->status.num_verts); 
+		}
 
 		R_TransformModelToWorld(ren, current_mo); 
 
 		//current_mo->status.state = R_CullPointAndRadius(current_mo->status.world_pos);			
 		if (!(current_mo->status.state & FCS_CULL_OUT)) {
-			R_CullBackFaces(ren, current_mo);
 			R_TransformWorldToView(ren, current_mo);
+			R_CullBackFaces(ren, current_mo);
 			R_TransformViewToClip(ren, current_mo);
 			R_TransformClipToScreen(ren, current_mo);
 			R_DrawWireframeMesh(ren, current_mo);

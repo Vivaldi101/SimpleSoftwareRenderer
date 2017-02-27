@@ -1,0 +1,6 @@
+TODO: 
+replace the left-handed system with a right-handed one.
+solid filled polygons.
+perspective correct texture mapping.
+homogeneous clipping.
+frustum plane extraction from the projection matrix.

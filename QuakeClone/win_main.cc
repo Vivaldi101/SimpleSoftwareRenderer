@@ -85,12 +85,8 @@ static int global_sys_event_head, global_sys_eventail;
 void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int data_len, void *data) {
 	SysEvent *ev = &global_sys_event_queue[global_sys_event_head & MASK_SYS_QUED_EVENTS];
 
-	if ( global_sys_event_head - global_sys_eventail >= MAX_SYS_QUED_EVENTS ) {
-		//Com_Printf("Sys_QueEvent: overflow\n");
-		//// we are discarding an event, but don't leak memory
-		//if ( ev->evPtr ) {
-		//	Z_Free( ev->evPtr );
-		//}
+	if (global_sys_event_head - global_sys_eventail >= MAX_SYS_QUED_EVENTS) {
+		Sys_Print("Overflow in system events\n");
 		global_sys_eventail++;
 	}
 
@@ -111,16 +107,12 @@ void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int dat
 SysEvent Sys_GetEvent() {
 	SysEvent	se;
 
-	//char		*s;
-	//MSG		msg;
-
-	// return if we have data
 	if (global_sys_event_head > global_sys_eventail) {
 		global_sys_eventail++;
 		return global_sys_event_queue[(global_sys_eventail - 1) & MASK_SYS_QUED_EVENTS];
 	}
 
-	// Create an empty event 
+	// create an empty event 
 	memset(&se, 0, sizeof(se));
 	se.ev_time = Sys_GetMilliseconds();
 

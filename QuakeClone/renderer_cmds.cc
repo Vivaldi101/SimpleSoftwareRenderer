@@ -1,12 +1,12 @@
 #include "shared.h"
 #include "renderer_local.h"
 
-void R_BeginFrame(Renderer *ren) {
+void R_BeginFrame(Renderer *ren, byte fill_color) {
 	// clean up the framebuffer
 	void *buffer = ren->vid_sys.buffer;
 	int pitch = ren->vid_sys.pitch;
 	int height = ren->vid_sys.height;
-	memset(buffer, 0, pitch * height);
+	memset(buffer, fill_color, pitch * height);
 }
 
 void R_EndFrame(Renderer *ren) {

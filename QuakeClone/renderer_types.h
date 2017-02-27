@@ -54,7 +54,7 @@ struct MeshObject {
 		r32		avg_radius;
 		r32		max_radius;
 
-		r32		world_matrix[4][4];
+		r32		world_matrix[4][4];	// currently unused
 		Vec3	world_pos;
 		Vec3	dir;
 		Vec3	ux, uy, uz;

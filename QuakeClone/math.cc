@@ -1,5 +1,17 @@
 #include "shared.h"
 
+void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]) {
+	r32 a00 = (*a)[0], a01 = (*a)[1], a02 = (*a)[2];
+
+	r32 b00 = b[0][0], b01 = b[0][1], b02 = b[0][2];
+	r32 b10 = b[1][0], b11 = b[1][1], b12 = b[1][2];
+	r32 b20 = b[2][0], b21 = b[2][1], b22 = b[2][2];
+
+	(*out)[0] = a00*b00 + a01*b10 + a02*b20;
+	(*out)[1] = a00*b01 + a01*b11 + a02*b21;
+	(*out)[2] = a00*b02 + a01*b12 + a02*b22;
+}
+
 void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]) {
 	r32 a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
 
