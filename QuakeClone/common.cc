@@ -233,7 +233,7 @@ static b32 backward;
 static b32 turn_left;
 static b32 turn_right;
 
-static Vec3 mat_rot_y[3];
+static Vec3 rot_mat_y[3];
 
 static b32 paused;
 static b32 reset;
@@ -364,11 +364,11 @@ void Com_RunFrame(Platform *pf) {
 	int num_game_frames_to_run = 0;
 
 	// test stuff
-	r32 mat_rot_x[3][3];
-	r32 mat_rot_y[3][3];
-	r32 mat_rot_z[3][3];
+	r32 rot_mat_x[3][3];
+	r32 rot_mat_z[3][3];
 	r32 rot_theta = DEG2RAD(-1.0f);
 	static r32 view_angle = 0.0f;
+	static r32 rot_mat_y[3][3];
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -420,27 +420,24 @@ void Com_RunFrame(Platform *pf) {
 		yaw -= 5.0f;
 		//yaw = DEG2RAD(yaw);
 
-		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
-		mat_rot_y[0][1] = 0.0f;
-		mat_rot_y[0][2] = sin(DEG2RAD(5.0f));
+		rot_mat_y[0][0] = cos(DEG2RAD(5.0f));
+		rot_mat_y[0][1] = 0.0f;
+		rot_mat_y[0][2] = sin(DEG2RAD(5.0f));
 
-		mat_rot_y[1][0] = 0.0f;
-		mat_rot_y[1][1] = 1.0f;
-		mat_rot_y[1][2] = 0.0f;
+		rot_mat_y[1][0] = 0.0f;
+		rot_mat_y[1][1] = 1.0f;
+		rot_mat_y[1][2] = 0.0f;
 
-		mat_rot_y[2][0] = -sin(DEG2RAD(5.0f));
-		mat_rot_y[2][1] = 0.0f;
-		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		rot_mat_y[2][0] = -sin(DEG2RAD(5.0f));
+		rot_mat_y[2][1] = 0.0f;
+		rot_mat_y[2][2] = cos(DEG2RAD(5.0f));
 
 		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
 		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
-		Vec3 tmp;
-		//R_RotatePoints(mat_rot_y, verts, mos[0].status.num_verts); 
 		for (int i = 0; i < mos[0].status.num_verts; ++i) {
-			Mat1x3Mul(&tmp, &verts[i], mat_rot_y);
-			verts[i] = tmp;
+			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 		}
 
 		turn_left = false;
@@ -450,65 +447,76 @@ void Com_RunFrame(Platform *pf) {
 		yaw += 5.0f;
 		//yaw = DEG2RAD(yaw);
 
-		mat_rot_y[0][0] = cos(DEG2RAD(5.0f));
-		mat_rot_y[0][1] = 0.0f;
-		mat_rot_y[0][2] = -sin(DEG2RAD(5.0f));
+		rot_mat_y[0][0] = cos(DEG2RAD(5.0f));
+		rot_mat_y[0][1] = 0.0f;
+		rot_mat_y[0][2] = -sin(DEG2RAD(5.0f));
 
-		mat_rot_y[1][0] = 0.0f;
-		mat_rot_y[1][1] = 1.0f;
-		mat_rot_y[1][2] = 0.0f;
+		rot_mat_y[1][0] = 0.0f;
+		rot_mat_y[1][1] = 1.0f;
+		rot_mat_y[1][2] = 0.0f;
 
-		mat_rot_y[2][0] = sin(DEG2RAD(5.0f));
-		mat_rot_y[2][1] = 0.0f;
-		mat_rot_y[2][2] = cos(DEG2RAD(5.0f));
+		rot_mat_y[2][0] = sin(DEG2RAD(5.0f));
+		rot_mat_y[2][1] = 0.0f;
+		rot_mat_y[2][2] = cos(DEG2RAD(5.0f));
 
 		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
 		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
-		Vec3 tmp;
-		//R_RotatePoints(mat_rot_y, verts, mos[0].status.num_verts); 
 		for (int i = 0; i < mos[0].status.num_verts; ++i) {
-			Mat1x3Mul(&tmp, &verts[i], mat_rot_y);
-			verts[i] = tmp;
+			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 		}
 
 		turn_right = false;
 	}
 
 	if (reset) {
-		yaw = 0.0f;
 		Vector3Init(ren->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
 		Vector3Init(ren->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
+		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
+		int num_verts = mos[0].status.num_verts;
+
+		rot_mat_y[0][0] = cos(DEG2RAD(yaw));
+		rot_mat_y[2][2] = cos(DEG2RAD(yaw));
+
+		rot_mat_y[0][2] = sin(DEG2RAD(yaw));
+		rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
+		if (yaw != 0.0f) {
+			for (int i = 0; i < num_verts; ++i) {
+				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+			}
+		}
+		
 		reset = false;
+		yaw = 0.0f;
 	}
 
 
 	// test stuff
-	mat_rot_x[0][0] = 1.0f;
-	mat_rot_x[0][1] = 0.0f;
-	mat_rot_x[0][2] = 0.0f;
+	rot_mat_x[0][0] = 1.0f;
+	rot_mat_x[0][1] = 0.0f;
+	rot_mat_x[0][2] = 0.0f;
 
-	mat_rot_x[1][0] = 0.0f;
-	mat_rot_x[1][1] = cos(rot_theta);
-	mat_rot_x[1][2] = sin(rot_theta);
+	rot_mat_x[1][0] = 0.0f;
+	rot_mat_x[1][1] = cos(rot_theta);
+	rot_mat_x[1][2] = sin(rot_theta);
 
-	mat_rot_x[2][0] = 0.0f;
-	mat_rot_x[2][1] = -sin(rot_theta);
-	mat_rot_x[2][2] = cos(rot_theta);
+	rot_mat_x[2][0] = 0.0f;
+	rot_mat_x[2][1] = -sin(rot_theta);
+	rot_mat_x[2][2] = cos(rot_theta);
 
 
-	mat_rot_z[0][0] = cos(rot_theta);
-	mat_rot_z[0][1] = sin(rot_theta);
-	mat_rot_z[0][2] = 0.0f;
+	rot_mat_z[0][0] = cos(rot_theta);
+	rot_mat_z[0][1] = sin(rot_theta);
+	rot_mat_z[0][2] = 0.0f;
 
-	mat_rot_z[1][0] = -sin(rot_theta);
-	mat_rot_z[1][1] = cos(rot_theta);
-	mat_rot_z[1][2] = 0.0f;
+	rot_mat_z[1][0] = -sin(rot_theta);
+	rot_mat_z[1][1] = cos(rot_theta);
+	rot_mat_z[1][2] = 0.0f;
 
-	mat_rot_z[2][0] = 0.0f;
-	mat_rot_z[2][1] = 0.0f;
-	mat_rot_z[2][2] = 1.0f;
+	rot_mat_z[2][0] = 0.0f;
+	rot_mat_z[2][1] = 0.0f;
+	rot_mat_z[2][2] = 1.0f;
 
 
 	// test stuff
@@ -542,7 +550,7 @@ void Com_RunFrame(Platform *pf) {
 		Vec3 *verts = current_mo->mesh->local_verts->vert_array;
 
 		if (i != 0) {
-			R_RotatePoints(mat_rot_x, verts, current_mo->status.num_verts); 
+			R_RotatePoints(rot_mat_x, verts, current_mo->status.num_verts); 
 		}
 
 		R_TransformModelToWorld(ren, current_mo); 

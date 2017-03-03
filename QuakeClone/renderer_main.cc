@@ -5,33 +5,35 @@
 void R_SetupProjection(Renderer *ren) {
 	r32 aspect_ratio = ren->current_view.aspect_ratio;
 	r32 fov_y = ren->current_view.fov_y;
-	r32 d = (ren->current_view.viewplane_width / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
-	ren->current_view.view_dist = d;
 
+	r32 d = (ren->current_view.viewplane_width / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
+	// direct3d style [0, 1] z-buffer mapping
+	r32 a = ren->current_view.z_far / (ren->current_view.z_far - ren->current_view.z_near);
+	r32 b = -ren->current_view.z_near * a;
 	r32 m00 = 1.0f / aspect_ratio;
 	r32 projection_matrix[16];
 
-	// FIXME: add depth buffer and homogeneous clipping terms
-	projection_matrix[0] = m00;
+	projection_matrix[0] = m00 * d;
 	projection_matrix[4] = 0.0f;
 	projection_matrix[8] = 0.0f;
 	projection_matrix[12] = 0.0f;
 
 	projection_matrix[1] = 0.0f;
-	projection_matrix[5] = 1.0f;
+	projection_matrix[5] = d;
 	projection_matrix[9] = 0.0f;
 	projection_matrix[13] = 0.0f;
 
 	projection_matrix[2] = 0.0f;
 	projection_matrix[6] = 0.0f;
-	projection_matrix[10] = 1.0f;
-	projection_matrix[14] = 0.0f;
+	projection_matrix[10] = a;
+	projection_matrix[14] = b;
 
 	projection_matrix[3] = 0.0f;
 	projection_matrix[7] = 0.0f;
-	projection_matrix[11] = 1.0f / d;
+	projection_matrix[11] = 1.0f;
 	projection_matrix[15] = 0.0f;
 
+	ren->current_view.view_dist = d;
 	memcpy(ren->current_view.projection_matrix, projection_matrix, sizeof(projection_matrix));
 }
 
@@ -502,8 +504,8 @@ void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
 	}
 }
 
-void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_points) {
-	for (int i = 0; i < num_points; ++i) {
+void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
+	for (int i = 0; i < num_verts; ++i) {
 		r32 x = Vector3DotProduct(rot_mat[0], points[i]);
 		r32 y = Vector3DotProduct(rot_mat[1], points[i]);
 		r32 z = Vector3DotProduct(rot_mat[2], points[i]);
@@ -601,7 +603,7 @@ void R_RenderView(Renderer *ren) {
 		ren->current_view.viewplane_width = 2.0f;	// normalized viewplane
 		ren->current_view.viewplane_height = 2.0f;
 
-		ren->current_view.fov_y = 90.0f;
+		ren->current_view.fov_y = 75.0f;
 
 		// FIXME: compute dynamically
 		ren->current_view.z_near = 50.0f;
