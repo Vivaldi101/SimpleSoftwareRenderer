@@ -27,8 +27,8 @@ extern void	In_Activate(b32 active);
 extern void	In_Frame();
 
 // window creation
-#define WINDOW_WIDTH	800
-#define WINDOW_HEIGHT	600
+#define WINDOW_WIDTH	1920
+#define WINDOW_HEIGHT	1080
 extern b32 Vid_CreateWindow(struct Renderer *ren, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 

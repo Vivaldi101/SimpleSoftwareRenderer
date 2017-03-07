@@ -549,8 +549,9 @@ void Com_RunFrame(Platform *pf) {
 		// FIXME: reduce the indirection overhead
 		Vec3 *verts = current_mo->mesh->local_verts->vert_array;
 
-		if (i != 0) {
+		if (1) {
 			R_RotatePoints(rot_mat_x, verts, current_mo->status.num_verts); 
+			R_RotatePoints(rot_mat_z, verts, current_mo->status.num_verts); 
 		}
 
 		R_TransformModelToWorld(ren, current_mo); 
@@ -558,10 +559,13 @@ void Com_RunFrame(Platform *pf) {
 		//current_mo->status.state = R_CullPointAndRadius(current_mo->status.world_pos);			
 		if (!(current_mo->status.state & FCS_CULL_OUT)) {
 			R_TransformWorldToView(ren, current_mo);
-			R_CullBackFaces(ren, current_mo);
+			//R_CullBackFaces(ren, current_mo);
 			R_TransformViewToClip(ren, current_mo);
 			R_TransformClipToScreen(ren, current_mo);
-			R_DrawWireframeMesh(ren, current_mo);
+			if (1) {
+				R_DrawSolidMesh(ren, current_mo);
+				//R_DrawWireframeMesh(ren, current_mo);
+			}
 		}
 	}
 

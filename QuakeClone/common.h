@@ -3,7 +3,7 @@
 #include "shared.h"
 #include "renderer_types.h"
 
-#define MAX_UPS 60
+#define MAX_UPS 120
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
 

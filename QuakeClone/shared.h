@@ -168,6 +168,9 @@ union Vec4 {
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
 
+//inline Vec3 operator <(Vec3 a, Vec3 b) {
+//}
+
 inline Vec3 operator +(Vec3 a, Vec3 b) {
 	Vec3 v = {};
 
@@ -320,14 +323,21 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 
 // util tools
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
-#define XorSwap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
+#define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
+#define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
+#define TypelessSwap(a, b, type)
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
+
+#undef MAX
+#define MAX(a,b)	((a) > (b) ? (a) : (b))
+#undef MIN
+#define MIN(a,b)	((a) < (b) ? (a) : (b))
+
 
 // windows specific
 #ifdef _WIN32
 #include <Windows.h>
 #define InvalidCodePath do { MessageBoxA(0, "Invalid code path", 0, 0); Assert(0); } while(0)
-//#define InvalidDefaultCase do { MessageBoxA(0, "Invalid default case", 0, 0); Assert(0); } while(0)
 #else
 #define InvalidCodePath do { Assert(0); } while(0)
 #endif	// _WIN32

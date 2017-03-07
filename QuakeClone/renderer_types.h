@@ -8,8 +8,8 @@ struct Poly {
 	Vec3 *		vertex_list;	// points to the mesh containing the poly
 
 	int			state;
-	//int			attr;
 	u32			color;
+	//int			attr;
 
 	int			vert_indices[3];
 };

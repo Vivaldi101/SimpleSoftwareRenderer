@@ -1,4 +1,4 @@
-﻿Build started 01/03/2017 19:02:49.
+﻿Build started 07/03/2017 22:16:19.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
@@ -35,4 +35,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.20
+Time Elapsed 00:00:01.23

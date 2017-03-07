@@ -133,7 +133,9 @@ extern void R_TransformModelToWorld(Renderer *ren, MeshObject *md, VertexTransfo
 extern void R_TransformWorldToView(Renderer *ren, MeshObject *md);
 extern void R_TransformViewToClip(Renderer *ren, MeshObject *md);
 extern void R_TransformClipToScreen(Renderer *ren, MeshObject *md);
+
 extern void R_DrawWireframeMesh(Renderer *ren, MeshObject *md);
+extern void R_DrawSolidMesh(Renderer *ren, MeshObject *md);
 
 extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts);
 FrustumClippingState R_CullPointAndRadius(Renderer *ren, Vec3 pt, r32 radius = 0.0f);

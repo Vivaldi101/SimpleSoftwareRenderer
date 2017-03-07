@@ -434,7 +434,7 @@ static void R_DrawLine(Renderer *ren, int x0, int y0, int x1, int y1, u32 color)
 			y2_inc = -pitch;
 		}
 
-		// X- or Y-dominate line
+		// x- or y-dominate line
 		if (dx >= dy) {
 			x2_inc = 0;
 			y1_inc = 0;
@@ -448,17 +448,16 @@ static void R_DrawLine(Renderer *ren, int x0, int y0, int x1, int y1, u32 color)
 			num_pixels	= dy;
 			add			= dx;
 		}
-		numerator = denominator / 2;
 		u32 *line = (u32*)ren->vid_sys.buffer;
 		line = (line + (pitch * y0)) + x0;
 
-		for (int i = 0; i < num_pixels; ++i) {
+		for (int i = 0; i <= num_pixels; ++i) {
 			*line = color;
 			numerator += add;
 			if (numerator >= denominator) {
 				numerator -= denominator;
-				line += x2_inc;	// Inc x in case of Y-dominant line
-				line += y2_inc; // Inc y in case of X-dominant line
+				line += x2_inc;	// inc x in case of y-dominant line
+				line += y2_inc; // inc y in case of x-dominant line
 			}
 			line += x1_inc;
 			line += y1_inc;
@@ -466,7 +465,47 @@ static void R_DrawLine(Renderer *ren, int x0, int y0, int x1, int y1, u32 color)
 	}
 }
 
-// renders only triangles 
+static void R_DrawFlatBottomTriangle(Renderer *ren, r32 p0_x, r32 p0_y, r32 p1_x, r32 p1_y, r32 p2_x, r32 p2_y, Poly *poly) {
+	if (p1_x < p2_x) {
+		AnySwap(p1_x, p2_x, r32);
+	}
+	r32 dxy_left = (r32)(p2_x - p0_x) / (r32)(p2_y - p0_y);
+	r32 dxy_right = (r32)(p1_x - p0_x) / (r32)(p1_y - p0_y);
+
+	int cp0_y = (int)ceil(p0_y);
+	int cp2_y = (int)(ceil(p2_y) - 1);
+	r32 xs = p0_x;
+	r32 xe = p0_x;
+	xs = xs + ((cp0_y - p0_y) * dxy_left);
+	xe = xe + ((cp0_y - p0_y) * dxy_right);
+	for (int y = cp0_y; y <= cp2_y; ++y) {
+		R_DrawLine(ren, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, poly->color); 
+		xs += dxy_left;
+		xe += dxy_right;
+	}
+}
+
+static void R_DrawFlatTopTriangle(Renderer *ren, r32 p0_x, r32 p0_y, r32 p1_x, r32 p1_y, r32 p2_x, r32 p2_y, Poly *poly) {
+	if (p1_x < p0_x) {
+		AnySwap(p1_x, p0_x, r32);
+	}
+	r32 dxy_left = (r32)(p2_x - p0_x) / (r32)(p2_y - p0_y);
+	r32 dxy_right = (r32)(p2_x - p1_x) / (r32)(p2_y - p1_y);
+
+	int cp0_y = (int)ceil(p0_y);
+	int cp2_y = (int)(ceil(p2_y) - 1);
+	r32 xs = p2_x;
+	r32 xe = p2_x;
+	xs = xs - ((cp0_y - p0_y) * dxy_left);
+	xe = xe - ((cp0_y - p0_y) * dxy_right);
+	for (int y = cp2_y; y >= cp0_y; --y) {
+		R_DrawLine(ren, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, poly->color); 
+		xs -= dxy_left;
+		xe -= dxy_right;
+	}
+}
+
+// FIXME: move out of the main rendering file into a different one
 void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
 	int num_polys = md->status.num_polys;
 	Poly *polys = md->mesh->polys->poly_array;
@@ -503,6 +542,71 @@ void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
 				   polys[i].color);
 	}
 }
+
+#if 1
+void R_DrawSolidMesh(Renderer *ren, MeshObject *md) {
+	int num_polys = md->status.num_polys;
+	Poly *polys = md->mesh->polys->poly_array;
+	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+
+	for (int i = 0; i < num_polys; ++i) {
+		if ((polys[i].state & POLY_STATE_BACKFACE)) {
+			continue;
+		}
+
+		int v0 = polys[i].vert_indices[0];
+		int v1 = polys[i].vert_indices[1];
+		int v2 = polys[i].vert_indices[2];
+
+		r32 p0_x = trans_verts[v0].v.x;
+		r32 p0_y = trans_verts[v0].v.y;
+
+		r32 p1_x = trans_verts[v1].v.x;
+		r32 p1_y = trans_verts[v1].v.y;
+
+		r32 p2_x = trans_verts[v2].v.x;
+		r32 p2_y = trans_verts[v2].v.y;
+
+		// sort p0, p1, p2 in ascending y order
+		if (p1_y < p0_y) {
+			AnySwap(p1_x, p0_x, r32);
+			AnySwap(p1_y, p0_y, r32);
+		} 
+
+		// now we know that p0 and p1 are in order 
+		if (p2_y < p0_y) {
+			AnySwap(p2_x, p0_x, r32);
+			AnySwap(p2_y, p0_y, r32);
+		} 
+
+		if (p2_y < p1_y) {
+			AnySwap(p2_x, p1_x, r32);
+			AnySwap(p2_y, p1_y, r32);
+		} 
+
+		if (p0_y == p1_y) {
+			// flat top
+			R_DrawFlatTopTriangle(ren, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, &polys[i]);
+		} else if (p1_y == p2_y) {
+			// flat bottom
+			R_DrawFlatBottomTriangle(ren, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, &polys[i]);
+		} else {
+			// m = (y - y0) / (x - x0)
+			// m(x - x0) = y - y0
+			// mx - mx0 = y - y0
+			// x - x0 = (y - y0) / m
+			// x = (y - y0) / m + x0
+			// x derived from the point-slope form of the line
+			r32 m = (p2_y - p0_y) / (p2_x - p0_x);
+			r32 x = (p1_y - p0_y) / m + p0_x;
+			//x = (r32)((int)(x + 0.5f));
+			R_DrawFlatBottomTriangle(ren, p0_x, p0_y, x, p1_y, p1_x, p1_y, &polys[i]);
+			R_DrawFlatTopTriangle(ren, p1_x, p1_y, x, p1_y, p2_x, p2_y, &polys[i]);
+		}
+	}
+}
+#endif
+
 
 void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {

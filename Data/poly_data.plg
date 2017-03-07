@@ -2,25 +2,25 @@
 # simple cube, 8 vertices, 12 polygons
 tri 8 12
 # vertex list in x y z format
-10 10 10
--10 10 10
--10 10 -10
-10 10 -10
-10 -10 10
--10 -10 10
--10 -10 -10
-10 -10 -10
+10 10 5
+-10 10 5
+-10 10 -5
+10 10 -5
+10 -10 5
+-10 -10 5
+-10 -10 -5
+10 -10 -5
 # polygon list
 # each poly has 3 vertices
-0xce0f 3 0 1 2
-0xce0f 3 0 2 3
-0xce0f 3 0 7 4
-0xce0f 3 0 3 7
-0xce0f 3 4 7 6
-0xce0f 3 4 6 5
-0xce0f 3 1 6 2
-0xce0f 3 1 5 6
-0xce0f 3 3 6 7
-0xce0f 3 3 2 6
-0xce0f 3 0 4 5
-0xce0f 3 0 5 1
+0xcedd 3 0 1 2
+0xcedd 3 0 2 3
+0xcedd 3 0 7 4
+0xcedd 3 0 3 7
+0xcedd 3 4 7 6
+0xcedd 3 4 6 5
+0xcedd 3 1 6 2
+0xcedd 3 1 5 6
+0xcedd 3 3 6 7
+0xcedd 3 3 2 6
+0xcedd 3 0 4 5
+0xcedd 3 0 5 1

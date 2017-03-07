@@ -41,7 +41,7 @@ b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *
 
 	vid_sys.win_handles.window = CreateWindowEx(ex_style,
 												WINDOW_CLASS_NAME,
-										  		"QC Window",
+										  		"Test",
 										  		style_bits,
 										  		x, y, w, h,
 										  		0,
