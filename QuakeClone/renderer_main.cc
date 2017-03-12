@@ -119,7 +119,6 @@ void R_SetupFrustum(Renderer *ren) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		frustum[i].unit_normal = Vector3Normalize(frustum[i].unit_normal);
 		frustum[i].dist = Vector3DotProduct(frustum[i].unit_normal, origin);
-		frustum[i].type = PLANE_NON_AXIAL;
 	}
 
 	memcpy(&ren->current_view.frustum, &frustum, sizeof(frustum));
@@ -451,7 +450,7 @@ static void R_DrawLine(Renderer *ren, int x0, int y0, int x1, int y1, u32 color)
 		u32 *line = (u32*)ren->vid_sys.buffer;
 		line = (line + (pitch * y0)) + x0;
 
-		for (int i = 0; i <= num_pixels; ++i) {
+		for (int i = 0; i < num_pixels; ++i) {
 			*line = color;
 			numerator += add;
 			if (numerator >= denominator) {
@@ -469,11 +468,13 @@ static void R_DrawFlatBottomTriangle(Renderer *ren, r32 p0_x, r32 p0_y, r32 p1_x
 	if (p1_x < p2_x) {
 		AnySwap(p1_x, p2_x, r32);
 	}
-	r32 dxy_left = (r32)(p2_x - p0_x) / (r32)(p2_y - p0_y);
-	r32 dxy_right = (r32)(p1_x - p0_x) / (r32)(p1_y - p0_y);
 
 	int cp0_y = (int)ceil(p0_y);
 	int cp2_y = (int)(ceil(p2_y) - 1);
+
+	r32 dxy_left = (r32)(p2_x - p0_x) / (r32)(p2_y - p0_y);
+	r32 dxy_right = (r32)(p1_x - p0_x) / (r32)(p1_y - p0_y);
+
 	r32 xs = p0_x;
 	r32 xe = p0_x;
 	xs = xs + ((cp0_y - p0_y) * dxy_left);
@@ -489,19 +490,21 @@ static void R_DrawFlatTopTriangle(Renderer *ren, r32 p0_x, r32 p0_y, r32 p1_x, r
 	if (p1_x < p0_x) {
 		AnySwap(p1_x, p0_x, r32);
 	}
-	r32 dxy_left = (r32)(p2_x - p0_x) / (r32)(p2_y - p0_y);
-	r32 dxy_right = (r32)(p2_x - p1_x) / (r32)(p2_y - p1_y);
 
 	int cp0_y = (int)ceil(p0_y);
 	int cp2_y = (int)(ceil(p2_y) - 1);
-	r32 xs = p2_x;
-	r32 xe = p2_x;
-	xs = xs - ((cp0_y - p0_y) * dxy_left);
-	xe = xe - ((cp0_y - p0_y) * dxy_right);
-	for (int y = cp2_y; y >= cp0_y; --y) {
+
+	r32 dxy_left = (r32)(p2_x - p0_x) / (r32)(p2_y - p0_y);
+	r32 dxy_right = (r32)(p2_x - p1_x) / (r32)(p2_y - p1_y);
+
+	r32 xs = p0_x;
+	r32 xe = p1_x;
+	xs = xs + ((cp0_y - p0_y) * dxy_left);
+	xe = xe + ((cp0_y - p0_y) * dxy_right);
+	for (int y = cp0_y; y <= cp2_y; ++y) {
 		R_DrawLine(ren, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, poly->color); 
-		xs -= dxy_left;
-		xe -= dxy_right;
+		xs += dxy_left;
+		xe += dxy_right;
 	}
 }
 
@@ -591,6 +594,8 @@ void R_DrawSolidMesh(Renderer *ren, MeshObject *md) {
 			// flat bottom
 			R_DrawFlatBottomTriangle(ren, p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, &polys[i]);
 		} else {
+			// split the triangle into 2 parts
+
 			// m = (y - y0) / (x - x0)
 			// m(x - x0) = y - y0
 			// mx - mx0 = y - y0
@@ -599,7 +604,6 @@ void R_DrawSolidMesh(Renderer *ren, MeshObject *md) {
 			// x derived from the point-slope form of the line
 			r32 m = (p2_y - p0_y) / (p2_x - p0_x);
 			r32 x = (p1_y - p0_y) / m + p0_x;
-			//x = (r32)((int)(x + 0.5f));
 			R_DrawFlatBottomTriangle(ren, p0_x, p0_y, x, p1_y, p1_x, p1_y, &polys[i]);
 			R_DrawFlatTopTriangle(ren, p1_x, p1_y, x, p1_y, p2_x, p2_y, &polys[i]);
 		}

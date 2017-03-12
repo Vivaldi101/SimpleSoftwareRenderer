@@ -1,17 +1,23 @@
 #ifndef COMMON_H
 #define COMMON_H
-#include "shared.h"
+#include "shared.h"		// FIXME: merge shared and common.h into one
 #include "renderer_types.h"
+#include "keys.h"
 
 #define MAX_UPS 120
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
+struct Input {
+	Key	keys[MAX_NUM_KEYS];
+};
 
 struct Platform {
 	struct Renderer *		renderer;
-	struct ListAllocator *	list_allocator;
-	struct MemoryStack *	perm_data;
-	struct MemoryStack *	temp_data; // offset into the perm_data			
+	ListAllocator *			list_allocator;
+	// FIXME: get the stack allocator from other project
+	MemoryStack *			perm_data;
+	MemoryStack *			temp_data; 
+	Input		*			input;
 };
 
 enum SysEventType {
@@ -27,8 +33,8 @@ struct SysEvent {
 	int					ev_time;
 	enum SysEventType	ev_type;
 	int					ev_value, ev_value2;
-	int					ev_data_len;			// bytes of data pointed to by evPtr, for journaling
-	void *				ev_data;				// this must be manually freed if not NULL
+	int					ev_data_len;			
+	void *				ev_data;				
 };
 
 // Console
@@ -40,7 +46,7 @@ extern int Sys_GetMilliseconds();
 static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
-extern Platform Com_InitEngine(void *hinstance, void *wndproc);
+extern Platform Com_Init(void *hinstance, void *wndproc);
 extern void Com_RunFrame(Platform *pf);
 extern void Com_Quit();
 void *Allocate(ListAllocator *la, size_t num_bytes);
@@ -51,5 +57,7 @@ extern void Sys_GenerateEvents();
 extern struct SysEvent Com_GetEvent();
 extern struct SysEvent Sys_GetEvent();
 
+// Input
+extern void IN_ClearKeyStates(Key *keys);
 
 #endif	// Header guard

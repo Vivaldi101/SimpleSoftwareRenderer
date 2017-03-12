@@ -75,19 +75,21 @@ static void ParseCommandLine(char *cmd_line) {
 	}
 }
 
-// System event queue
+//
+// system event queue
+//
 #define	MAX_SYS_QUED_EVENTS		 256
 #define	MASK_SYS_QUED_EVENTS	(MAX_SYS_QUED_EVENTS - 1)
 
 static SysEvent global_sys_event_queue[MAX_SYS_QUED_EVENTS];
-static int global_sys_event_head, global_sys_eventail;
+static int global_sys_event_head, global_sys_event_tail;
 
 void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int data_len, void *data) {
 	SysEvent *ev = &global_sys_event_queue[global_sys_event_head & MASK_SYS_QUED_EVENTS];
 
-	if (global_sys_event_head - global_sys_eventail >= MAX_SYS_QUED_EVENTS) {
+	if (global_sys_event_head - global_sys_event_tail >= MAX_SYS_QUED_EVENTS) {
 		Sys_Print("Overflow in system events\n");
-		global_sys_eventail++;
+		global_sys_event_tail++;
 	}
 
 	global_sys_event_head++;
@@ -107,9 +109,9 @@ void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int dat
 SysEvent Sys_GetEvent() {
 	SysEvent	se;
 
-	if (global_sys_event_head > global_sys_eventail) {
-		global_sys_eventail++;
-		return global_sys_event_queue[(global_sys_eventail - 1) & MASK_SYS_QUED_EVENTS];
+	if (global_sys_event_head > global_sys_event_tail) {
+		global_sys_event_tail++;
+		return global_sys_event_queue[(global_sys_event_tail - 1) & MASK_SYS_QUED_EVENTS];
 	}
 
 	// create an empty event 
@@ -186,11 +188,10 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	timeBeginPeriod(1);
 	Sys_GetMilliseconds();
 
-	Platform pf = Com_InitEngine(global_win_vars.hinstance, global_win_vars.wndproc);
+	Platform pf = Com_Init(global_win_vars.hinstance, global_win_vars.wndproc);
+
 
 	for (;;) {
-		// run 1 frame of input
-		//In_Frame();
 		// run 1 frame of update and render
 		Com_RunFrame(&pf);
 	}

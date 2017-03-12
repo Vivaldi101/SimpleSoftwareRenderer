@@ -1,37 +1,31 @@
 #include "keys.h"
-Key	global_keys[MAX_KEYS];
-b32		global_any_key_down;
+b32	global_any_key_down;
 
-void IN_ClearKeyStates() {
-	//global_any_key_down = qfalse;
-
-	for (int i = 0; i < MAX_KEYS; ++i) {
-		if (global_keys[i].down) {
-			//CL_KeyEvent(i, qfalse, 0);
-		}
-		global_keys[i].down = 0;
-		global_keys[i].repeats = 0;
+void IN_ClearKeyStates(Key *keys) {
+	for (int i = 0; i < MAX_NUM_KEYS; ++i) {
+		keys[i].down = 0;
+		keys[i].repeats = 0;
 	}
 }
 
-void IN_HandleKeyEvent(int key, b32 down, u32 time) {
-	char	*kb;
+void IN_HandleKeyEvent(Key *keys, int key, b32 down, u32 time) {
+	//char	*kb;
 	char	cmd[1024];
 
 	// update auto-repeat status and BUTTON_ANY status
-	global_keys[key].down = down;
+	keys[key].down = down;
 
 	if (down) {
-		global_keys[key].repeats++;
-		if ( global_keys[key].repeats == 1) {
-			global_any_key_down++;
+		keys[key].repeats++;
+		if ( keys[key].repeats == 1) {
+			//global_any_key_down++;
 		}
 	} else {
-		global_keys[key].repeats = 0;
-		global_any_key_down--;
-		if (global_any_key_down < 0) {
-			global_any_key_down = 0;
-		}
+		keys[key].repeats = 0;
+		//global_any_key_down--;
+		//if (global_any_key_down < 0) {
+		//	global_any_key_down = 0;
+		//}
 	}
 
 #if 0

@@ -54,9 +54,6 @@
     <ClCompile Include="win_console.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="win_input.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="win_main.cc">
       <Filter>src</Filter>
     </ClCompile>

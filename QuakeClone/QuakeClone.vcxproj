@@ -138,7 +138,6 @@
     <ClCompile Include="renderer_main.cc" />
     <ClCompile Include="render_queue.cc" />
     <ClCompile Include="win_console.cc" />
-    <ClCompile Include="win_input.cc" />
     <ClCompile Include="win_shared.cc" />
     <ClCompile Include="win_main.cc" />
     <ClCompile Include="win_main_window.cc" />

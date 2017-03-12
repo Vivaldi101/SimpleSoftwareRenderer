@@ -286,12 +286,17 @@ struct Orientation {
 	Vec3	dir;			// look at vector in uvn system, or euler angles
 };
 
-struct Plane {
-	Vec3	unit_normal;
-	r32		dist;
-	byte	type;			// for fast side tests: 0,1,2 = axial, 3 = nonaxial
-	byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
-	byte	pad[2];			// for 4 byte alignment
+union Plane {
+	struct {
+		Vec3	unit_normal;
+		r32		dist;
+	};
+	struct {
+		r32		a, b, c, d;
+	};
+	//byte	type;			// for fast side tests: 0,1,2 = axial, 3 = nonaxial
+	//byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
+	//byte	pad[2];			// for 4 byte alignment
 };
 
 /*
@@ -302,12 +307,24 @@ GENERAL
 ==============================================================
 */
 
+//
 // stack based allocator
+//
 
 struct MemoryStack {
 	byte *	base_ptr;
 	size_t	max_size;
 	size_t	bytes_used;
+};
+
+//
+// fixed size allocator
+//
+
+struct ListAllocator {
+	byte *	data;
+	size_t	max_size;
+	int		num_rows;
 };
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
@@ -322,6 +339,8 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #define PopArray(arena, count, type) (_Pop_(arena, (count) * sizeof(type)))  
 
 // util tools
+#define CheckZeroArray(a, size)	((*(int *)(a) == 0) && (*((int *)(a) + (size - 1)) == 0)) 
+//#define CheckZeroArray(a, size)	(((a)[0] == 0) && ((a)[(size) - 1] == 0)) 
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
 #define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
 #define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
@@ -338,8 +357,10 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #ifdef _WIN32
 #include <Windows.h>
 #define InvalidCodePath do { MessageBoxA(0, "Invalid code path", 0, 0); Assert(0); } while(0)
+#define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
 #else
 #define InvalidCodePath do { Assert(0); } while(0)
+#define OutOfMemory do { Assert(0); } while(0)
 #endif	// _WIN32
 
 #endif	// Header guard

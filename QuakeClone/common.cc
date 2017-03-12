@@ -24,7 +24,9 @@ static inline u32 NextPO2(u32 v) {
 }
 
 
+//
 // fixed size allocator
+//
 
 #define BYTE_INDEX_16	1		// index of first 16-byte payload
 #define BYTE_INDEX_32	18		// index of first 16-byte payload
@@ -37,17 +39,12 @@ static inline u32 NextPO2(u32 v) {
 
 #define BLOCK_STATE(data, index)	((data)[(index) - 1])	// check if empty block
 
+// ids for blocks
 #define FREE_BLOCK 0xfb
 #define ALLOCATED_BLOCK 0xab
+
 #define LIST_ROW_SIZE	4088	// size of a row of entries in table
 
-struct ListAllocator {
-	byte *	data;
-	size_t	max_size;
-	int		num_rows;
-	union {
-	} type;
-};
 
 static void InitColumn(ListAllocator *list, int index) {
 	int num_rows = list->num_rows;
@@ -187,11 +184,13 @@ static ListAllocator *InitListMemory(size_t num_bytes) {
 	return la;
 }
 
+//
 // stack based allocator
+//
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
 void *_Push_(MemoryStack *ms, size_t num_bytes) {
-	Assert((ms->bytes_used + num_bytes) <= ms->max_size);
+	CheckMemory((ms->bytes_used + num_bytes) <= ms->max_size);
 	void *ptr = ms->base_ptr + ms->bytes_used;
 	ms->bytes_used += num_bytes;
 
@@ -199,7 +198,7 @@ void *_Push_(MemoryStack *ms, size_t num_bytes) {
 }
 
 void _Pop_(MemoryStack *ms, size_t num_bytes) {
-	Assert(((int)ms->bytes_used - (int)num_bytes) >= 0);
+	CheckMemory(((int)ms->bytes_used - (int)num_bytes) >= 0);
 	memset(ms->base_ptr + ms->bytes_used - num_bytes, 0, num_bytes);
 	ms->bytes_used -= num_bytes;
 }
@@ -224,8 +223,6 @@ static int global_game_time_residual;
 static int global_game_frame;
 
 // just for prototyping purposes
-//static r32 up_down = 0.0f;
-
 static r32 yaw = 0.0f;
 static b32 forward;
 static b32 backward;
@@ -237,8 +234,9 @@ static Vec3 rot_mat_y[3];
 
 static b32 paused;
 static b32 reset;
+static b32 wireframe;
 
-Platform Com_InitEngine(void *hinstance, void *wndproc) {
+Platform Com_Init(void *hinstance, void *wndproc) {
 	Platform pf = {};
 	MeshObject *mo;
 	MeshObject *player_mo;
@@ -250,6 +248,9 @@ Platform Com_InitEngine(void *hinstance, void *wndproc) {
 
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	pf.temp_data = InitStackMemory(MEGABYTES(64));
+	pf.input = PushStruct(pf.perm_data, Input);
+	IN_ClearKeyStates(pf.input->keys);
+
 	R_Init(&pf, hinstance, wndproc);
 
 
@@ -261,7 +262,6 @@ Platform Com_InitEngine(void *hinstance, void *wndproc) {
 	player_mo->mesh->polys = (PolyGroup *)Allocate(pf.list_allocator, sizeof(PolyGroup));
 
 	// FIXME: move file api elsewhere
-	// just for prototyping purposes
 	// FIXME: maybe replace the CRT file i/o with win32 api
 	FILE *fp;
 	fopen_s(&fp, "poly_data.plg", "r");
@@ -277,7 +277,7 @@ Platform Com_InitEngine(void *hinstance, void *wndproc) {
 	PLG_LoadMeshObject(player_mo, &fp, world_pos);
 	memcpy(&pf.renderer->back_end->entities[pf.renderer->back_end->num_entities++], player_mo, sizeof(MeshObject));
 
-	int num_entities = 5;
+	const int num_entities = 5;
 	for (int i = 0; i < num_entities; ++i) {
 		// just for prototyping purposes
 		mo = (MeshObject *)Allocate(pf.list_allocator, sizeof(MeshObject));
@@ -288,6 +288,7 @@ Platform Com_InitEngine(void *hinstance, void *wndproc) {
 
 
 		// FIXME: move elsewhere
+		// position the objects randomly
 		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
 		PLG_LoadMeshObject(mo, &fp, world_pos);
 
@@ -305,6 +306,7 @@ Platform Com_InitEngine(void *hinstance, void *wndproc) {
 
 static void ProcessEvent(SysEvent se) {
 
+	// FIXME: move input handling elsewhere
 	// ALL of this is just for prototyping purposes
 	if (se.ev_value == VK_ESCAPE) {
 		//Sys_Print(se.ev_value);
@@ -315,7 +317,10 @@ static void ProcessEvent(SysEvent se) {
 		paused = !paused;
 	}
 
-	// FIXME: move input handling elsewhere
+	if (se.ev_value == VK_SPACE) {
+		wireframe = !wireframe;
+	} 
+
 	if (se.ev_value == VK_UP) {
 		forward = true;
 	} 
@@ -341,7 +346,7 @@ void Com_RunEventLoop() {
 	for (;;) {
 		se = Com_GetEvent();
 
-		// if no more events 
+		// if no more events bail out
 		if (se.ev_type == SET_NONE) {
 			return;
 		}
@@ -360,7 +365,7 @@ void Com_RunFrame(Platform *pf) {
 
 	static b32 first_run = true;
 
-	// FIXME: atm this is unused
+	// FIXME: atm this is unused, assuming that the hw can handle the frame rate
 	int num_game_frames_to_run = 0;
 
 	// test stuff
@@ -382,7 +387,7 @@ void Com_RunFrame(Platform *pf) {
 
 		for (;;) {
 			// how much time to wait before running the next frame
-			if (global_game_time_residual < MSEC_PER_SIM) {		// should be 16 or 33 
+			if (global_game_time_residual < MSEC_PER_SIM) {		
 				break;
 			}
 			global_game_time_residual -= MSEC_PER_SIM;
@@ -550,8 +555,8 @@ void Com_RunFrame(Platform *pf) {
 		Vec3 *verts = current_mo->mesh->local_verts->vert_array;
 
 		if (1) {
-			R_RotatePoints(rot_mat_x, verts, current_mo->status.num_verts); 
 			R_RotatePoints(rot_mat_z, verts, current_mo->status.num_verts); 
+			R_RotatePoints(rot_mat_x, verts, current_mo->status.num_verts); 
 		}
 
 		R_TransformModelToWorld(ren, current_mo); 
@@ -559,12 +564,13 @@ void Com_RunFrame(Platform *pf) {
 		//current_mo->status.state = R_CullPointAndRadius(current_mo->status.world_pos);			
 		if (!(current_mo->status.state & FCS_CULL_OUT)) {
 			R_TransformWorldToView(ren, current_mo);
-			//R_CullBackFaces(ren, current_mo);
+			R_CullBackFaces(ren, current_mo);
 			R_TransformViewToClip(ren, current_mo);
 			R_TransformClipToScreen(ren, current_mo);
-			if (1) {
+			if (wireframe) {
+				R_DrawWireframeMesh(ren, current_mo);
+			} else {
 				R_DrawSolidMesh(ren, current_mo);
-				//R_DrawWireframeMesh(ren, current_mo);
 			}
 		}
 	}
@@ -594,16 +600,18 @@ void Com_Quit() {
 	Sys_Quit();
 }
 
+//
 // common event queue
+//
 #define	MAX_COM_QUED_EVENTS 1024
 
 static SysEvent global_com_event_queue[MAX_COM_QUED_EVENTS];
-static int global_com_event_head, global_com_eventail;
+static int global_com_event_head, global_com_even_tail;
 
 SysEvent Com_GetEvent() {
-	if (global_com_event_head > global_com_eventail) {
-		global_com_eventail++;
-		return global_com_event_queue[(global_com_eventail - 1) & (MAX_COM_QUED_EVENTS - 1)];
+	if (global_com_event_head > global_com_even_tail) {
+		global_com_even_tail++;
+		return global_com_event_queue[(global_com_even_tail - 1) & (MAX_COM_QUED_EVENTS - 1)];
 	}
 
 	return Sys_GetEvent();
