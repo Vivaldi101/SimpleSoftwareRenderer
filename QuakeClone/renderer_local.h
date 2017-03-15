@@ -48,6 +48,8 @@ enum {
 	FRUSTUM_PLANE_RIGHT,
 	FRUSTUM_PLANE_TOP,
 	FRUSTUM_PLANE_BOTTOM,
+	//FRUSTUM_PLANE_FAR,
+	//FRUSTUM_PLANE_NEAR,
 
 	NUM_FRUSTUM_PLANES
 };
@@ -75,7 +77,7 @@ struct ViewSystem {
 	r32				screen_matrix[4][4];
 
 	Orientation		world_orientation;
-	Orientation		debug_orientation;
+	//Orientation		debug_orientation;
 	Vec3			target;
 
 	r32				viewport_x,		viewport_y;

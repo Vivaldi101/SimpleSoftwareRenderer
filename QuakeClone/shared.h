@@ -1,7 +1,7 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#include <cstdint>
+#include <stdint.h>
 #include <stdio.h>		// FIXME: remove at some point
 #include <string.h>		// FIXME: remove at some point
 #include <math.h>		// FIXME: remove at some point
@@ -286,14 +286,9 @@ struct Orientation {
 	Vec3	dir;			// look at vector in uvn system, or euler angles
 };
 
-union Plane {
-	struct {
-		Vec3	unit_normal;
-		r32		dist;
-	};
-	struct {
-		r32		a, b, c, d;
-	};
+struct Plane {
+	Vec3	unit_normal;
+	r32		dist;
 	//byte	type;			// for fast side tests: 0,1,2 = axial, 3 = nonaxial
 	//byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
 	//byte	pad[2];			// for 4 byte alignment
@@ -321,7 +316,7 @@ struct MemoryStack {
 // fixed size allocator
 //
 
-struct ListAllocator {
+struct FixedSizedAllocator {
 	byte *	data;
 	size_t	max_size;
 	int		num_rows;

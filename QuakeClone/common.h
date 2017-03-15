@@ -13,7 +13,7 @@ struct Input {
 
 struct Platform {
 	struct Renderer *		renderer;
-	ListAllocator *			list_allocator;
+	FixedSizedAllocator *			list_allocator;
 	// FIXME: get the stack allocator from other project
 	MemoryStack *			perm_data;
 	MemoryStack *			temp_data; 
@@ -49,8 +49,8 @@ static inline int Com_ModifyFrameMsec(int frame_msec);
 extern Platform Com_Init(void *hinstance, void *wndproc);
 extern void Com_RunFrame(Platform *pf);
 extern void Com_Quit();
-void *Allocate(ListAllocator *la, size_t num_bytes);
-void Free(ListAllocator *la, void **ptr);
+void *Allocate(FixedSizedAllocator *la, size_t num_bytes);
+void Free(FixedSizedAllocator *la, void **ptr);
 
 // Events
 extern void Sys_GenerateEvents();

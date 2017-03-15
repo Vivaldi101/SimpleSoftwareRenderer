@@ -46,7 +46,7 @@ static inline u32 NextPO2(u32 v) {
 #define LIST_ROW_SIZE	4088	// size of a row of entries in table
 
 
-static void InitColumn(ListAllocator *list, int index) {
+static void InitColumn(FixedSizedAllocator *list, int index) {
 	int num_rows = list->num_rows;
 	for (int i = 0; i < num_rows; ++i) {
 		BLOCK_STATE(list->data, index) = FREE_BLOCK;
@@ -54,13 +54,13 @@ static void InitColumn(ListAllocator *list, int index) {
 	}
 }
 
-static void DestroyListAllocator(ListAllocator *list) {
+static void DestroyListAllocator(FixedSizedAllocator *list) {
 	list->num_rows = 0;
 	list->max_size = 0;
 	VirtualFree(list->data, 0, MEM_RELEASE);
 }
 
-static int SearchColumn(ListAllocator *list, int index) {
+static int SearchColumn(FixedSizedAllocator *list, int index) {
 	int num_rows = list->num_rows;
 
 	for (int i = 0; i < num_rows; ++i) {
@@ -75,7 +75,7 @@ static int SearchColumn(ListAllocator *list, int index) {
 	return 0;
 }
 
-void *Allocate(ListAllocator *la, size_t num_bytes) {
+void *Allocate(FixedSizedAllocator *la, size_t num_bytes) {
 	int index;
 
 	if (!la->data) {
@@ -124,7 +124,7 @@ void *Allocate(ListAllocator *la, size_t num_bytes) {
 	return 0;
 }
 
-void Free(ListAllocator *la, void **ptr) {
+void Free(FixedSizedAllocator *la, void **ptr) {
 	int index = (int)((byte *)(*ptr) - la->data);
 	index = index % LIST_ROW_SIZE;
 	*ptr = 0;
@@ -160,8 +160,8 @@ void Free(ListAllocator *la, void **ptr) {
 	}
 }
 
-static ListAllocator *InitListMemory(size_t num_bytes) {
-	ListAllocator *la = (ListAllocator *)VirtualAlloc(0, num_bytes + sizeof(ListAllocator), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+static FixedSizedAllocator *InitListMemory(size_t num_bytes) {
+	FixedSizedAllocator *la = (FixedSizedAllocator *)VirtualAlloc(0, num_bytes + sizeof(FixedSizedAllocator), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 	if (!la) {
 		Sys_Print("Failed to init the fixed sized allocator\n");
@@ -170,7 +170,7 @@ static ListAllocator *InitListMemory(size_t num_bytes) {
 
 	la->max_size = num_bytes;
 	la->num_rows = (int)num_bytes / LIST_ROW_SIZE;
-	la->data = (byte *)la + sizeof(ListAllocator);
+	la->data = (byte *)la + sizeof(FixedSizedAllocator);
 
 	InitColumn(la, BYTE_INDEX_16);
 	InitColumn(la, BYTE_INDEX_32);
@@ -561,7 +561,9 @@ void Com_RunFrame(Platform *pf) {
 
 		R_TransformModelToWorld(ren, current_mo); 
 
-		//current_mo->status.state = R_CullPointAndRadius(current_mo->status.world_pos);			
+		if (i != 0) {
+			current_mo->status.state = R_CullPointAndRadius(ren, current_mo->status.world_pos);			
+		}
 		if (!(current_mo->status.state & FCS_CULL_OUT)) {
 			R_TransformWorldToView(ren, current_mo);
 			R_CullBackFaces(ren, current_mo);

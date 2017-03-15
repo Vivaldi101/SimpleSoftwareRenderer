@@ -94,3 +94,23 @@ void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]) {
 	out[3][3] = a30*b03 + a31*b13 + a32*b23 + a33*b33;
 }
 
+void MatTranspose(const float in[16], float out[16]) {
+	for ( int i = 0; i < 4; i++ ) {
+		for ( int j = 0; j < 4; j++ ) {
+			out[i*4+j] = in[j*4+i];
+		}
+	}
+}
+
+//void Mat4x4MulSlow(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]) {
+//	for (int i = 0; i < n; ++i {
+//		for (int j = 0; j < n; ++j) {
+//			sum = 0.0;
+//			for (int k = 0; k < n; ++k) {
+//				sum += A[i][k]*B[k][j];
+//				C[i][j] += sum;
+//			}
+//		}
+//	}
+//}
+

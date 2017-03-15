@@ -28,6 +28,7 @@ void Sys_Sleep(DWORD ms) {
 	Sleep(ms);
 }
 
+// from Raymond Chen's blog
 void Sys_ToggleFullscreen(HWND window) {
 	DWORD style = GetWindowLong(window, GWL_STYLE);
 	if (style & WS_OVERLAPPEDWINDOW) {
