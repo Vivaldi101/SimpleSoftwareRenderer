@@ -72,9 +72,6 @@ static int MapKey (int key) {
 #endif
 
 LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) {
-	//u64 key;
-	//b32 was_key_down;
-	//b32 is_key_down;
 	switch (msg) {
 		case WM_CREATE: {
 			global_win_vars.hwnd = window;
@@ -83,42 +80,22 @@ LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) 
 			global_win_vars.hwnd = 0;
 		} break;
 
-		case WM_SYSKEYDOWN:
-		case WM_SYSKEYUP:
-		case WM_KEYDOWN:
-		case WM_KEYUP: {
-			u64 key	= wparam;
-			b32 was_key_down = ((1 << 30) & lparam) != 0;
-			b32 is_key_down = ((1 << 31) & lparam) == 0;
-			b32 alt_down = lparam & (1 << 29);
-			if (is_key_down != was_key_down) {
-				if ((key == VK_RETURN) && alt_down) {
-					Sys_ToggleFullscreen(window);
-				}
-				Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)key, 0, 0, 0);
-			}
-		}
+	case WM_SYSKEYDOWN:
+		// fall through 
+		// FIXME: not sure about the int casts
+	case WM_KEYDOWN:
+		Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, true, 0, 0);
+		break;
 
-		//case WM_KEYUP: {
-		//	key	= wparam;
-		//	was_key_down = ((1 << 30) & lparam) != 0;
-		//	is_key_down = ((1 << 31) & lparam) == 0;
+	case WM_SYSKEYUP:
+	case WM_KEYUP:
+		Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, false, 0, 0);
+		break;
 
-		//	if (was_key_down) {
-		//		b32 alt_down = lparam & (1 << 29);
-		//		if ((key == VK_RETURN) && alt_down) {
-		//			Sys_ToggleFullscreen(window);
-		//		}
-		//		Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)key, 0, 0, 0);
-		//	}
-
-		//} break;
-
-		//case WM_CHAR: {
-		//	Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
-		//} break;
+	case WM_CHAR:
+		Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
+		break;
 	}
-	
 
     return DefWindowProc(window, msg, wparam, lparam);
 }

@@ -29,8 +29,7 @@
 
 
 #define MAX_PLG_LINE_LEN 256
-#define IS_EMPTY_CHAR(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\n' || (c) == '\t') 
-#define Swap(A, B) do { if (A != B) {A ^= B; B ^= A; A ^= B;} } while(0)
+#define IsEmptyChar(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\n' || (c) == '\t') 
 
 
 static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
@@ -43,7 +42,7 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 		}
 
 		for (len = strlen(buffer), i = 0; 
-			(IS_EMPTY_CHAR(buffer[i])); ++i) 
+			(IsEmptyChar(buffer[i])); ++i) 
 			;
 
 		if (i >= len || buffer[i] == '#') {

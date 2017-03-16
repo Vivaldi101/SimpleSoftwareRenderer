@@ -316,7 +316,7 @@ struct MemoryStack {
 // fixed size allocator
 //
 
-struct FixedSizedAllocator {
+struct FBAllocator {
 	byte *	data;
 	size_t	max_size;
 	int		num_rows;
@@ -335,12 +335,12 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 
 // util tools
 #define CheckZeroArray(a, size)	((*(int *)(a) == 0) && (*((int *)(a) + (size - 1)) == 0)) 
-//#define CheckZeroArray(a, size)	(((a)[0] == 0) && ((a)[(size) - 1] == 0)) 
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
 #define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
 #define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
 #define TypelessSwap(a, b, type)
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
+#define OffsetOf(i, s) (int)&(((s *)0)->i)
 
 #undef MAX
 #define MAX(a,b)	((a) > (b) ? (a) : (b))

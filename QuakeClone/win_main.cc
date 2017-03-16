@@ -99,12 +99,12 @@ void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int dat
 		time = Sys_GetMilliseconds();
 	}
 
-	ev->ev_time = time;
-	ev->ev_type = ev_type;
-	ev->ev_value = value;
-	ev->ev_value2 = value2;
-	ev->ev_data_len = data_len;
-	ev->ev_data = data;
+	ev->time = time;
+	ev->type = ev_type;
+	ev->value = value;
+	ev->value2 = value2;
+	ev->data_size = data_len;
+	ev->data = data;
 }
 
 SysEvent Sys_GetEvent() {
@@ -117,7 +117,7 @@ SysEvent Sys_GetEvent() {
 
 	// create an empty event 
 	memset(&se, 0, sizeof(se));
-	se.ev_time = Sys_GetMilliseconds();
+	se.time = Sys_GetMilliseconds();
 
 	return se;
 }

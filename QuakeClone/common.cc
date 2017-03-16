@@ -46,26 +46,26 @@ static inline u32 NextPO2(u32 v) {
 #define LIST_ROW_SIZE	4088	// size of a row of entries in table
 
 
-static void InitColumn(FixedSizedAllocator *list, int index) {
-	int num_rows = list->num_rows;
+static void InitColumn(FBAllocator *fba, int index) {
+	int num_rows = fba->num_rows;
 	for (int i = 0; i < num_rows; ++i) {
-		BLOCK_STATE(list->data, index) = FREE_BLOCK;
+		BLOCK_STATE(fba->data, index) = FREE_BLOCK;
 		index += LIST_ROW_SIZE;
 	}
 }
 
-static void DestroyListAllocator(FixedSizedAllocator *list) {
-	list->num_rows = 0;
-	list->max_size = 0;
-	VirtualFree(list->data, 0, MEM_RELEASE);
+static void DestroyFixedBlockAllocator(FBAllocator *fba) {
+	fba->num_rows = 0;
+	fba->max_size = 0;
+	VirtualFree(fba->data, 0, MEM_RELEASE);
 }
 
-static int SearchColumn(FixedSizedAllocator *list, int index) {
-	int num_rows = list->num_rows;
+static int SearchColumn(FBAllocator *fba, int index) {
+	int num_rows = fba->num_rows;
 
 	for (int i = 0; i < num_rows; ++i) {
-		if (BLOCK_STATE(list->data, index) == FREE_BLOCK) {
-			BLOCK_STATE(list->data, index) = ALLOCATED_BLOCK;
+		if (BLOCK_STATE(fba->data, index) == FREE_BLOCK) {
+			BLOCK_STATE(fba->data, index) = ALLOCATED_BLOCK;
 
 			return index;
 		}
@@ -75,11 +75,11 @@ static int SearchColumn(FixedSizedAllocator *list, int index) {
 	return 0;
 }
 
-void *Allocate(FixedSizedAllocator *la, size_t num_bytes) {
+void *Allocate(FBAllocator *la, size_t num_bytes) {
 	int index;
 
 	if (!la->data) {
-		Sys_Print("List memory system not initialized\n");
+		Sys_Print("FixedBlock memory system not initialized\n");
 		Sys_Quit();
 	}
 
@@ -124,7 +124,7 @@ void *Allocate(FixedSizedAllocator *la, size_t num_bytes) {
 	return 0;
 }
 
-void Free(FixedSizedAllocator *la, void **ptr) {
+void Free(FBAllocator *la, void **ptr) {
 	int index = (int)((byte *)(*ptr) - la->data);
 	index = index % LIST_ROW_SIZE;
 	*ptr = 0;
@@ -160,8 +160,8 @@ void Free(FixedSizedAllocator *la, void **ptr) {
 	}
 }
 
-static FixedSizedAllocator *InitListMemory(size_t num_bytes) {
-	FixedSizedAllocator *la = (FixedSizedAllocator *)VirtualAlloc(0, num_bytes + sizeof(FixedSizedAllocator), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+static FBAllocator *InitFixedBlockMemory(size_t num_bytes) {
+	FBAllocator *la = (FBAllocator *)VirtualAlloc(0, num_bytes + sizeof(FBAllocator), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
 	if (!la) {
 		Sys_Print("Failed to init the fixed sized allocator\n");
@@ -170,7 +170,7 @@ static FixedSizedAllocator *InitListMemory(size_t num_bytes) {
 
 	la->max_size = num_bytes;
 	la->num_rows = (int)num_bytes / LIST_ROW_SIZE;
-	la->data = (byte *)la + sizeof(FixedSizedAllocator);
+	la->data = (byte *)la + sizeof(FBAllocator);
 
 	InitColumn(la, BYTE_INDEX_16);
 	InitColumn(la, BYTE_INDEX_32);
@@ -222,7 +222,7 @@ static MemoryStack *InitStackMemory(size_t num_bytes) {
 static int global_game_time_residual;
 static int global_game_frame;
 
-// just for prototyping purposes
+// just for prototyping purposes, will get removed
 static r32 yaw = 0.0f;
 static b32 forward;
 static b32 backward;
@@ -238,28 +238,25 @@ static b32 wireframe;
 
 Platform Com_Init(void *hinstance, void *wndproc) {
 	Platform pf = {};
-	MeshObject *mo;
-	MeshObject *player_mo;
 
 	Sys_Init();
 
-	pf.list_allocator = InitListMemory(1024 * LIST_ROW_SIZE);
-	pf.perm_data = InitStackMemory(MEGABYTES(16));
-
+	pf.fb_allocator = InitFixedBlockMemory(1024 * LIST_ROW_SIZE);
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
+	pf.perm_data = InitStackMemory(MEGABYTES(16));
 	pf.temp_data = InitStackMemory(MEGABYTES(64));
 	pf.input = PushStruct(pf.perm_data, Input);
-	IN_ClearKeyStates(pf.input->keys);
+
+	IN_ClearKeyStates(pf.input);
 
 	R_Init(&pf, hinstance, wndproc);
 
-
 	// just for prototyping purposes
-	player_mo = (MeshObject *)Allocate(pf.list_allocator, sizeof(MeshObject));
-	player_mo->mesh = (MeshData *)Allocate(pf.list_allocator, sizeof(MeshData));
-	player_mo->mesh->local_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
-	player_mo->mesh->trans_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
-	player_mo->mesh->polys = (PolyGroup *)Allocate(pf.list_allocator, sizeof(PolyGroup));
+	MeshObject *player_mo = (MeshObject *)Allocate(pf.fb_allocator, sizeof(MeshObject));
+	player_mo->mesh = (MeshData *)Allocate(pf.fb_allocator, sizeof(MeshData));
+	player_mo->mesh->local_verts = (VertexGroup *)Allocate(pf.fb_allocator, sizeof(VertexGroup));
+	player_mo->mesh->trans_verts = (VertexGroup *)Allocate(pf.fb_allocator, sizeof(VertexGroup));
+	player_mo->mesh->polys = (PolyGroup *)Allocate(pf.fb_allocator, sizeof(PolyGroup));
 
 	// FIXME: move file api elsewhere
 	// FIXME: maybe replace the CRT file i/o with win32 api
@@ -277,14 +274,14 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	PLG_LoadMeshObject(player_mo, &fp, world_pos);
 	memcpy(&pf.renderer->back_end->entities[pf.renderer->back_end->num_entities++], player_mo, sizeof(MeshObject));
 
-	const int num_entities = 5;
+	const int num_entities = 10;
 	for (int i = 0; i < num_entities; ++i) {
 		// just for prototyping purposes
-		mo = (MeshObject *)Allocate(pf.list_allocator, sizeof(MeshObject));
-		mo->mesh = (MeshData *)Allocate(pf.list_allocator, sizeof(MeshData));
-		mo->mesh->local_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
-		mo->mesh->trans_verts = (VertexGroup *)Allocate(pf.list_allocator, sizeof(VertexGroup));
-		mo->mesh->polys = (PolyGroup *)Allocate(pf.list_allocator, sizeof(PolyGroup));
+		MeshObject *mo = (MeshObject *)Allocate(pf.fb_allocator, sizeof(MeshObject));
+		mo->mesh = (MeshData *)Allocate(pf.fb_allocator, sizeof(MeshData));
+		mo->mesh->local_verts = (VertexGroup *)Allocate(pf.fb_allocator, sizeof(VertexGroup));
+		mo->mesh->trans_verts = (VertexGroup *)Allocate(pf.fb_allocator, sizeof(VertexGroup));
+		mo->mesh->polys = (PolyGroup *)Allocate(pf.fb_allocator, sizeof(PolyGroup));
 
 
 		// FIXME: move elsewhere
@@ -304,59 +301,76 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	return pf;
 }
 
-static void ProcessEvent(SysEvent se) {
+static void ProcessEvent(Input *in, SysEvent se) {
 
 	// FIXME: move input handling elsewhere
 	// ALL of this is just for prototyping purposes
-	if (se.ev_value == VK_ESCAPE) {
+	if (se.value == VK_ESCAPE) {
 		//Sys_Print(se.ev_value);
 		Sys_Quit();
 	}
 
-	if (se.ev_value == VK_PAUSE) {
+	if (se.type == SET_KEY) {
+		IN_HandleKeyEvent(in, se.value, se.value2, se.time);
+	}
+
+#if 1
+	if (se.value == VK_PAUSE && !Key_IsDown(in->keys, se.value)) {
 		paused = !paused;
 	}
 
-	if (se.ev_value == VK_SPACE) {
+	if (se.value == VK_SPACE && !Key_IsDown(in->keys, se.value)) {
 		wireframe = !wireframe;
 	} 
 
-	if (se.ev_value == VK_UP) {
+	if (se.value == VK_UP && Key_IsDown(in->keys, se.value)) {
 		forward = true;
-	} 
-
-	if (se.ev_value == VK_DOWN) {
-		backward = true;
-	} 
-
-	if (se.ev_value == VK_RIGHT) {
-		turn_right = true;
-	} else if (se.ev_value == VK_LEFT) {
-		turn_left = true;
+	} else {
+		forward = false;
 	}
 
-	if (se.ev_value == VK_RETURN) {
+	if (se.value == VK_DOWN && Key_IsDown(in->keys, se.value)) {
+		backward = true;
+	} else {
+		backward = false;
+	}
+
+	if (se.value == VK_LEFT && Key_IsDown(in->keys, se.value)) {
+		turn_left = true;
+	} else {
+		turn_left = false;
+	}
+
+	if (se.value == VK_RIGHT && Key_IsDown(in->keys, se.value)) {
+		turn_right = true;
+	} else {
+		turn_right = false;
+	}
+
+	if (se.value == VK_RETURN) {
 		reset = true;
 	}
+#endif
 }
 
-void Com_RunEventLoop() {
+void Com_RunEventLoop(Input *in) {
 	SysEvent se;
 
 	for (;;) {
 		se = Com_GetEvent();
 
 		// if no more events bail out
-		if (se.ev_type == SET_NONE) {
+		if (se.type == SET_NONE) {
 			return;
 		}
-		ProcessEvent(se);
+
+		ProcessEvent(in, se);
 	}
 }
 
 void Com_RunFrame(Platform *pf) {
 	Sys_GenerateEvents();
-	Com_RunEventLoop();
+	Com_RunEventLoop(pf->input);
 
 	// test stuff
 	if (paused) {

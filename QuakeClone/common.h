@@ -13,8 +13,8 @@ struct Input {
 
 struct Platform {
 	struct Renderer *		renderer;
-	FixedSizedAllocator *			list_allocator;
-	// FIXME: get the stack allocator from other project
+	FBAllocator *			fb_allocator;
+	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	MemoryStack *			perm_data;
 	MemoryStack *			temp_data; 
 	Input		*			input;
@@ -22,19 +22,18 @@ struct Platform {
 
 enum SysEventType {
 	SET_NONE = 0,		// evTime is still valid
-	SET_KEY,				// evValue is a key code, evValue2 is the down flag
+	SET_KEY,			// evValue is a key code, evValue2 is the down flag
 	SET_CHAR,			// evValue is an ascii char
 	SET_MOUSE,			// evValue and evValue2 are reletive signed x / y moves
-	SET_CONSOLE,			// evPtr is a char*
-	SET_PACKET			// evPtr is a netadr followed by data bytes to evPtrLength
+	SET_CONSOLE			// evPtr is a char*
 };
 
 struct SysEvent {
-	int					ev_time;
-	enum SysEventType	ev_type;
-	int					ev_value, ev_value2;
-	int					ev_data_len;			
-	void *				ev_data;				
+	int					time;
+	SysEventType		type;
+	int					value, value2;
+	int					data_size;			
+	void *				data;				
 };
 
 // Console
@@ -49,8 +48,8 @@ static inline int Com_ModifyFrameMsec(int frame_msec);
 extern Platform Com_Init(void *hinstance, void *wndproc);
 extern void Com_RunFrame(Platform *pf);
 extern void Com_Quit();
-void *Allocate(FixedSizedAllocator *la, size_t num_bytes);
-void Free(FixedSizedAllocator *la, void **ptr);
+void *Allocate(FBAllocator *la, size_t num_bytes);
+void Free(FBAllocator *la, void **ptr);
 
 // Events
 extern void Sys_GenerateEvents();
@@ -58,6 +57,9 @@ extern struct SysEvent Com_GetEvent();
 extern struct SysEvent Sys_GetEvent();
 
 // Input
-extern void IN_ClearKeyStates(Key *keys);
+extern void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time);
+extern void IN_ClearKeyStates(Input *in);
+extern b32 Key_IsDown(Key *keys, int key);
+//extern void IN_ClearKeyStates(Key *keys);
 
 #endif	// Header guard

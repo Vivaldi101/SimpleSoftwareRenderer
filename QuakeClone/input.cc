@@ -1,31 +1,25 @@
 #include "keys.h"
-b32	global_any_key_down;
+#include "common.h"
+//b32	global_any_key_down;
 
-void IN_ClearKeyStates(Key *keys) {
+void IN_ClearKeyStates(Input *in) {
 	for (int i = 0; i < MAX_NUM_KEYS; ++i) {
-		keys[i].down = 0;
-		keys[i].repeats = 0;
+		in->keys[i].down = 0;
+		in->keys[i].repeats = 0;
 	}
 }
 
-void IN_HandleKeyEvent(Key *keys, int key, b32 down, u32 time) {
+void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time) {
 	//char	*kb;
 	char	cmd[1024];
 
 	// update auto-repeat status and BUTTON_ANY status
-	keys[key].down = down;
+	in->keys[key].down = down;
 
 	if (down) {
-		keys[key].repeats++;
-		if ( keys[key].repeats == 1) {
-			//global_any_key_down++;
-		}
+		in->keys[key].repeats++;
 	} else {
-		keys[key].repeats = 0;
-		//global_any_key_down--;
-		//if (global_any_key_down < 0) {
-		//	global_any_key_down = 0;
-		//}
+		in->keys[key].repeats = 0;
 	}
 
 #if 0
@@ -59,31 +53,6 @@ void IN_HandleKeyEvent(Key *keys, int key, b32 down, u32 time) {
 		//VM_Call( uivm, UI_KEY_EVENT, key, down );
 		return;
 	}
-
-#ifdef __linux__
-  if (key == K_ENTER)
-  {
-    if (down)
-    {
-      if (keys[K_ALT].down)
-      {
-        Key_ClearStates();
-        if (Cvar_VariableValue("r_fullscreen") == 0)
-        {
-          Com_Printf("Switching to fullscreen rendering\n");
-          Cvar_Set("r_fullscreen", "1");
-        }
-        else
-        {
-          Com_Printf("Switching to windowed rendering\n");
-          Cvar_Set("r_fullscreen", "0");
-        }
-        Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n");
-        return;
-      }
-    }
-  }
-#endif
 
 	// console key is hardcoded, so the user can never unbind it
 	if (key == '`' || key == '~') {
@@ -184,4 +153,12 @@ void IN_HandleKeyEvent(Key *keys, int key, b32 down, u32 time) {
 		}
 	}
 #endif
+}
+
+b32 Key_IsDown(Key *keys, int key) {
+	if (key == -1) {
+		return false;
+	}
+
+	return keys[key].down;
 }

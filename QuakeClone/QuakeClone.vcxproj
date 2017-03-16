@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClCompile Include="common.cc" />
     <ClCompile Include="cvar.cc" />
+    <ClCompile Include="files.cc" />
     <ClCompile Include="input.cc" />
     <ClCompile Include="math.cc" />
     <ClCompile Include="plg_loader.cc" />
