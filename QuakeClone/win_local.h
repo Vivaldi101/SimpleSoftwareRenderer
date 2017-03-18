@@ -27,15 +27,13 @@ extern void	In_Activate(b32 active);
 extern void	In_Frame();
 
 // window creation
-#define WINDOW_WIDTH	800
-#define WINDOW_HEIGHT	600
 extern b32 Vid_CreateWindow(struct Renderer *ren, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
 // events
 extern void Sys_QueEvent(int time, enum SysEventType ev_type, int value, int value2, int data_len, void *data);
 
-LRESULT WINAPI MainWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam);
+LRESULT WINAPI MainWndProc(HWND window, UINT umsg, WPARAM wparam, LPARAM lparam);
 struct WinVars {
 	void *			wndproc;
 	HINSTANCE		reflib_library;		// handle to refresh DLL 

@@ -76,25 +76,25 @@ LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) 
 		case WM_CREATE: {
 			global_win_vars.hwnd = window;
 		} break;
-		case WM_DESTROY: {
-			global_win_vars.hwnd = 0;
-		} break;
 
-	case WM_SYSKEYDOWN:
 		// fall through 
 		// FIXME: not sure about the int casts
-	case WM_KEYDOWN:
-		Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, true, 0, 0);
-		break;
+		case WM_SYSKEYDOWN:
+		case WM_KEYDOWN:
+			Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, true, 0, 0);
+			break;
 
-	case WM_SYSKEYUP:
-	case WM_KEYUP:
-		Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, false, 0, 0);
-		break;
+		case WM_SYSKEYUP:
+		case WM_KEYUP:
+			Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, false, 0, 0);
+			break;
 
-	case WM_CHAR:
-		Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
-		break;
+		case WM_CHAR:
+			if (wparam == 'f') {
+				Sys_ToggleFullscreen(window);
+			}
+			Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
+			break;
 	}
 
     return DefWindowProc(window, msg, wparam, lparam);

@@ -1,5 +1,4 @@
 TODO: 
-frustum plane extraction from the projection matrix.
 perspective correct texture mapping.
+unity build.
 homogeneous clipping.
-replace the left-handed system with a right-handed one.

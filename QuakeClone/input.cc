@@ -10,8 +10,7 @@ void IN_ClearKeyStates(Input *in) {
 }
 
 void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time) {
-	//char	*kb;
-	char	cmd[1024];
+	Assert(key >= 0 && key < MAX_NUM_KEYS);
 
 	// update auto-repeat status and BUTTON_ANY status
 	in->keys[key].down = down;
@@ -155,10 +154,7 @@ void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time) {
 #endif
 }
 
-b32 Key_IsDown(Key *keys, int key) {
-	if (key == -1) {
-		return false;
-	}
-
-	return keys[key].down;
+b32 IN_IsKeyDown(Input *in, int key) {
+	Assert(key >= 0 && key < MAX_NUM_KEYS);
+	return in->keys[key].down;
 }

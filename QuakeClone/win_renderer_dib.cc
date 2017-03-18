@@ -4,7 +4,7 @@
 static HGDIOBJ	s_global_previously_selected_GDI_obj;
 struct DibData {
 	/*
-	**	NEVER put any members before header!
+	**	DO NOT put any members before header!
 	*/
 	BITMAPINFOHEADER	header;
 	RGBQUAD				colors[256];	// FIXME: move rgb colors someplace
@@ -17,57 +17,6 @@ b32 DIB_Init(VidSystem *vid_sys) {
 
 	memset(&dib, 0, sizeof(dib));
 
-#if 0
-	// testing the pixel format... will be removed maybe
-	HMODULE ddraw_library = LoadLibrary("ddraw.dll");
-	if (!ddraw_library) {
-		Sys_Quit();
-	}
-
-	#define DIRECT_DRAW_CREATE(name) HRESULT WINAPI name(GUID FAR *lpGUID, LPVOID *lplpDD, REFIID iid, IUnknown FAR *pUnkOuter)
-	typedef DIRECT_DRAW_CREATE(DDrawCreate);
-	DDrawCreate* ddraw_fn_ptr = (DDrawCreate*)GetProcAddress(ddraw_library, "DirectDrawCreateEx");
-
-	IDirectDrawSurface7 *primary_surface;
-	LPDIRECTDRAW7 lpdd;
-	DDSURFACEDESC2 ddsd;						
-
-    // create IDirectDraw interface 7.0 object and test for error
-	if (FAILED(ddraw_fn_ptr(NULL, (LPVOID *)&lpdd, IID_IDirectDraw7, NULL))) {
-		Sys_Print("Failed to init ddraw object");
-	}
-
-	// set cooperation level to windowed mode 
-	if (FAILED(lpdd->SetCooperativeLevel(0, DDSCL_NORMAL))) {
-		Sys_Print("Failed set the co-op level for ddraw");
-	}
-
-	#define DDRAW_INIT_STRUCT(ddstruct) { memset(&ddstruct,0,sizeof(ddstruct)); ddstruct.dwSize=sizeof(ddstruct); }
-
-    // Create the primary surface
-	DDRAW_INIT_STRUCT(ddsd);
-
-	ddsd.dwFlags = DDSD_CAPS;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-
-    lpdd->CreateSurface(&ddsd, &primary_surface, 0);
-
-    // get the pixel format of the primary surface
-    DDPIXELFORMAT ddpf; // used to get pixel format
-
-    // initialize structure
-    DDRAW_INIT_STRUCT(ddpf);
-
-    // query the format from primary surface
-    primary_surface->GetPixelFormat(&ddpf);
-
-	int rgb_mode = ddpf.dwRGBBitCount;
-
-	if (ddraw_library) {
-		FreeLibrary(ddraw_library);
-	}
-#endif
-
 	/*
 	** grab a DC
 	*/
@@ -78,15 +27,13 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		}
 	}
 
-	//printf("WinGDI: global_soft_renderer.palettized =%d\n",global_soft_renderer.palettized );
-
 	vid_sys->bpp = 4;
 
 	/*
 	** fill in the BITMAPINFO struct
 	*/
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
-	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		// get the buffer
+	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		
 	win_dib_info->bmiHeader.biHeight        = -vid_sys->height;		// top down buffer
 	win_dib_info->bmiHeader.biPlanes        = 1;
 	win_dib_info->bmiHeader.biBitCount      = (WORD)(vid_sys->bpp * 8);
@@ -124,7 +71,6 @@ b32 DIB_Init(VidSystem *vid_sys) {
 											 			0);
 
 	if (!vid_sys->win_handles.dib_section) {
-		//ri.Con_Printf( PRINT_ALL, "DIB_Init() - CreateDIBSection failed\n" );
 		Sys_Print("\nCouldn't create the dib section\n");
 		return false;
 	}
@@ -141,8 +87,6 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		Sys_Print("\nWinGDI, framebuffer is top down.\n");
     }
 
-	//printf("CreateDIBSection OK: w=%d, h=%d, buffer=%x\n",vid.width,vid.height,vid.buffer);
-
 	/*
 	** clear the DIB memory buffer
 	*/
@@ -150,15 +94,12 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	memset(vid_sys->buffer, 0xff, vid_sys->pitch * vid_sys->height);
 
 	if (!(vid_sys->win_handles.hdc_dib_section = CreateCompatibleDC(vid_sys->win_handles.dc))) {
-		//ri.Con_Printf( PRINT_ALL, "DIB_Init() - CreateCompatibleDC failed\n" );
 		Sys_Print("\nDIB_Init() - CreateCompatibleDC failed\n");
 		return false;
-		//goto fail;
 	}
 	if (!(s_global_previously_selected_GDI_obj = SelectObject(vid_sys->win_handles.hdc_dib_section, vid_sys->win_handles.dib_section))) {
 		Sys_Print("\nDIB_Init() - SelectObject failed\n");
 		return false;
-		//goto fail;
 	}
 
 	return true;

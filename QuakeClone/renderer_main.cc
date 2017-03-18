@@ -39,7 +39,7 @@ void R_SetupProjection(Renderer *ren) {
 	memcpy(ren->current_view.projection_matrix, projection_matrix, sizeof(projection_matrix));
 }
 
-#if 1
+// Gribb & Hartmann method
 void R_SetupFrustum(Renderer *ren) {
 	Plane frustum[4];
 	r32	combo_matrix[4][4];
@@ -81,7 +81,6 @@ void R_SetupFrustum(Renderer *ren) {
 
 	memcpy(&ren->current_view.frustum, &frustum, sizeof(frustum));
 }
-#endif
 
 void R_TransformWorldToView(Renderer *ren, MeshObject *md) {
 	int num_verts = md->status.num_verts;

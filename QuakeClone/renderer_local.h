@@ -100,8 +100,8 @@ struct BackEnd {
 	//dlight_t	dlights[MAX_DLIGHTS];
 
 	// FIXME: change MeshObject to Entity
-	MeshObject 	entities[MAX_ENTITIES];
-	int			num_entities;
+	//MeshObject 	entities[MAX_ENTITIES];
+	//int			num_entities;
 	Poly *		polys;			//[MAX_POLYS];
 	Vec3 *		poly_verts;		//[MAX_POLYVERTS];
 	//struct MeshData *	mesh_data;	// fixed num of verts and polys

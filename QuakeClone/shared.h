@@ -95,24 +95,8 @@ inline u16 RGB_888To565(int r, int g, int b) {
     (((Address - ((((size_t)Alignment)-1) & Address))))
 
 
-// nothing outside the Cvar_*() functions should modify these fields!
-//struct Cvar {
-//	char *		name;
-//	char *		string;
-//	char *		reset_string;		// cvar_restart will reset to this value
-//	char *		latched_string;		// for CVAR_LATCH vars
-//	int			flags;
-//	b32			modified;			// set each time the cvar is changed
-//	int			modification_count;	// incremented each time the cvar is changed
-//	float		value;				// atof( string )
-//	int			integer;			// atoi( string )
-//	Cvar *		next;
-//	Cvar *		hash_next;
-//};
-
 // max values
-#define	MAX_CVAR_VALUE_STRING	256
-#define	MAX_ENTITIES			1023		// can't be increased without changing drawsurf bit packing
+#define	MAX_ENTITIES			256
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
 // the main view, all the 3D icons, etc
@@ -353,9 +337,11 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #include <Windows.h>
 #define InvalidCodePath do { MessageBoxA(0, "Invalid code path", 0, 0); Assert(0); } while(0)
 #define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
+#define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
 #else
 #define InvalidCodePath do { Assert(0); } while(0)
 #define OutOfMemory do { Assert(0); } while(0)
+#define EventOverflow do {  Assert(0); } while(0)
 #endif	// _WIN32
 
 #endif	// Header guard

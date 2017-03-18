@@ -241,11 +241,13 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 
 	Sys_Init();
 
+	// FIXME: macros for memory sizes
 	pf.fb_allocator = InitFixedBlockMemory(1024 * LIST_ROW_SIZE);
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	pf.perm_data = InitStackMemory(MEGABYTES(16));
 	pf.temp_data = InitStackMemory(MEGABYTES(64));
 	pf.input = PushStruct(pf.perm_data, Input);
+	pf.game_state = PushStruct(pf.perm_data, GameState);
 
 	IN_ClearKeyStates(pf.input);
 
@@ -272,7 +274,7 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 
 	Vec3 world_pos = {};
 	PLG_LoadMeshObject(player_mo, &fp, world_pos);
-	memcpy(&pf.renderer->back_end->entities[pf.renderer->back_end->num_entities++], player_mo, sizeof(MeshObject));
+	memcpy(&pf.game_state->entities[pf.game_state->num_entities++], player_mo, sizeof(MeshObject));
 
 	const int num_entities = 10;
 	for (int i = 0; i < num_entities; ++i) {
@@ -289,7 +291,7 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
 		PLG_LoadMeshObject(mo, &fp, world_pos);
 
-		memcpy(&pf.renderer->back_end->entities[pf.renderer->back_end->num_entities++], mo, sizeof(MeshObject));
+		memcpy(&pf.game_state->entities[pf.game_state->num_entities++], mo, sizeof(MeshObject));
 	}
 
 	if (fp) {
@@ -314,34 +316,34 @@ static void ProcessEvent(Input *in, SysEvent se) {
 		IN_HandleKeyEvent(in, se.value, se.value2, se.time);
 	}
 
-#if 1
-	if (se.value == VK_PAUSE && !Key_IsDown(in->keys, se.value)) {
+	// FIXME: remove the globals
+	if (se.value == VK_PAUSE && !IN_IsKeyDown(in, se.value)) {
 		paused = !paused;
 	}
 
-	if (se.value == VK_SPACE && !Key_IsDown(in->keys, se.value)) {
+	if (se.value == VK_SPACE && !IN_IsKeyDown(in, se.value)) {
 		wireframe = !wireframe;
 	} 
 
-	if (se.value == VK_UP && Key_IsDown(in->keys, se.value)) {
+	if (se.value == VK_UP && IN_IsKeyDown(in, se.value)) {
 		forward = true;
 	} else {
 		forward = false;
 	}
 
-	if (se.value == VK_DOWN && Key_IsDown(in->keys, se.value)) {
+	if (se.value == VK_DOWN && IN_IsKeyDown(in, se.value)) {
 		backward = true;
 	} else {
 		backward = false;
 	}
 
-	if (se.value == VK_LEFT && Key_IsDown(in->keys, se.value)) {
+	if (se.value == VK_LEFT && IN_IsKeyDown(in, se.value)) {
 		turn_left = true;
 	} else {
 		turn_left = false;
 	}
 
-	if (se.value == VK_RIGHT && Key_IsDown(in->keys, se.value)) {
+	if (se.value == VK_RIGHT && IN_IsKeyDown(in, se.value)) {
 		turn_right = true;
 	} else {
 		turn_right = false;
@@ -350,7 +352,6 @@ static void ProcessEvent(Input *in, SysEvent se) {
 	if (se.value == VK_RETURN) {
 		reset = true;
 	}
-#endif
 }
 
 void Com_RunEventLoop(Input *in) {
@@ -420,24 +421,21 @@ void Com_RunFrame(Platform *pf) {
 	// FIXME: will be move elsewhere
 	Renderer *ren = pf->renderer;
 	RenderQueue *rq = pf->renderer->queue;
-	MeshObject *mos = pf->renderer->back_end->entities;
+	MeshObject *entities = pf->game_state->entities;
 
 	// movement testing
 	if (forward) {
 		ren->current_view.world_orientation.origin = 
 			ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 10.0f);
-		forward = false;
 	}
 
 	if (backward) {
 		ren->current_view.world_orientation.origin = 
 			ren->current_view.world_orientation.origin - (ren->current_view.world_orientation.dir * 10.0f);
-		backward = false;
 	}
 
 	if (turn_left) {
-		yaw -= 5.0f;
-		//yaw = DEG2RAD(yaw);
+		yaw -= 2.0f;
 
 		rot_mat_y[0][0] = cos(DEG2RAD(5.0f));
 		rot_mat_y[0][1] = 0.0f;
@@ -454,17 +452,14 @@ void Com_RunFrame(Platform *pf) {
 		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
-		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
-		for (int i = 0; i < mos[0].status.num_verts; ++i) {
+		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
+		for (int i = 0; i < entities[0].status.num_verts; ++i) {
 			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 		}
-
-		turn_left = false;
 	}
 
 	if (turn_right) {
-		yaw += 5.0f;
-		//yaw = DEG2RAD(yaw);
+		yaw += 2.0f;
 
 		rot_mat_y[0][0] = cos(DEG2RAD(5.0f));
 		rot_mat_y[0][1] = 0.0f;
@@ -481,19 +476,17 @@ void Com_RunFrame(Platform *pf) {
 		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
-		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
-		for (int i = 0; i < mos[0].status.num_verts; ++i) {
+		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
+		for (int i = 0; i < entities[0].status.num_verts; ++i) {
 			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 		}
-
-		turn_right = false;
 	}
 
 	if (reset) {
 		Vector3Init(ren->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
 		Vector3Init(ren->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-		Vec3 *verts = mos[0].mesh->local_verts->vert_array;
-		int num_verts = mos[0].status.num_verts;
+		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
+		int num_verts = entities[0].status.num_verts;
 
 		rot_mat_y[0][0] = cos(DEG2RAD(yaw));
 		rot_mat_y[2][2] = cos(DEG2RAD(yaw));
@@ -539,9 +532,9 @@ void Com_RunFrame(Platform *pf) {
 
 
 	// test stuff
-	int num_entities = pf->renderer->back_end->num_entities;
+	int num_entities = pf->game_state->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
-		MeshObject *current_mo = &mos[i];
+		MeshObject *current_mo = &entities[i];
 		int num_polys = current_mo->status.num_polys;
 
 		// clear mesh states
@@ -557,14 +550,14 @@ void Com_RunFrame(Platform *pf) {
 	R_RenderView(ren);
 
 	// hacky player third person cam test stuff
-	// FIXME: 0 index hardcoded for player in the mos array
-	mos[0].status.world_pos = 
+	// FIXME: 0 index hardcoded for player in the entities array
+	entities[0].status.world_pos = 
 		ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 60.0f);
-	mos[0].status.world_pos[1] -= 20.0f;
+	entities[0].status.world_pos[1] -= 20.0f;
 
 	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
-		MeshObject *current_mo = &mos[i];
+		MeshObject *current_mo = &entities[i];
 		// FIXME: reduce the indirection overhead
 		Vec3 *verts = current_mo->mesh->local_verts->vert_array;
 
@@ -619,15 +612,16 @@ void Com_Quit() {
 //
 // common event queue
 //
-#define	MAX_COM_QUED_EVENTS 1024
+#define	MAX_COM_QUED_EVENTS		1024
+#define	MASK_COM_QUED_EVENTS	(MAX_COM_QUED_EVENTS - 1)
 
 static SysEvent global_com_event_queue[MAX_COM_QUED_EVENTS];
-static int global_com_event_head, global_com_even_tail;
+static u32 global_com_event_head, global_com_even_tail;
 
 SysEvent Com_GetEvent() {
 	if (global_com_event_head > global_com_even_tail) {
 		global_com_even_tail++;
-		return global_com_event_queue[(global_com_even_tail - 1) & (MAX_COM_QUED_EVENTS - 1)];
+		return global_com_event_queue[(global_com_even_tail - 1) & MASK_COM_QUED_EVENTS];
 	}
 
 	return Sys_GetEvent();
