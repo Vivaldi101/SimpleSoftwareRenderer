@@ -53,14 +53,14 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 	}
 }
 
-b32 PLG_LoadMeshObject(MeshObject *mo, FILE **fp, Vec3 world_pos, r32 scale) {
+b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
 	const char *parsed_string;
 
-	mo->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
-	mo->status.world_pos = world_pos;
+	ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
+	ent->status.world_pos = world_pos;
 
-	MeshData *mesh = mo->mesh;
+	Mesh *mesh = ent->mesh;
 
 	// get the object desc
 	if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
@@ -69,9 +69,9 @@ b32 PLG_LoadMeshObject(MeshObject *mo, FILE **fp, Vec3 world_pos, r32 scale) {
 		return false;
 	}
 
-	sscanf_s(parsed_string, "%s %d %d", mo->status.name, sizeof(mo->status.name), &mo->status.num_verts, &mo->status.num_polys);
+	sscanf_s(parsed_string, "%s %d %d", ent->status.name, sizeof(ent->status.name), &ent->status.num_verts, &ent->status.num_polys);
 
-	int num_verts = mo->status.num_verts;
+	int num_verts = ent->status.num_verts;
 	for (int i = 0; i < num_verts; ++i) {
 		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("\nError while reading lines from an opened PLG file, it should be a vertex in the x y z order");
@@ -82,7 +82,7 @@ b32 PLG_LoadMeshObject(MeshObject *mo, FILE **fp, Vec3 world_pos, r32 scale) {
 				 &mesh->local_verts->vert_array[i].v.x,
 				 &mesh->local_verts->vert_array[i].v.y,
 				 &mesh->local_verts->vert_array[i].v.z);
-		//mo->local_vertex_list[i].v.w = 1.0f;		disabled the Vec4 for now
+		//ent->local_vertex_list[i].v.w = 1.0f;		disabled the Vec4 for now
 
 		mesh->local_verts->vert_array[i][0] *= scale;
 		mesh->local_verts->vert_array[i][1] *= scale;
@@ -104,7 +104,7 @@ b32 PLG_LoadMeshObject(MeshObject *mo, FILE **fp, Vec3 world_pos, r32 scale) {
 	int poly_surface_desc = 0;
 	char tmp_poly_surface_desc[8];
 
-	int num_polys = mo->status.num_polys;
+	int num_polys = ent->status.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
 		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("\nError while reading lines from an opened PLG file," 
@@ -129,18 +129,18 @@ b32 PLG_LoadMeshObject(MeshObject *mo, FILE **fp, Vec3 world_pos, r32 scale) {
 		mesh->polys->poly_array[i].vertex_list = mesh->local_verts->vert_array;
 
 		if (poly_surface_desc & PLX_2SIDED_FLAG) {
-			//mo->poly_array[i].attr |= POLY_ATTR_2SIDED;
+			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
 		}
 
 		if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
-			//mo->poly_array[i].attr |= POLY_ATTR_RGB16;
+			//ent->poly_array[i].attr |= POLY_ATTR_RGB16;
 			int red = (poly_surface_desc & 0x0f00) >> 8;
 			int green = (poly_surface_desc & 0x00f0) >> 4;
 			int blue = (poly_surface_desc & 0x000f);
 
 			mesh->polys->poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
 		} else {
-			//mo->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
+			//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
 			mesh->polys->poly_array[i].color = poly_surface_desc & 0x00ff;
 		}
 

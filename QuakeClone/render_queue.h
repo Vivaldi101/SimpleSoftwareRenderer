@@ -9,8 +9,9 @@ struct RenderQueue {
 };
 
 enum RenderCommandEnum {
-	Command_ClearScreen,
-	Command_Poly
+	RCMD_ClearScreen,
+	RCMD_ShowScreen,
+	RCMD_Poly
 };
 
 struct RenderCommandHeader {
@@ -19,12 +20,18 @@ struct RenderCommandHeader {
 
 struct ClearScreen {
 	RenderCommandHeader	header;
+	int					width, height;
 	r32					r, g, b, a;
+};
+
+struct ShowScreen {
+	RenderCommandHeader	header;
+	int					width, height;
 };
 
 extern RenderQueue *AllocateRenderQueue(MemoryStack *ms, size_t max_buffer_size);
 extern void ExecuteRenderQueue(RenderQueue *rq, Renderer *ren);
 
-#define PlaceRenderCommand(group, type)(type *)_PlaceRenderCommand_(group, sizeof(type), Command_##type)
+#define PlaceRenderCommand(group, type)(type *)_PlaceRenderCommand_(group, sizeof(type), RCMD_##type)
 extern RenderCommandHeader *_PlaceRenderCommand_(RenderQueue *rq, size_t element_size, RenderCommandEnum type);
 #endif	// Header guard

@@ -1,52 +1,25 @@
 #include "shared.h"
 
 #include "win_renderer.h"
-#include "renderer_local.h"
+#include "renderer.h"
 #include "render_queue.h"
 
-void R_Init(Platform *pf, void *hinstance, void *wndproc) { 
-	pf->renderer = PushStruct(pf->perm_data, Renderer);
-	pf->renderer->back_end = PushStruct(pf->perm_data, BackEnd);
-	pf->renderer->back_end->polys = PushArray(pf->perm_data, MAX_POLYS, Poly);
+Renderer *R_Init(MemoryStack *mem_stack, void *hinstance, void *wndproc) { 
+	Renderer *ren = PushStruct(mem_stack, Renderer);
+	ren->polys = PushArray(mem_stack, MAX_POLYS, Poly);
+	ren->queue = AllocateRenderQueue(mem_stack, MEGABYTES(4));
 
-	pf->renderer->queue = AllocateRenderQueue(pf->temp_data, MEGABYTES(4));
-	PlaceRenderCommand(pf->renderer->queue, ClearScreen);
-
-	if (!Vid_CreateWindow(pf->renderer, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
+	if (!Vid_CreateWindow(ren, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");
 		Sys_Quit();
 	}	
 
-	if (!DIB_Init(&pf->renderer->vid_sys)) {
+	if (!DIB_Init(&ren->vid_sys)) {
 		Sys_Print("Error while initializing the DIB\n");
 		Sys_Quit();
 	}
 
 	Sys_Print("Renderer init done\n");
-	//
-	// init function tables
-	//
-	//for ( i = 0; i < FUNCTABLE_SIZE; i++ )
-	//{
-	//	tr.sinTable[i]		= sin( DEG2RAD( i * 360.0f / ( ( float ) ( FUNCTABLE_SIZE - 1 ) ) ) );
-	//	tr.squareTable[i]	= ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
-	//	tr.sawToothTable[i] = (float)i / FUNCTABLE_SIZE;
-	//	tr.inverseSawToothTable[i] = 1.0f - tr.sawToothTable[i];
 
-	//	if ( i < FUNCTABLE_SIZE / 2 )
-	//	{
-	//		if ( i < FUNCTABLE_SIZE / 4 )
-	//		{
-	//			tr.triangleTable[i] = ( float ) i / ( FUNCTABLE_SIZE / 4 );
-	//		}
-	//		else
-	//		{
-	//			tr.triangleTable[i] = 1.0f - tr.triangleTable[i-FUNCTABLE_SIZE / 4];
-	//		}
-	//	}
-	//	else
-	//	{
-	//		tr.triangleTable[i] = -tr.triangleTable[i-FUNCTABLE_SIZE/2];
-	//	}
-	//}
+	return ren;
 }

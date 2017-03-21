@@ -1,12 +1,24 @@
-﻿Build started 18/03/2017 16:53:59.
+﻿Build started 21/03/2017 20:49:45.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
+         Touching "x64\Debug\QuakeClone.unsuccessfulbuild".
        ClCompile:
-         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /errorReport:prompt common.cc
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /errorReport:prompt common.cc plg_loader.cc renderer_cmds.cc renderer_init.cc renderer_main.cc render_queue.cc win_main.cc win_main_window.cc win_renderer_dib.cc
          common.cc
-     1>common.cc(594): warning C4189: 'frame_msec' : local variable is initialized but not referenced
+         plg_loader.cc
+         renderer_cmds.cc
+         renderer_init.cc
      1>common.cc(57): warning C4505: 'DestroyFixedBlockAllocator' : unreferenced local function has been removed
+     1>common.cc(163): warning C4505: 'InitFixedBlockMemory' : unreferenced local function has been removed
+         renderer_main.cc
+         render_queue.cc
+         win_main.cc
+     1>f:\code\quakeclone\quakeclone\renderer_cmds.cc(85): warning C4701: potentially uninitialized local variable 'y' used
+     1>f:\code\quakeclone\quakeclone\renderer_cmds.cc(84): warning C4701: potentially uninitialized local variable 'x' used
+         win_main_window.cc
+     1>render_queue.cc(19): warning C4189: 'clear' : local variable is initialized but not referenced
+     1>render_queue.cc(24): warning C4189: 'clear' : local variable is initialized but not referenced
+         win_renderer_dib.cc
        Link:
          F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\cvar.obj
@@ -24,7 +36,6 @@
          x64\Debug\win_main_window.obj
          x64\Debug\win_renderer_dib.obj
          x64\Debug\win_wndproc.obj
-         LINK : F:\code\QuakeClone\x64\Debug\QuakeClone.exe not found or not built by the last incremental link; performing full link
          QuakeClone.vcxproj -> F:\code\QuakeClone\x64\Debug\QuakeClone.exe
        Manifest:
          C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\code\QuakeClone\x64\Debug\QuakeClone.exe;#1" /manifest x64\Debug\QuakeClone.exe.intermediate.manifest
@@ -35,4 +46,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.31
+Time Elapsed 00:00:01.13

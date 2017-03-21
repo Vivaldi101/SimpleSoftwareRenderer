@@ -1,4 +1,4 @@
-#include "renderer_local.h"
+#include "renderer.h"
 #include "win_renderer.h"
 
 static HGDIOBJ	s_global_previously_selected_GDI_obj;

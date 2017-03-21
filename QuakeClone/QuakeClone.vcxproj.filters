@@ -28,9 +28,6 @@
     <ClInclude Include="keys.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="renderer_local.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="win_renderer.h">
       <Filter>headers</Filter>
     </ClInclude>
@@ -41,6 +38,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="render_queue.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

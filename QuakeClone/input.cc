@@ -12,7 +12,6 @@ void IN_ClearKeyStates(Input *in) {
 void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time) {
 	Assert(key >= 0 && key < MAX_NUM_KEYS);
 
-	// update auto-repeat status and BUTTON_ANY status
 	in->keys[key].down = down;
 
 	if (down) {
@@ -20,6 +19,11 @@ void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time) {
 	} else {
 		in->keys[key].repeats = 0;
 	}
+
+	if (in->curr_key != key) {
+		in->prev_key = in->curr_key;
+	}
+	in->curr_key = key; 
 
 #if 0
 	// escape is always handled special

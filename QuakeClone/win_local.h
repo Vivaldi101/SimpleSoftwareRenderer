@@ -4,7 +4,7 @@
 #include "shared.h"
 
 // console system
-extern void	Sys_CreateConsole();
+extern void	Sys_CreateConsole(HINSTANCE hinstance);
 extern void	Sys_DestroyConsole();
 extern void Sys_Print(const char *msg);
 extern void Sys_Sleep(DWORD ms);
@@ -40,7 +40,7 @@ struct WinVars {
 	b32				reflib_active;
 
 	HWND			hwnd;
-	HINSTANCE		hinstance;
+	//HINSTANCE		hinstance;
 	b32				active_app;
 	b32				is_minimized;
 	OSVERSIONINFO	os_version;

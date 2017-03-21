@@ -1,0 +1,32 @@
+﻿Build started 21/03/2017 18:16:41.
+     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "x64\Release\QuakeClone.unsuccessfulbuild".
+       ClCompile:
+         All outputs are up-to-date.
+       Link:
+         F:\Programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\x64\Release\QuakeClone.exe" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Release\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\x64\Release\QuakeClone.pdb" /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\x64\Release\QuakeClone.lib" /MACHINE:X64 x64\Release\common.obj
+         x64\Release\cvar.obj
+         x64\Release\files.obj
+         x64\Release\input.obj
+         x64\Release\math.obj
+         x64\Release\plg_loader.obj
+         x64\Release\renderer_cmds.obj
+         x64\Release\renderer_init.obj
+         x64\Release\renderer_main.obj
+         x64\Release\render_queue.obj
+         x64\Release\win_console.obj
+         x64\Release\win_shared.obj
+         x64\Release\win_main.obj
+         x64\Release\win_main_window.obj
+         x64\Release\win_renderer_dib.obj
+         x64\Release\win_wndproc.obj
+     1>win_shared.obj : error LNK2001: unresolved external symbol __imp_timeGetTime
+     1>win_main.obj : error LNK2001: unresolved external symbol __imp_timeEndPeriod
+     1>win_main.obj : error LNK2001: unresolved external symbol __imp_timeBeginPeriod
+     1>F:\code\QuakeClone\x64\Release\QuakeClone.exe : fatal error LNK1120: 3 unresolved externals
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.06

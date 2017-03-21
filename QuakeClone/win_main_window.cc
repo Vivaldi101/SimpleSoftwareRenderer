@@ -1,5 +1,5 @@
 #include "win_renderer.h"
-#include "renderer_local.h"
+#include "renderer.h"
 #define	WINDOW_CLASS_NAME "QC"
 
 

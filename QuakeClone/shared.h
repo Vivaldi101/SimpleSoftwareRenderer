@@ -8,15 +8,15 @@
 
 
 // typedefs for all ints
-typedef int8_t	i8;
-typedef int16_t	i16;
-typedef int32_t	i32;
-typedef int64_t	i64;
+typedef int8_t		i8;
+typedef int16_t		i16;
+typedef int32_t		i32;
+typedef int64_t		i64;
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
+typedef uint8_t		u8;
+typedef uint16_t	u16;
+typedef uint32_t	u32;
+typedef uint64_t	u64;
 
 typedef unsigned char byte;
 
@@ -115,24 +115,21 @@ MATHLIB
 #define M_PI 3.14159265358979323846f	// matches value in gcc v2 math.h
 #endif
 
-#define Vector3Init(v, x, y, z)		((v)[0] = (x), (v)[1] = (y), (v)[2] = (z))
-#define Vector4Init(v, x, y, z, w)	((v)[0] = (x), (v)[1] = (y), (v)[2] = (z), (v)[3] = (w))
-#define Vector3Zero(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0))
-#define Vector4Zero(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0), (v)[3] = (1))
+#define Vec3Init(v, x, y, z)		((v)[0] = (x), (v)[1] = (y), (v)[2] = (z))
+#define Vec4Init(v, x, y, z, w)		((v)[0] = (x), (v)[1] = (y), (v)[2] = (z), (v)[3] = (w))
+#define Vec3ZeroOut(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0))
+#define Vec4ZeroOut(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0), (v)[3] = (1))
 
-#define Vector3DotProduct(x, y)		((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
-#define Vector3Subtract(a, b, c)	((c)[0] = (a)[0] - (b)[0] , (c)[1] = (a)[1] - (b)[1], (c)[2] = (a)[2] - (b)[2])
+#define Vec3Dot(x, y)				((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
 #define Vector3Add(a, b, c)			((c)[0] = (a)[0] + (b)[0] , (c)[1] = (a)[1] + (b)[1], (c)[2] = (a)[2] + (b)[2])
-#define Vector3Copy(a, b)			((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2])
-#define Vector4Copy(a, b)			((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2], (a)[3] = (b)[3])
-#define	Vector3Scale(v, s, o)		((o)[0] = (v)[0] * (s), (o)[1] = (v)[1] * (s), (o)[2] = (v)[2] * (s))
-#define	Vector3MA(v, s, b, o)		((o)[0] = (v)[0] + (b)[0] * (s), (o)[1] = (v)[1] + (b)[1] * (s), (o)[2] = (v)[2] + (b)[2] * (s))
+#define Vec3Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2])
+#define Vec4Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2], (a)[3] = (b)[3])
 
-#define Matrix3x3SetIdentity(m)		(Vector3Init((m)[0],1,0,0), Vector3Init((m)[1],0,1,0), Vector3Init((m)[2],0,0,1))
-#define Matrix4x4SetIdentity(m)		(Vector4Init((m)[0],1,0,0,0), Vector4Init((m)[1],0,1,0,0), Vector4Init((m)[2],0,0,1,0), Vector4Init((m)[3],0,0,0,1))
+#define Mat3x3SetIdentity(m)		(Vec3Init((m)[0],1,0,0), Vec3Init((m)[1],0,1,0), Vec3Init((m)[2],0,0,1))
+#define Mat4x4SetIdentity(m)		(Vec4Init((m)[0],1,0,0,0), Vec4Init((m)[1],0,1,0,0), Vec4Init((m)[2],0,0,1,0), Vec4Init((m)[3],0,0,0,1))
 
-#define Matrix3x3Init(m)			(Vector3Init((m)[0],0,0,0), Vector3Init((m)[1],0,0,0), Vector3Init((m)[2],0,0,0))
-#define Matrix4x4Init(m)			(Vector4Init((m)[0],0,0,0,0), Vector4Init((m)[1],0,0,0,0), Vector4Init((m)[2],0,0,0,0), Vector4Init((m)[3],0,0,0,0))
+#define Mat3x3Init(m)				(Vec3Init((m)[0],0,0,0), Vec3Init((m)[1],0,0,0), Vec3Init((m)[2],0,0,0))
+#define Mat4x4Init(m)				(Vec4Init((m)[0],0,0,0,0), Vec4Init((m)[1],0,0,0,0), Vec4Init((m)[2],0,0,0,0), Vec4Init((m)[3],0,0,0,0))
 
 #define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		// x and y define the plane of v
 #define Square(s)					((s) * (s))
@@ -144,6 +141,7 @@ union Vec3 {
 	r32			&operator[](int i)			{ return data[i]; }
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
+
 union Vec4 {
 	struct {	r32 x, y, z, w;		} v;
 	r32 data[4];
@@ -151,9 +149,6 @@ union Vec4 {
 	r32			&operator[](int i)			{ return data[i]; }
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
-
-//inline Vec3 operator <(Vec3 a, Vec3 b) {
-//}
 
 inline Vec3 operator +(Vec3 a, Vec3 b) {
 	Vec3 v = {};
@@ -208,7 +203,7 @@ static inline Vec3 Vector3CrossProduct(Vec3 v1, Vec3 v2) {
 static inline r32 Vector3Len(const Vec3 *v) {
 	r32	len;
 
-	len = Vector3DotProduct(*v, *v);
+	len = Vec3Dot(*v, *v);
 	len = sqrt(len);
 		
 	return len;
@@ -218,7 +213,7 @@ static inline Vec3 Vector3Normalize(const Vec3 *v) {
 	Vec3 n = {};
 	r32	len, ilen;
 
-	len = Vector3DotProduct(*v, *v);
+	len = Vec3Dot(*v, *v);
 	len = sqrt(len);
 
 	if (len) {
@@ -235,7 +230,7 @@ static inline Vec3 Vector3Normalize(Vec3 v) {
 	Vec3 n = {};
 	r32	len, ilen;
 
-	len = Vector3DotProduct(v, v);
+	len = Vec3Dot(v, v);
 	len = sqrt(len);
 
 	if (len) {

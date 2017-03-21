@@ -248,18 +248,18 @@ void Con_AppendText(const char *msg) {
 	SendMessage(global_console.hwnd_buffer, EM_REPLACESEL, 0, (LPARAM)buffer);
 }
 #if 1
-void Sys_CreateConsole() {
+void Sys_CreateConsole(HINSTANCE hinstance) {
 	WNDCLASS wc = {};
 	HDC hdc;
 	RECT rect;
 
-	const char *console_class_name = "Console1";
+	const char *console_class_name = "Debug Console";
 	int nheight;
 	int swidth, sheight;
 	int DEDSTYLE = WS_POPUPWINDOW | WS_CAPTION | WS_MINIMIZEBOX;
 
 	wc.lpfnWndProc   = ConWndProc;
-	wc.hInstance     = global_win_vars.hinstance;
+	wc.hInstance     = hinstance;
 	wc.hCursor       = LoadCursor (NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpszClassName = console_class_name;
@@ -289,7 +289,7 @@ void Sys_CreateConsole() {
 									   rect.right - rect.left + 1, rect.bottom - rect.top + 1,
 									   NULL,
 									   NULL,
-									   global_win_vars.hinstance,
+									   hinstance,
 									   NULL);
 
 	if (!global_console.hwnd) {
@@ -323,7 +323,7 @@ void Sys_CreateConsole() {
 												 6, 400, 528, 20,
 												 global_console.hwnd, 
 												 (HMENU)INPUT_ID,	// child input line window ID
-												 global_win_vars.hinstance, NULL);
+												 hinstance, NULL);
 
 	// Create the scrollbuffer
 	global_console.hwnd_buffer = CreateWindow("edit", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | 
@@ -331,7 +331,7 @@ void Sys_CreateConsole() {
 											  6, 40, 526, 354,
 											  global_console.hwnd, 
 											  (HMENU)EDIT_ID,			// child scrollbar window ID
-											  global_win_vars.hinstance, NULL );
+											  hinstance, NULL );
 
 
 

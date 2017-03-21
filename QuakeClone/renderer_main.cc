@@ -1,4 +1,4 @@
-#include "renderer_local.h"
+#include "renderer.h"
 #include "win_renderer.h"
 #include "plg_loader.h"
 
@@ -6,6 +6,8 @@ void R_SetupProjection(Renderer *ren) {
 	r32 aspect_ratio = ren->current_view.aspect_ratio;
 	r32 fov_y = ren->current_view.fov_y;
 
+	// NOTE: currently this handles only view planes 2x2 dimension
+	// FIXME: handle variable sized view planes
 	r32 d = (ren->current_view.viewplane_width / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
 
 	// direct3d style [0, 1] z-buffer mapping
@@ -65,37 +67,30 @@ void R_SetupFrustum(Renderer *ren) {
 	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = combo_matrix[2][1] + combo_matrix[2][3];
 	frustum[FRUSTUM_PLANE_BOTTOM].dist = combo_matrix[3][1] - combo_matrix[3][3];
 
+	// FIXME: add near and far planes
+
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		frustum[i].unit_normal = Vector3Normalize(frustum[i].unit_normal);
-		frustum[i].dist = Vector3DotProduct(frustum[i].unit_normal, ren->current_view.world_orientation.origin);
+		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, ren->current_view.world_orientation.origin);
 	}
-
-	//for ( int i = 0; i < 6; i++ ) {
-	//	float s = idMath::InvSqrt( planes[i].Normal().LengthSqr() );
-	//	planes[i][0] *= s;
-	//	planes[i][1] *= s;
-	//	planes[i][2] *= s;
-	//	planes[i][3] *= s;
-	//}
-
 
 	memcpy(&ren->current_view.frustum, &frustum, sizeof(frustum));
 }
 
-void R_TransformWorldToView(Renderer *ren, MeshObject *md) {
+void R_TransformWorldToView(Renderer *ren, Entity *md) {
 	int num_verts = md->status.num_verts;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 	for (int i = 0; i < num_verts; ++i) {
 		r32 vert[4], tmp[4];
-		Vector3Copy(vert, trans_verts[i]);
+		Vec3Copy(vert, trans_verts[i]);
 		vert[3] = 1.0f;
 
 		Mat1x4Mul(tmp, vert, ren->current_view.view_matrix);  
-		Vector3Copy(trans_verts[i], tmp);
+		Vec3Copy(trans_verts[i], tmp);
 	}
 }
 
-void R_TransformModelToWorld(Renderer *ren, MeshObject *md, VertexTransformState vts) {
+void R_TransformModelToWorld(Renderer *ren, Entity *md, VertexTransformState vts) {
 	int num_verts = md->status.num_verts;
 	Vec3 *local_verts = md->mesh->local_verts->vert_array;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
@@ -114,40 +109,20 @@ void R_TransformModelToWorld(Renderer *ren, MeshObject *md, VertexTransformState
 FrustumClippingState R_CullPointAndRadius(Renderer *ren, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = ren->current_view.frustum[i];
-		r32 dist = Vector3DotProduct(pt, pl.unit_normal) - pl.dist;
+		r32 dist = Vec3Dot(pt, pl.unit_normal) - pl.dist;
 
 		if (dist < 0.0f) {
-			//Sys_Print("Point center is outside of a plane\n");
-			//if (dot - radius > 0.0f) {
-			//	Sys_Print("Point with radius is outside of the frustum\n");
-			//	return CULL_OUT;
-			//} else {
-			//	Sys_Print("Point with radius is partially clipped of the frustum\n");
-			//	return CULL_CLIP;
-			//}
-			//Sys_Print("Point is culled!\n");
-			//return CULL_IN;
-			//cull_state[i] = CULL_OUT;
-			Sys_Print("Culling!!\n");
+			//Sys_Print("Culling!!\n");
 			return FCS_CULL_OUT;
 			
 		} 
 	}
 
-	//for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-	//	if (cull_state[i] == CULL_OUT) {
-	//		Sys_Print("Point is culled!!\n");
-	//		return CULL_OUT;
-	//	}
-	//}
-
-	Sys_Print("NO culling!!\n");
+	//Sys_Print("NO culling!!\n");
 	return FCS_CULL_IN;
-	//Sys_Print("Point is on a plane of the frustum\n");
-	//return CULL_OUT;
 }
 
-void R_TransformViewToClip(Renderer *ren, MeshObject *md) {
+void R_TransformViewToClip(Renderer *ren, Entity *md) {
 	int num_verts = md->status.num_verts;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 	r32 (*m)[4] = ren->current_view.projection_matrix;
@@ -155,7 +130,6 @@ void R_TransformViewToClip(Renderer *ren, MeshObject *md) {
 	r32 out[4];
 
 	for (int i = 0; i < num_verts; ++i) {
-		// FIXME: macro
 		in[0] = trans_verts[i][0];
 		in[1] = trans_verts[i][1];
 		in[2] = trans_verts[i][2];
@@ -165,13 +139,10 @@ void R_TransformViewToClip(Renderer *ren, MeshObject *md) {
 		trans_verts[i][0] = out[0] / out[3];
 		trans_verts[i][1] = out[1] / out[3];
 		trans_verts[i][2] = out[2] / out[3];
-		//z = trans_verts[i].v.z;
-		//trans_verts[i].v.x = (trans_verts[i].v.x * dist) / z; 
-		//trans_verts[i].v.y = (trans_verts[i].v.y * dist) / z; 
 	}
 }
 
-void R_TransformClipToScreen(Renderer *ren, MeshObject *md) {
+void R_TransformClipToScreen(Renderer *ren, Entity *md) {
 	int num_verts = md->status.num_verts;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
@@ -185,9 +156,9 @@ void R_TransformClipToScreen(Renderer *ren, MeshObject *md) {
 
 void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
-		r32 x = Vector3DotProduct(rot_mat[0], points[i]);
-		r32 y = Vector3DotProduct(rot_mat[1], points[i]);
-		r32 z = Vector3DotProduct(rot_mat[2], points[i]);
+		r32 x = Vec3Dot(rot_mat[0], points[i]);
+		r32 y = Vec3Dot(rot_mat[1], points[i]);
+		r32 z = Vec3Dot(rot_mat[2], points[i]);
 
 		points[i][0] = x;
 		points[i][1] = y;
@@ -195,7 +166,7 @@ void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
 	}
 }
 
-void R_CullBackFaces(Renderer *ren, MeshObject *md) {
+void R_CullBackFaces(Renderer *ren, Entity *md) {
 	Poly *polys = md->mesh->polys->poly_array;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 	Vec3 p = {};
@@ -215,7 +186,7 @@ void R_CullBackFaces(Renderer *ren, MeshObject *md) {
 		Vec3 n = Vector3CrossProduct(u, v);
 		Vec3 view = Vector3Build(trans_verts[v0], p);
 
-		r32 dot = Vector3DotProduct(view, n);
+		r32 dot = Vec3Dot(view, n);
 
 		if (dot <= 0.0f) {
 			polys[i].state |= POLY_STATE_BACKFACE;
@@ -227,7 +198,7 @@ void R_RotateForViewer(Renderer *ren) {
 	r32		view_matrix[16];
 	Vec3	origin;
 
-	Vector3Copy(origin, ren->current_view.world_orientation.origin);
+	Vec3Copy(origin, ren->current_view.world_orientation.origin);
 
 	// compute the uvn vectors
 	Vec3 n = ren->current_view.world_orientation.dir;
@@ -248,17 +219,17 @@ void R_RotateForViewer(Renderer *ren) {
 	view_matrix[0] = u[0];
 	view_matrix[4] = u[1];
 	view_matrix[8] = u[2];
-	view_matrix[12] = -(Vector3DotProduct(u, origin));
+	view_matrix[12] = -(Vec3Dot(u, origin));
 
 	view_matrix[1] = v[0];
 	view_matrix[5] = v[1];
 	view_matrix[9] = v[2];
-	view_matrix[13] = -(Vector3DotProduct(v, origin));
+	view_matrix[13] = -(Vec3Dot(v, origin));
 
 	view_matrix[2] = n[0];
 	view_matrix[6] = n[1];
 	view_matrix[10] = n[2];
-	view_matrix[14] = -(Vector3DotProduct(n, origin));
+	view_matrix[14] = -(Vec3Dot(n, origin));
 
 	view_matrix[3] = 0.0f;
 	view_matrix[7] = 0.0f;
@@ -273,8 +244,8 @@ void R_RenderView(Renderer *ren) {
 	if (!first_draw) {
 		first_draw = true;
 
-		Vector3Init(ren->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-		Vector3Init(ren->current_view.target, 0.0f, 0.0f, 1.0f);
+		Vec3Init(ren->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
+		Vec3Init(ren->current_view.target, 0.0f, 0.0f, 1.0f);
 
 		ren->current_view.world_orientation.dir = ren->current_view.target;
 		ren->current_view.aspect_ratio = (r32)ren->vid_sys.width / (r32)ren->vid_sys.height;

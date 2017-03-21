@@ -35,37 +35,36 @@ struct PolyGroup {
 	Poly	poly_array[64];		// cacheline friendly
 };
 
-struct MeshData {
+struct Mesh {
 	VertexGroup	*	local_verts;		// original
 	VertexGroup	* 	trans_verts;		// transformed
 
 	PolyGroup *		polys;
 };
-// not self contained
-// general poly mesh
-struct MeshObject {
-	struct {
-		int		id;
-		char	name[32];
 
-		int		state;
-		int		attr;
-
-		r32		avg_radius;
-		r32		max_radius;
-
-		r32		world_matrix[4][4];	// currently unused
-		Vec3	world_pos;
-		Vec3	dir;
-		Vec3	ux, uy, uz;
-
-		int		num_verts;
-		int		num_polys;
-	} status;
-	// FIXME: maybe remove the un-named struct status
-
-	MeshData *	mesh;
-};
+//// not self contained
+//// general poly mesh
+//struct Entity {
+//	struct {
+//		int		id;
+//		char	name[32];
+//
+//		int		state;
+//		int		attr;
+//
+//		r32		avg_radius;
+//		r32		max_radius;
+//
+//		//r32	world_matrix[4][4];	// currently unused
+//		Vec3	world_pos;
+//
+//		int		num_verts;
+//		int		num_polys;
+//	} status;
+//	// FIXME: maybe remove the un-named struct status
+//
+//	Mesh *	mesh;
+//};
 
 // master poly list
 struct RenderList {

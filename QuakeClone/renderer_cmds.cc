@@ -1,5 +1,5 @@
 #include "shared.h"
-#include "renderer_local.h"
+#include "renderer.h"
 
 void R_BeginFrame(Renderer *ren, byte fill_color) {
 	// clean up the framebuffer
@@ -199,7 +199,7 @@ static void R_DrawFlatTopTriangle(Renderer *ren, r32 p0_x, r32 p0_y, r32 p1_x, r
 	}
 }
 
-void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
+void R_DrawWireframeMesh(Renderer *ren, Entity *md) {
 	int num_polys = md->status.num_polys;
 	Poly *polys = md->mesh->polys->poly_array;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
@@ -236,7 +236,7 @@ void R_DrawWireframeMesh(Renderer *ren, MeshObject *md) {
 	}
 }
 
-void R_DrawSolidMesh(Renderer *ren, MeshObject *md) {
+void R_DrawSolidMesh(Renderer *ren, Entity *md) {
 	int num_polys = md->status.num_polys;
 	Poly *polys = md->mesh->polys->poly_array;
 	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;

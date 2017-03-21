@@ -72,19 +72,21 @@ static int MapKey (int key) {
 #endif
 
 LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) {
+	LRESULT result = 0;
 	switch (msg) {
 		case WM_CREATE: {
 			global_win_vars.hwnd = window;
 		} break;
 
-		// fall through 
 		// FIXME: not sure about the int casts
 		case WM_SYSKEYDOWN:
+		// fall through 
 		case WM_KEYDOWN:
 			Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, true, 0, 0);
 			break;
 
 		case WM_SYSKEYUP:
+		// fall through 
 		case WM_KEYUP:
 			Sys_QueEvent(global_win_vars.sys_msg_time, SET_KEY, (int)wparam, false, 0, 0);
 			break;
@@ -95,7 +97,10 @@ LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) 
 			}
 			Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
 			break;
+		default:
+			result = DefWindowProc(window, msg, wparam, lparam); 
+			break;
 	}
 
-    return DefWindowProc(window, msg, wparam, lparam);
+    return result;
 }

@@ -7,7 +7,7 @@
 
 struct Key {
 	b32		down;
-	int		repeats;		// if > 1, it is autorepeating
+	u32		repeats;		// if > 1, it is autorepeating
 	char *	binding;
 };
 //extern Key	global_keys[MAX_KEYS];

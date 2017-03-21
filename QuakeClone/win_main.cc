@@ -15,7 +15,6 @@ void Sys_Init() {
 
 void Sys_Quit() {
 	Sys_DestroyConsole();
-	// FIXME: maybe free the list and stack allocators
 	timeEndPeriod(1);
 	exit(0);
 }
@@ -145,18 +144,9 @@ void Sys_PumpEvents() {
 }
 
 void Sys_GenerateEvents() {
-	//static int entered = false;
-	////char *s;
-
-	//if (entered) {
-	//	return;
-	//}
-	//entered = true;
-
 	// pump the message loop
 	Sys_PumpEvents();
 
-	// grab or release the mouse cursor if necessary
 #if 0
 	IN_Frame();
 
@@ -173,27 +163,23 @@ void Sys_GenerateEvents() {
 	}
 
 #endif
-	//entered = false;
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
 
-	global_win_vars.hinstance = hinstance;
-	global_win_vars.wndproc = MainWndProc;
-
 	ParseCommandLine(cmd_line);
-	Sys_CreateConsole();
+	Sys_CreateConsole(hinstance);
 	Sys_ShowConsole(1, true);
 
-	// initial time resolution and base
+	// initial time resolution
 	timeBeginPeriod(1);
 	Sys_GetMilliseconds();
 
-	Platform pf = Com_Init(global_win_vars.hinstance, global_win_vars.wndproc);
-
+	Platform pf = Com_Init(hinstance, MainWndProc);
+	Renderer *ren = R_Init(pf.stack_allocator.perm_data, hinstance, MainWndProc);
 
 	for (;;) {
 		// run 1 frame of update and render
-		Com_RunFrame(&pf);
+		Com_RunFrame(&pf, ren);
 	}
 }
