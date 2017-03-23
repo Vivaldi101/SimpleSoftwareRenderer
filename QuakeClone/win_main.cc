@@ -50,6 +50,7 @@ void Sys_ToggleFullscreen(HWND window) {
 	}
 }
 
+#if 0
 static void ParseCommandLine(char *cmd_line) {
 	global_sys_argc = 1;
 	global_sys_argv[0] = "exe";
@@ -74,9 +75,10 @@ static void ParseCommandLine(char *cmd_line) {
 		}
 	}
 }
+#endif
 
 //
-// system event queue
+// event queue
 //
 #define	MAX_SYS_QUED_EVENTS		256
 #define	MASK_SYS_QUED_EVENTS	(MAX_SYS_QUED_EVENTS - 1)
@@ -146,28 +148,10 @@ void Sys_PumpEvents() {
 void Sys_GenerateEvents() {
 	// pump the message loop
 	Sys_PumpEvents();
-
-#if 0
-	IN_Frame();
-
-	// check for console commands
-	s = Sys_ConsoleInput();
-	if ( s ) {
-		char	*b;
-		int		len;
-
-		len = strlen( s ) + 1;
-		b = (char *)Mem_Alloc( len, TAG_EVENTS );
-		strcpy( b, s );
-		Sys_QueEvent( SE_CONSOLE, 0, 0, len, b, 0 );
-	}
-
-#endif
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
 
-	ParseCommandLine(cmd_line);
 	Sys_CreateConsole(hinstance);
 	Sys_ShowConsole(1, true);
 

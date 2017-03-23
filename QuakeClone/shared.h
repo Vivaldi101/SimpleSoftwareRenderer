@@ -70,8 +70,8 @@ static inline r32 RAD2DEG(r32 a) {
 #define TERABYTES(Value) ((GIGABYTES(Value)*1024ULL))
 
 // rgb
-#define RGB_32(A,R,G,B) (((A & 255) << 24) + ((R & 255) << 16) + ((G & 255) << 8) + ((B) & 255))
-#define RGB_16_565(R,G,B) ((((R) & 31) << 11) + (((G) & 63) << 5) + ((B) & 31))
+#define RGB_32(A,R,G,B) (((A & 255u) << 24u) + ((R & 255u) << 16u) + ((G & 255u) << 8u) + ((B) & 255u))
+#define RGB_16_565(R,G,B) ((((R) & 31u) << 11u) + (((G) & 63u) << 5u) + ((B) & 31u))
 
 inline u16 RGB_888To565(int r, int g, int b) {
     // builds a 5.6.5 format 16 bit pixel
@@ -306,6 +306,7 @@ extern void *_Push_(MemoryStack *ms, size_t num_bytes);
 extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 
 #define PushSize(arena, type, size) ((type *)_Push_(arena, size))  
+
 #define PushStruct(arena, type) ((type *)_Push_(arena, sizeof(type)))  
 #define PopStruct(arena, type) (_Pop_(arena, sizeof(type)))  
 
@@ -317,20 +318,26 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
 #define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
 #define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
-#define TypelessSwap(a, b, type)
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
-#define OffsetOf(i, s) (int)&(((s *)0)->i)
+#define OffsetOf(i, s) ((int)&(((s *)0)->i))
+#define OffsetOfSize(i, s) sizeof((s *)0)->i
+#define PointerSizeOf(v) ((sizeof(v) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
+#define VaStart(va, v) ((va) = (char *)&(v) + PointerSizeOf(v))
+#define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
+
 
 #undef MAX
 #define MAX(a,b)	((a) > (b) ? (a) : (b))
 #undef MIN
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
 
+#define ABS(a) (((a) >= 0) ? (a) : -(a))
+
 
 // windows specific
 #ifdef _WIN32
 #include <Windows.h>
-#define InvalidCodePath do { MessageBoxA(0, "Invalid code path", 0, 0); Assert(0); } while(0)
+#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Assert(0); } while(0)
 #define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
 #define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
 #else

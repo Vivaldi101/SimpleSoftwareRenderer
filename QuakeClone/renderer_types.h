@@ -6,11 +6,8 @@
 // based on a vertex list
 struct Poly {
 	Vec3 *		vertex_list;	// points to the mesh containing the poly
-
 	int			state;
 	u32			color;
-	//int			attr;
-
 	int			vert_indices[3];
 };
 

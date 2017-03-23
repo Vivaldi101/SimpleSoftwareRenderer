@@ -90,7 +90,7 @@ struct ViewSystem {
 };
 
 struct Renderer {
-	struct RenderQueue *	queue;
+	struct RenderCommands *	commands;
 	Poly *					polys;			
 	Vec3 *					poly_verts;		
 	VidSystem 				vid_sys;

@@ -94,8 +94,9 @@ LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) 
 		case WM_CHAR:
 			if (wparam == 'f') {
 				Sys_ToggleFullscreen(window);
+			} else {
+				Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
 			}
-			Sys_QueEvent(global_win_vars.sys_msg_time, SET_CHAR, (int)wparam, 0, 0, 0);
 			break;
 		default:
 			result = DefWindowProc(window, msg, wparam, lparam); 

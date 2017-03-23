@@ -2,7 +2,8 @@
 #define RENDERER_GROUP_H
 #include "common.h"
 
-struct RenderQueue {
+#define RCMD(type) RCMD_##type
+struct RenderCommands {
 	byte *			buffer_base;
 	size_t			max_buffer_size;
 	size_t			used_buffer_size;
@@ -20,18 +21,21 @@ struct RenderCommandHeader {
 
 struct ClearScreen {
 	RenderCommandHeader	header;
-	int					width, height;
-	r32					r, g, b, a;
+	u32 fill_color;
 };
 
 struct ShowScreen {
 	RenderCommandHeader	header;
-	int					width, height;
+	int	width, height;
 };
 
-extern RenderQueue *AllocateRenderQueue(MemoryStack *ms, size_t max_buffer_size);
-extern void ExecuteRenderQueue(RenderQueue *rq, Renderer *ren);
+extern RenderCommands *AllocateRenderCommands(MemoryStack *ms, size_t max_buffer_size);
+extern void ExecuteRenderCommands(RenderCommands *rc, Renderer *ren);
 
-#define PlaceRenderCommand(group, type)(type *)_PlaceRenderCommand_(group, sizeof(type), RCMD_##type)
-extern RenderCommandHeader *_PlaceRenderCommand_(RenderQueue *rq, size_t element_size, RenderCommandEnum type);
+#define ApplyRenderCommand(rc, render_type, format, ...)_ApplyRenderCommand_(rc, RCMD_##render_type, sizeof(render_type), format, __VA_ARGS__)
+extern void _ApplyRenderCommand_(RenderCommands *rc, RenderCommandEnum type, size_t element_size, char *format, ...);
+
+#define EndRenderCommand(rc, render_type) { (rc)->used_buffer_size += sizeof(render_type); } 
+
+//extern void _EndRenderCommand_(RenderCommands *rc, size_t element_size);
 #endif	// Header guard

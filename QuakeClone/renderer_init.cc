@@ -7,7 +7,7 @@
 Renderer *R_Init(MemoryStack *mem_stack, void *hinstance, void *wndproc) { 
 	Renderer *ren = PushStruct(mem_stack, Renderer);
 	ren->polys = PushArray(mem_stack, MAX_POLYS, Poly);
-	ren->queue = AllocateRenderQueue(mem_stack, MEGABYTES(4));
+	ren->commands = AllocateRenderCommands(mem_stack, MEGABYTES(4));
 
 	if (!Vid_CreateWindow(ren, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");

@@ -6,7 +6,7 @@
 #define	MAX_NUM_KEYS 256
 
 struct Key {
-	b32		down;
+	b32		pressed;
 	u32		repeats;		// if > 1, it is autorepeating
 	char *	binding;
 };

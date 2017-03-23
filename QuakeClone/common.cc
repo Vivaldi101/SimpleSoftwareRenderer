@@ -24,6 +24,7 @@ static inline u32 NextPO2(u32 v) {
 }
 
 
+#if 0
 //
 // fixed size allocator
 //
@@ -183,6 +184,7 @@ static byte *InitFixedBlockMemory(size_t num_bytes) {
 
 	return (byte *)la;
 }
+#endif
 
 //
 // stack based allocator
@@ -218,6 +220,13 @@ static MemoryStack *InitStackMemory(size_t num_bytes) {
 	return ms;
 }
 
+/*
+==============================================================
+
+COMMON
+
+==============================================================
+*/
 
 static int global_game_time_residual;
 static int global_game_frame;
@@ -303,55 +312,32 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 
 static void ProcessEvent(Input *in, SysEvent se) {
 
-	// FIXME: move input handling elsewhere
-	// ALL of this is just for prototyping purposes
-	if (se.type == SET_KEY) {
-		IN_HandleKeyEvent(in, se.value, se.value2, se.time);
-	}
-
 	if (se.value == VK_ESCAPE) {
 		Sys_Quit();
 	}
 
 	// FIXME: remove the globals
-	if (se.value == VK_PAUSE && !IN_IsKeyDown(in, se.value)) {
-		paused = !paused;
-	}
+	// FIXME: handles only up, down, left, right, space and pause keys
+	// FIXME: make into switch
+	if (se.type == SET_KEY) {
+		int mapped_key = IN_MapKeyToIndex(in, se.value, se.value2, se.time);
 
-	if (se.value == VK_SPACE && !IN_IsKeyDown(in, se.value)) {
-		wireframe = !wireframe;
-	} 
+		// valid key
+		if (mapped_key > ControllerIndexEnum::KEY_INVALID) {
+			if ((mapped_key == ControllerIndexEnum::KEY_PAUSE) && !IN_IsKeyDown(in, mapped_key)) {
+				paused = !paused;
+			} else if ((mapped_key == ControllerIndexEnum::KEY_SPACE) && !IN_IsKeyDown(in, mapped_key)) {
+				wireframe = !wireframe;
+			}
+		}
 
-	if (se.value == VK_UP && (IN_IsKeyDown(in, in->curr_key) && !IN_IsKeyDown(in, in->prev_key))) {
-		forward = true;
-	} else {
-		forward = false;
-	}
-
-	if (se.value == VK_DOWN && (IN_IsKeyDown(in, in->curr_key) && !IN_IsKeyDown(in, in->prev_key))) {
-		backward = true;
-	} else {
-		backward = false;
-	}
-
-	if (se.value == VK_LEFT && IN_IsKeyDown(in, se.value)) {
-		turn_left = true;
-	} else {
-		turn_left = false;
-	}
-
-	if (se.value == VK_RIGHT && IN_IsKeyDown(in, se.value)) {
-		turn_right = true;
-	} else {
-		turn_right = false;
-	}
-
-	if (se.value == VK_RETURN) {
-		reset = true;
+		if (se.value == VK_RETURN) {
+			reset = true;
+		}
 	}
 }
 
-void Com_RunEventLoop(Input *in) {
+static void Com_RunEventLoop(GameState *gs, Input *in) {
 	SysEvent se;
 
 	for (;;) {
@@ -366,11 +352,12 @@ void Com_RunEventLoop(Input *in) {
 	}
 }
 
-void Com_SimFrame(r32 dt) {
+static void Com_SimFrame(r32 dt, Entity *ents, Input *in) {
 }
+
 void Com_RunFrame(Platform *pf, Renderer *ren) {
 	Sys_GenerateEvents();
-	Com_RunEventLoop(pf->input);
+	Com_RunEventLoop(pf->game_state, pf->input);
 
 	// test stuff
 	if (paused) {
@@ -417,15 +404,13 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		Sys_Sleep(0);
 	}
 
-#if 0
+	Entity *entities = pf->game_state->entities;
 	for (int i = 0; i < num_game_frames_to_run; ++i) {
-		Com_SimFrame(MSEC_PER_SIM);
+		Com_SimFrame(MSEC_PER_SIM, entities, pf->input);
 	}
-#endif
 
 	// FIXME: will be moved elsewhere
-	RenderQueue *rq = ren->queue;
-	Entity *entities = pf->game_state->entities;
+	RenderCommands *rc = ren->commands;
 
 	if (reset) {
 		Vec3Init(ren->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
@@ -535,6 +520,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 
 
 	// test stuff
+	// FIXME: extract these into a function
 	int num_entities = pf->game_state->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
 		Entity *current_mo = &entities[i];
@@ -551,12 +537,13 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 
 	R_RenderView(ren);
 
-	// hacky player third person cam test stuff
 	// FIXME: 0 index hardcoded for player in the entities array
+	// acky player third person cam test stuff
 	entities[0].status.world_pos = 
 		ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 60.0f);
 	entities[0].status.world_pos[1] -= 20.0f;
 
+	// FIXME: 0 index hardcoded for player in the entities array
 	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
 		Entity *current_mo = &entities[i];
@@ -586,16 +573,19 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		}
 	}
 
-	PlaceRenderCommand(rq, ShowScreen);
-	PlaceRenderCommand(rq, ClearScreen);
-	ExecuteRenderQueue(rq, ren);
+	ApplyRenderCommand(rc, ShowScreen, "");
+	EndRenderCommand(rc, ShowScreen);
 
-	// FIXME: will be moved elsewhere
-	static int last_time = Sys_GetMilliseconds();
-	int	now_time = Sys_GetMilliseconds();
-	int	frame_msec = now_time - last_time;
-	last_time = now_time;
+	ApplyRenderCommand(rc, ClearScreen, "%d", OffsetOf(fill_color, ClearScreen), 0);
+	EndRenderCommand(rc, ClearScreen);
+
+	ExecuteRenderCommands(rc, ren);
+
 	{
+		static int last_time = Sys_GetMilliseconds();
+		int	now_time = Sys_GetMilliseconds();
+		int	frame_msec = now_time - last_time;
+		last_time = now_time;
 		char buffer[64];
 		sprintf_s(buffer, "Frame time: %d, Yaw: %f\n", frame_msec, yaw);
 		OutputDebugStringA(buffer);
@@ -610,7 +600,7 @@ void Com_Quit() {
 }
 
 //
-// common event queue
+// event queue
 //
 #define	MAX_COM_QUED_EVENTS		1024
 #define	MASK_COM_QUED_EVENTS	(MAX_COM_QUED_EVENTS - 1)
@@ -635,5 +625,37 @@ static int Com_ModifyFrameMsec(int frame_msec) {
 
 	return frame_msec;
 }
+
+#if 0
+void ProcessStruct(X* x, char *format, ...) {
+	char *start, *p, *q = (char *)x;
+	VaStart(start, format);
+
+	p = format;
+	for (; *p; ++p) {
+		if (*p == '%') {
+			switch (*(p + 1)) {
+				case 'd': {
+					int offset = VaArg(start, int);
+					Assert(offset >= 0);
+					Assert(offset < sizeof(*x));
+					int data = VaArg(start, int);
+					*(int *)(q + offset) = data;
+				} break;
+				case 'f': {
+					int offset = VaArg(start, int);
+					Assert(offset >= 0);
+					Assert(offset < sizeof(*x));
+					double data = VaArg(start, double);
+					*(float *)(q + offset) = (float)data;
+				} break;
+
+				default: break;
+			}
+		}
+	}
+}
+#endif
+
 
 

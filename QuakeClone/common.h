@@ -21,10 +21,24 @@
 #define WINDOW_HEIGHT	600
 #endif	// PLATFORM_FULLSCREEN
 
+
+#define PLAYER_CONTROLLER 0
+#define MAX_NUM_CONTROLLERS 1
+enum ControllerIndexEnum { KEY_INVALID = -1, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_PAUSE, KEY_SPACE, KEY_MAX };
+union Controller {
+	Key buttons[6];
+	struct {
+		Key		up;
+		Key		down;
+		Key		left;
+		Key		right;
+
+		Key		pause;
+		Key		space;
+	};
+};
 struct Input {
-	Key	keys[MAX_NUM_KEYS];
-	int curr_key;
-	int prev_key;
+	Controller controllers[MAX_NUM_CONTROLLERS];
 };
 
 struct Entity {
@@ -49,6 +63,7 @@ struct Entity {
 
 	union {
 		struct {
+			Controller input;
 		} player;
 	};
 
@@ -58,7 +73,6 @@ struct Entity {
 struct GameState {
 	Entity 		entities[MAX_ENTITIES];
 	int			num_entities;
-	//Player		player;
 };
 
 struct StackAllocator {
@@ -68,8 +82,6 @@ struct StackAllocator {
 };
 
 struct Platform {
-	// fixed block allocator
-	//FBAllocator 		fb_allocator;
 	// with temp and perm allocations coming from the opposite sides
 	StackAllocator 		stack_allocator;
 	Input		*		input;
@@ -103,10 +115,7 @@ static inline int Com_ModifyFrameMsec(int frame_msec);
 // Common
 extern Platform Com_Init(void *hinstance, void *wndproc);
 extern void Com_RunFrame(Platform *pf, struct Renderer *ren);
-extern void Com_SimFrame(r32 dt);
 extern void Com_Quit();
-void *Allocate(FBAllocator *la, size_t num_bytes);
-void Free(FBAllocator *la, void **ptr);
 
 // Events
 extern void Sys_GenerateEvents();
@@ -115,7 +124,8 @@ extern struct SysEvent Sys_GetEvent();
 
 // Input
 extern b32 IN_IsKeyDown(Input *in, int key);
-extern void IN_HandleKeyEvent(Input *in, int key, b32 down, u32 time);
+extern void IN_HandleControllerEvent(int key);
+extern int IN_MapKeyToIndex(Input *in, int key, b32 down, u32 time);
 extern void IN_ClearKeyStates(Input *in);
 
 #endif	// Header guard

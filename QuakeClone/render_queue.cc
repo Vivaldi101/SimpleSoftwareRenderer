@@ -1,51 +1,73 @@
 #include "render_queue.h"
 #include "renderer.h"
 
-RenderQueue *AllocateRenderQueue(MemoryStack *ms, size_t max_buffer_size) {
-	RenderQueue *result = PushStruct(ms, RenderQueue);
+RenderCommands *AllocateRenderCommands(MemoryStack *ms, size_t max_buffer_size) {
+	RenderCommands *result = PushStruct(ms, RenderCommands);
 	result->max_buffer_size = max_buffer_size;
 	result->buffer_base = PushSize(ms, byte, max_buffer_size);
+	result->used_buffer_size = 0;
 
 	return result;
 }
 
-void ExecuteRenderQueue(RenderQueue *rq, Renderer *ren) {
+void ExecuteRenderCommands(RenderCommands *rc, Renderer *ren) {
+	Assert(rc->used_buffer_size > 0);
 	RenderCommandHeader *header;
 
-	for (size_t i = 0; i < rq->used_buffer_size;) {
-		header = (RenderCommandHeader *)(rq->buffer_base + i);
+	for (size_t i = 0; i < rc->used_buffer_size;) {
+		header = (RenderCommandHeader *)(rc->buffer_base + i);
 
 		if (header->type == RCMD_ClearScreen) {
 			ClearScreen *clear = (ClearScreen *)header;
 			i += sizeof(ClearScreen);
 
-			R_BeginFrame(ren, 40);
+			R_BeginFrame(ren, (byte)clear->fill_color);
 		} else if (header->type == RCMD_ShowScreen) {
-			ShowScreen *clear = (ShowScreen *)header;
+			ShowScreen *show = (ShowScreen *)header;
 			i += sizeof(ShowScreen);
 
 			R_EndFrame(ren);
 		} else {
-			InvalidCodePath;
+			InvalidCodePath("Invalid renderer command type");
 		}
 	}
 
-	rq->used_buffer_size = 0;
+	rc->used_buffer_size = 0;
 }
 
-RenderCommandHeader *_PlaceRenderCommand_(RenderQueue *rq, size_t element_size, RenderCommandEnum type) {
-	RenderCommandHeader *result = 0;
+void _ApplyRenderCommand_(RenderCommands *rc, RenderCommandEnum type, size_t element_size, char *format, ...) {
+	if (rc->used_buffer_size + element_size <= rc->max_buffer_size) {
+		RenderCommandHeader *rch = (RenderCommandHeader *)(rc->buffer_base + rc->used_buffer_size);
+		rch->type = type;
+		char *start, *p = format, *q = (char *)rch;
 
-	if (rq->used_buffer_size + element_size <= rq->max_buffer_size) {
-		result = (RenderCommandHeader *)(rq->buffer_base + rq->used_buffer_size);
-		if (type == RCMD_ShowScreen) {
+		VaStart(start, format);
+
+		for (; *p; ++p) {
+			if (*p == '%') {
+				switch (*(p + 1)) {
+					case 'd': {
+						int offset = VaArg(start, int);
+						Assert(offset >= 0);
+						int data = VaArg(start, int);
+						*(int *)(q + offset) = data;
+					} break;
+					case 'f': {
+						int offset = VaArg(start, int);
+						Assert(offset >= 0);
+						r64 data = VaArg(start, r64);
+						*(r32 *)(q + offset) = (r32)data;
+					} break;
+
+					default: InvalidCodePath("Unrecognized formatter");
+				}
+			}
 		}
-		result->type = type;
-
-		rq->used_buffer_size += element_size;
 	} else {
-		InvalidCodePath;
+		InvalidCodePath("Renderer buffer overflow");
 	}
-
-	return result;
 }
+
+//void _EndRenderCommand_(RenderCommands *rc, size_t element_size) {
+//	rc->used_buffer_size += element_size;
+//}
