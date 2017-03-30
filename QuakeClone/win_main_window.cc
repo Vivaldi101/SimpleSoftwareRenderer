@@ -1,15 +1,15 @@
-#include "win_renderer.h"
+#include "win_r.h"
 #include "renderer.h"
 #define	WINDOW_CLASS_NAME "QC"
 
 
 #define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
-b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *hinstance) {
+b32 Vid_CreateWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance) {
 	WNDCLASS wc;
 	memset(&wc, 0, sizeof(wc));
 
-	VidSystem vid_sys;
-	memset(&vid_sys, 0, sizeof(vid_sys));
+	//VidSystem vid_sys;
+	//memset(&vid_sys, 0, sizeof(vid_sys));
 
 	RECT rect;
 	int	x, y, w, h;
@@ -39,7 +39,7 @@ b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *
 	x = 0;
 	y = 0;
 
-	vid_sys.win_handles.window = CreateWindowEx(ex_style,
+	vid_sys->win_handles.window = CreateWindowEx(ex_style,
 												WINDOW_CLASS_NAME,
 										  		"Test",
 										  		style_bits,
@@ -48,24 +48,22 @@ b32 Vid_CreateWindow(Renderer *ren, int width, int height, void *wndproc, void *
 										  		0,
 										  		(HINSTANCE)hinstance,
 										  		0);
-	vid_sys.width = width;
-	vid_sys.height = height;
+	vid_sys->width = width;
+	vid_sys->height = height;
 
-	if (!vid_sys.win_handles.window) {
+	if (!vid_sys->win_handles.window) {
 		return false;
 	}
 	
-	ShowWindow(vid_sys.win_handles.window, SW_SHOWNORMAL);
-	UpdateWindow(vid_sys.win_handles.window);
-	SetForegroundWindow(vid_sys.win_handles.window);
-	SetFocus(vid_sys.win_handles.window);
+	ShowWindow(vid_sys->win_handles.window, SW_SHOWNORMAL);
+	UpdateWindow(vid_sys->win_handles.window);
+	SetForegroundWindow(vid_sys->win_handles.window);
+	SetFocus(vid_sys->win_handles.window);
 
 	Sys_Print("Main window created!\n");
 
-	memcpy(&ren->vid_sys, &vid_sys, sizeof(vid_sys));
+	//memcpy(&ren->vid_sys, &vid_sys, sizeof(vid_sys));
 
 	return true;
-
-	// let the sound and input subsystems know about the new window
 }
 

@@ -15,19 +15,18 @@ extern void Sys_Init();
 extern void Sys_Quit();
 
 // input system
-extern void In_Activate(b32 active);
-extern void In_MouseEvent(int mstate);
+//extern void In_Activate(b32 active);
+//extern void In_MouseEvent(int mstate);
 
-extern void	In_Init();
-extern void	In_Shutdown();
+//extern void	In_Init();
+//extern void	In_Shutdown();
+//
+//extern void	In_DeactivateMouse();
+//
+//extern void	In_Activate(b32 active);
+//extern void	In_Frame();
 
-extern void	In_DeactivateMouse();
-
-extern void	In_Activate(b32 active);
-extern void	In_Frame();
-
-// window creation
-extern b32 Vid_CreateWindow(struct Renderer *ren, int width, int height, void *wndproc, void *hinstance);
+extern b32 Vid_CreateWindow(struct VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
 // events
@@ -35,11 +34,11 @@ extern void Sys_QueEvent(int time, enum SysEventType ev_type, int value, int val
 
 LRESULT WINAPI MainWndProc(HWND window, UINT umsg, WPARAM wparam, LPARAM lparam);
 struct WinVars {
-	void *			wndproc;
+	//void *			wndproc;
 	HINSTANCE		reflib_library;		// handle to refresh DLL 
 	b32				reflib_active;
 
-	HWND			hwnd;
+	//HWND			hwnd;
 	//HINSTANCE		hinstance;
 	b32				active_app;
 	b32				is_minimized;

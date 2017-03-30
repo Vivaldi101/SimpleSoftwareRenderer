@@ -73,7 +73,7 @@ static inline r32 RAD2DEG(r32 a) {
 #define RGB_32(A,R,G,B) (((A & 255u) << 24u) + ((R & 255u) << 16u) + ((G & 255u) << 8u) + ((B) & 255u))
 #define RGB_16_565(R,G,B) ((((R) & 31u) << 11u) + (((G) & 63u) << 5u) + ((B) & 31u))
 
-inline u16 RGB_888To565(int r, int g, int b) {
+static inline u16 RGB_888To565(int r, int g, int b) {
     // builds a 5.6.5 format 16 bit pixel
     // assumes input is in 8.8.8 format
 
@@ -96,12 +96,27 @@ inline u16 RGB_888To565(int r, int g, int b) {
 
 
 // max values
-#define	MAX_ENTITIES			256
-// these are sort of arbitrary limits.
-// the limits apply to the sum of all scenes in a frame --
-// the main view, all the 3D icons, etc
-#define	MAX_POLYS		600
-#define	MAX_POLYVERTS	3000
+#define	MAX_NUM_ENTITIES	256
+#define	MAX_NUM_POLYS		512
+
+// util tools
+#define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
+#define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
+#define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
+#define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
+#define OffsetOf(i, s) ((int)&(((s *)0)->i))
+#define OffsetOfSize(i, s) sizeof((s *)0)->i
+#define PointerSizeOf(v) ((sizeof(v) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
+#define VaStart(va, v) ((va) = (char *)&(v) + PointerSizeOf(v))
+#define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
+
+
+#undef MAX
+#define MAX(a,b)	((a) > (b) ? (a) : (b))
+#undef MIN
+#define MIN(a,b)	((a) < (b) ? (a) : (b))
+
+#define ABS(a) (((a) >= 0) ? (a) : -(a))
 
 /*
 ==============================================================
@@ -131,11 +146,12 @@ MATHLIB
 #define Mat3x3Init(m)				(Vec3Init((m)[0],0,0,0), Vec3Init((m)[1],0,0,0), Vec3Init((m)[2],0,0,0))
 #define Mat4x4Init(m)				(Vec4Init((m)[0],0,0,0,0), Vec4Init((m)[1],0,0,0,0), Vec4Init((m)[2],0,0,0,0), Vec4Init((m)[3],0,0,0,0))
 
-#define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		// x and y define the plane of v
+#define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		
 #define Square(s)					((s) * (s))
 
 union Vec3 {
 	struct {	r32 x, y, z;		} v;
+	struct {	r32 r, g, b;		} c;
 	r32 data[3];
 
 	r32			&operator[](int i)			{ return data[i]; }
@@ -144,6 +160,7 @@ union Vec3 {
 
 union Vec4 {
 	struct {	r32 x, y, z, w;		} v;
+	struct {	r32 r, g, b, a;		} c;
 	r32 data[4];
 
 	r32			&operator[](int i)			{ return data[i]; }
@@ -253,6 +270,25 @@ static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
 	return v;
 }
 
+static inline i32 truncateI64(i64 value) {
+	Assert(value <= 0x7FFFFFFF);
+	i32 result = (i32)value;
+	return result;
+}
+static inline u32 truncateU64(u64 value) {
+	Assert(value <= 0xFFFFFFFF); 
+	u32 result = (u32)value;
+	return result;
+}
+static inline i32 roundReal32ToI32(r32 value) {
+	i32 result = (i32)(value + 0.5f);
+	return result;
+}
+static inline u32 roundReal32ToU32(r32 value) {
+	u32 result = (u32)(value + 0.5f);
+	return result;
+}
+
 extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
 extern void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
 extern void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
@@ -302,36 +338,19 @@ struct FBAllocator {
 };
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
+// FIXME: pass alignment
 extern void *_Push_(MemoryStack *ms, size_t num_bytes);
 extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 
-#define PushSize(arena, type, size) ((type *)_Push_(arena, size))  
+#define PushSize(stack, size, type) ((type *)_Push_(stack, size))  
 
-#define PushStruct(arena, type) ((type *)_Push_(arena, sizeof(type)))  
-#define PopStruct(arena, type) (_Pop_(arena, sizeof(type)))  
+#define PushStruct(stack, type) ((type *)_Push_(stack, sizeof(type)))  
+#define PopStruct(stack, type) (_Pop_(stack, sizeof(type)))  
 
-#define PushArray(arena, count, type) ((type *)_Push_(arena, (count) * sizeof(type)))
-#define PopArray(arena, count, type) (_Pop_(arena, (count) * sizeof(type)))  
+//#define PushPointers(stack, count, type) ((type *)_Push_(stack, (count) * sizeof(type)))
+#define PushArray(stack, count, type) ((type *)_Push_(stack, (count) * sizeof(type)))
+#define PopArray(stack, count, type) (_Pop_(stack, (count) * sizeof(type)))  
 
-// util tools
-#define CheckZeroArray(a, size)	((*(int *)(a) == 0) && (*((int *)(a) + (size - 1)) == 0)) 
-#define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
-#define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
-#define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
-#define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
-#define OffsetOf(i, s) ((int)&(((s *)0)->i))
-#define OffsetOfSize(i, s) sizeof((s *)0)->i
-#define PointerSizeOf(v) ((sizeof(v) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
-#define VaStart(va, v) ((va) = (char *)&(v) + PointerSizeOf(v))
-#define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
-
-
-#undef MAX
-#define MAX(a,b)	((a) > (b) ? (a) : (b))
-#undef MIN
-#define MIN(a,b)	((a) < (b) ? (a) : (b))
-
-#define ABS(a) (((a) >= 0) ? (a) : -(a))
 
 
 // windows specific

@@ -116,33 +116,34 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
+    <ClInclude Include="entity.h" />
     <ClInclude Include="keys.h" />
     <ClInclude Include="plg_loader.h" />
-    <ClInclude Include="renderer_types.h" />
-    <ClInclude Include="render_queue.h" />
+    <ClInclude Include="r_types.h" />
+    <ClInclude Include="r_cmds.h" />
     <ClInclude Include="shared.h" />
     <ClInclude Include="keycodes.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="win_local.h" />
-    <ClInclude Include="win_renderer.h" />
+    <ClInclude Include="win_r.h" />
     <ClInclude Include="win_shared.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common.cc" />
-    <ClCompile Include="cvar.cc" />
-    <ClCompile Include="files.cc" />
+    <ClCompile Include="entity.cc" />
     <ClCompile Include="input.cc" />
     <ClCompile Include="math.cc" />
     <ClCompile Include="plg_loader.cc" />
-    <ClCompile Include="renderer_cmds.cc" />
-    <ClCompile Include="renderer_init.cc" />
-    <ClCompile Include="renderer_main.cc" />
-    <ClCompile Include="render_queue.cc" />
+    <ClCompile Include="r_cmds.cc" />
+    <ClCompile Include="r_init.cc" />
+    <ClCompile Include="r_main.cc" />
+    <ClCompile Include="r_scene.cc" />
+    <ClCompile Include="r_backend.cc" />
     <ClCompile Include="win_console.cc" />
     <ClCompile Include="win_shared.cc" />
     <ClCompile Include="win_main.cc" />
     <ClCompile Include="win_main_window.cc" />
-    <ClCompile Include="win_renderer_dib.cc" />
+    <ClCompile Include="win_r.cc" />
     <ClCompile Include="win_wndproc.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

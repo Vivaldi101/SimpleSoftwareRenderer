@@ -12,6 +12,18 @@ void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]) {
 	(*out)[2] = a00*b02 + a01*b12 + a02*b22;
 }
 
+void Mat1x3Mul(r32 out[3], const r32 a[3], const r32 b[3][3]) {
+	r32 a00 = a[0], a01 = a[1], a02 = a[2];
+
+	r32 b00 = b[0][0], b01 = b[0][1], b02 = b[0][2];
+	r32 b10 = b[1][0], b11 = b[1][1], b12 = b[1][2];
+	r32 b20 = b[2][0], b21 = b[2][1], b22 = b[2][2];
+
+	out[0] = a00*b00 + a01*b10 + a02*b20;
+	out[1] = a00*b01 + a01*b11 + a02*b21;
+	out[2] = a00*b02 + a01*b12 + a02*b22;
+}
+
 void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]) {
 	r32 a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
 
@@ -94,23 +106,10 @@ void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]) {
 	out[3][3] = a30*b03 + a31*b13 + a32*b23 + a33*b33;
 }
 
-void MatTranspose(const float in[16], float out[16]) {
-	for ( int i = 0; i < 4; i++ ) {
-		for ( int j = 0; j < 4; j++ ) {
+void MatTranspose(r32 out[16], const r32 in[16]) {
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
 			out[i*4+j] = in[j*4+i];
 		}
 	}
 }
-
-//void Mat4x4MulSlow(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]) {
-//	for (int i = 0; i < n; ++i {
-//		for (int j = 0; j < n; ++j) {
-//			sum = 0.0;
-//			for (int k = 0; k < n; ++k) {
-//				sum += A[i][k]*B[k][j];
-//				C[i][j] += sum;
-//			}
-//		}
-//	}
-//}
-

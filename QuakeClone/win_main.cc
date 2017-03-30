@@ -123,7 +123,8 @@ SysEvent Sys_GetEvent() {
 	return se;
 }
 
-void Sys_PumpEvents() {
+u32 Sys_PumpEvents() {
+	u32 time = 0;
     MSG msg;
 
 	// pump the message loop
@@ -131,23 +132,18 @@ void Sys_PumpEvents() {
 		if (!GetMessage( &msg, NULL, 0, 0)) {
 			Sys_Quit();
 		}
-
-		// save the msg time, because wndprocs don't have access to the timestamp
-		if (global_win_vars.sys_msg_time && global_win_vars.sys_msg_time > (int)msg.time) {
-			// don't ever let the event times run backwards	
-//			common->Printf( "Sys_PumpEvents: win32.sysMsgTime (%i) > msg.time (%i)\n", win32.sysMsgTime, msg.time );
-		} else {
-			global_win_vars.sys_msg_time = msg.time;
-		}
-
+		time = msg.time;
+			
 		TranslateMessage(&msg);
       	DispatchMessage(&msg);
 	}
+
+	return time;
 }
 
 void Sys_GenerateEvents() {
 	// pump the message loop
-	Sys_PumpEvents();
+	u32 event_time = Sys_PumpEvents();
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
@@ -160,10 +156,10 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Sys_GetMilliseconds();
 
 	Platform pf = Com_Init(hinstance, MainWndProc);
-	Renderer *ren = R_Init(pf.stack_allocator.perm_data, hinstance, MainWndProc);
+	RenderingSystem *rs = R_Init(&pf, hinstance, MainWndProc);
 
 	for (;;) {
-		// run 1 frame of update and render
-		Com_RunFrame(&pf, ren);
+		// run 1 frame of update and render  
+		Com_RunFrame(&pf, rs);
 	}
 }

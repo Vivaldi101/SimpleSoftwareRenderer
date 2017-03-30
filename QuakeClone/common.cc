@@ -1,5 +1,5 @@
 #include "common.h"
-#include "render_queue.h"
+#include "r_cmds.h"
 #include "plg_loader.h"
 
 
@@ -120,7 +120,6 @@ void *Allocate(FBAllocator *la, size_t num_bytes) {
 		}
 	}
 
-	// FIXME: handle this?
 	Sys_Print("Couldn't allocate memory\n");
 	return 0;
 }
@@ -191,6 +190,7 @@ static byte *InitFixedBlockMemory(size_t num_bytes) {
 //
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
+// FIXME: pass alignment
 void *_Push_(MemoryStack *ms, size_t num_bytes) {
 	CheckMemory((ms->bytes_used + num_bytes) <= ms->max_size);
 	void *ptr = ms->base_ptr + ms->bytes_used;
@@ -228,7 +228,7 @@ COMMON
 ==============================================================
 */
 
-static int global_game_time_residual;
+static r32 global_game_time_residual;
 static int global_game_frame;
 
 // just for prototyping purposes, will get removed
@@ -253,19 +253,18 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	// FIXME: macros for memory sizes
 	//pf.fb_allocator.data = InitFixedBlockMemory(1024 * LIST_ROW_SIZE);
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
-	pf.stack_allocator.perm_data = InitStackMemory(MAX_PERM_MEMORY);
-	pf.stack_allocator.temp_data = InitStackMemory(MAX_TEMP_MEMORY);
-	pf.input = PushStruct(pf.stack_allocator.perm_data, Input);
-	pf.game_state = PushStruct(pf.stack_allocator.perm_data, GameState);
+	pf.main_memory_stack.perm_data = InitStackMemory(MAX_PERM_MEMORY);
+	pf.main_memory_stack.temp_data = InitStackMemory(MAX_TEMP_MEMORY);
+	pf.game_state = PushStruct(pf.main_memory_stack.perm_data, GameState);
 
-	IN_ClearKeyStates(pf.input);
+	//IN_ClearKeyStates(pf.input);
 
 	// just for prototyping purposes
-	Entity *player_mo = PushStruct(pf.stack_allocator.perm_data, Entity);
-	player_mo->mesh = PushStruct(pf.stack_allocator.perm_data, Mesh);
-	player_mo->mesh->local_verts = PushStruct(pf.stack_allocator.perm_data, VertexGroup);
-	player_mo->mesh->trans_verts = PushStruct(pf.stack_allocator.perm_data, VertexGroup);
-	player_mo->mesh->polys = PushStruct(pf.stack_allocator.perm_data, PolyGroup);
+	Entity *player_mo = PushStruct(pf.main_memory_stack.perm_data, Entity);
+	player_mo->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
+	player_mo->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	player_mo->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	player_mo->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
 
 	// FIXME: move file api elsewhere
 	// FIXME: maybe replace the CRT file i/o with win32 api
@@ -286,11 +285,11 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	const int num_entities = 10;
 	for (int i = 0; i < num_entities; ++i) {
 		// just for prototyping purposes
-		Entity *mo = PushStruct(pf.stack_allocator.perm_data, Entity);
-		mo->mesh = PushStruct(pf.stack_allocator.perm_data, Mesh);
-		mo->mesh->local_verts = PushStruct(pf.stack_allocator.perm_data, VertexGroup);
-		mo->mesh->trans_verts = PushStruct(pf.stack_allocator.perm_data, VertexGroup);
-		mo->mesh->polys = PushStruct(pf.stack_allocator.perm_data, PolyGroup);
+		Entity *mo = PushStruct(pf.main_memory_stack.perm_data, Entity);
+		mo->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
+		mo->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+		mo->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+		mo->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
 
 
 		// FIXME: move elsewhere
@@ -316,18 +315,19 @@ static void ProcessEvent(Input *in, SysEvent se) {
 		Sys_Quit();
 	}
 
-	// FIXME: remove the globals
 	// FIXME: handles only up, down, left, right, space and pause keys
-	// FIXME: make into switch
 	if (se.type == SET_KEY) {
 		int mapped_key = IN_MapKeyToIndex(in, se.value, se.value2, se.time);
 
 		// valid key
+		// FIXME: make into switch
 		if (mapped_key > ControllerIndexEnum::KEY_INVALID) {
 			if ((mapped_key == ControllerIndexEnum::KEY_PAUSE) && !IN_IsKeyDown(in, mapped_key)) {
 				paused = !paused;
 			} else if ((mapped_key == ControllerIndexEnum::KEY_SPACE) && !IN_IsKeyDown(in, mapped_key)) {
 				wireframe = !wireframe;
+			} else if ((mapped_key == ControllerIndexEnum::KEY_UP) && IN_IsKeyDown(in, mapped_key)) {
+			} else if ((mapped_key == ControllerIndexEnum::KEY_DOWN) && IN_IsKeyDown(in, mapped_key)) {
 			}
 		}
 
@@ -352,29 +352,31 @@ static void Com_RunEventLoop(GameState *gs, Input *in) {
 	}
 }
 
-static void Com_SimFrame(r32 dt, Entity *ents, Input *in) {
+static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in) {
+	for (int i = 0; i < num_frames; ++i) {
+	}
 }
 
-void Com_RunFrame(Platform *pf, Renderer *ren) {
+void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	Sys_GenerateEvents();
-	Com_RunEventLoop(pf->game_state, pf->input);
+	Com_RunEventLoop(pf->game_state, &pf->input_state);
 
 	// test stuff
 	if (paused) {
 		return;
 	}
 
+	// test stuff
 	static b32 first_run = true;
 
-	// FIXME: atm this is unused, will get fixed
 	int num_game_frames_to_run = 0;
 
-	// test stuff
 	r32 rot_mat_x[3][3];
 	r32 rot_mat_z[3][3];
 	r32 rot_theta = DEG2RAD(-1.0f);
 	static r32 view_angle = 0.0f;
 	static r32 rot_mat_y[3][3];
+
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -394,7 +396,6 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 			global_game_time_residual -= MSEC_PER_SIM;
 			global_game_frame++;
 			num_game_frames_to_run++;
-			// if there is enough residual left, we may run additional frames
 		}
 
 		if (num_game_frames_to_run > 0) {
@@ -405,16 +406,17 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	}
 
 	Entity *entities = pf->game_state->entities;
-	for (int i = 0; i < num_game_frames_to_run; ++i) {
-		Com_SimFrame(MSEC_PER_SIM, entities, pf->input);
-	}
+	Com_SimFrame(MSEC_PER_SIM, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state);
+	
 
-	// FIXME: will be moved elsewhere
-	RenderCommands *rc = ren->commands;
-
+	// FIXME: will be moved
+	// render
+	ViewSystem *current_view = &rs->front_end.current_view;
+	RendererBackend *rbe = &rs->back_end;
+	RenderCommands *cmds = &rs->back_end.cmds;
 	if (reset) {
-		Vec3Init(ren->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
-		Vec3Init(ren->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
+		Vec3Init(current_view->world_orientation.dir, 0.0f, 0.0f, 1.0f);
+		Vec3Init(current_view->world_orientation.origin, 0.0f, 0.0f, 0.0f);
 		
 		rot_mat_y[0][0] = cos(DEG2RAD(yaw));
 		rot_mat_y[0][2] = sin(DEG2RAD(yaw));
@@ -434,15 +436,16 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		yaw = 0.0f;
 	}
 
+	// FIXME: will be moved
 	// movement testing
 	if (forward) {
-		ren->current_view.world_orientation.origin = 
-			ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 10.0f);
+		current_view->world_orientation.origin = 
+			current_view->world_orientation.origin + (current_view->world_orientation.dir * 10.0f);
 	}
 
 	if (backward) {
-		ren->current_view.world_orientation.origin = 
-			ren->current_view.world_orientation.origin - (ren->current_view.world_orientation.dir * 10.0f);
+		current_view->world_orientation.origin = 
+			current_view->world_orientation.origin - (current_view->world_orientation.dir * 10.0f);
 	}
 
 	if (turn_left) {
@@ -460,8 +463,8 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		rot_mat_y[2][1] = 0.0f;
 		rot_mat_y[2][2] = cos(DEG2RAD(1.0f));
 
-		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+		current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+		current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
 		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
 		for (int i = 0; i < entities[0].status.num_verts; ++i) {
@@ -484,8 +487,8 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		rot_mat_y[2][1] = 0.0f;
 		rot_mat_y[2][2] = cos(DEG2RAD(1.0f));
 
-		ren->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-		ren->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+		current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+		current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
 		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
 		for (int i = 0; i < entities[0].status.num_verts; ++i) {
@@ -520,7 +523,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 
 
 	// test stuff
-	// FIXME: extract these into a function
+	// FIXME: extract this into a function
 	int num_entities = pf->game_state->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
 		Entity *current_mo = &entities[i];
@@ -535,52 +538,45 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		}
 	}
 
-	R_RenderView(ren);
+	// FIXME: these will go through the backend
+	R_RenderView(current_view);
 
 	// FIXME: 0 index hardcoded for player in the entities array
-	// acky player third person cam test stuff
+	// hacky player third person cam test stuff
 	entities[0].status.world_pos = 
-		ren->current_view.world_orientation.origin + (ren->current_view.world_orientation.dir * 60.0f);
+		current_view->world_orientation.origin + (current_view->world_orientation.dir * 60.0f);
 	entities[0].status.world_pos[1] -= 20.0f;
 
+#if 1
+	R_BeginFrame(rbe->vid_sys, cmds);
 	// FIXME: 0 index hardcoded for player in the entities array
 	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
-		Entity *current_mo = &entities[i];
+		Entity *e = &entities[i];
 		// FIXME: reduce the indirection overhead
-		Vec3 *verts = current_mo->mesh->local_verts->vert_array;
+		Vec3 *verts = e->mesh->local_verts->vert_array;
 
 		if (i) {
-			R_RotatePoints(rot_mat_z, verts, current_mo->status.num_verts); 
-			R_RotatePoints(rot_mat_x, verts, current_mo->status.num_verts); 
+			R_RotatePoints(rot_mat_z, verts, e->status.num_verts); 
+			R_RotatePoints(rot_mat_x, verts, e->status.num_verts); 
 		}
 
-		R_TransformModelToWorld(ren, current_mo); 
+		R_TransformModelToWorld(e); 
 
 		if (i) {
-			current_mo->status.state = R_CullPointAndRadius(ren, current_mo->status.world_pos);			
+			e->status.state = R_CullPointAndRadius(current_view, e->status.world_pos);			
 		}
-		if (!(current_mo->status.state & FCS_CULL_OUT)) {
-			R_TransformWorldToView(ren, current_mo);
-			R_CullBackFaces(ren, current_mo);
-			R_TransformViewToClip(ren, current_mo);
-			R_TransformClipToScreen(ren, current_mo);
-			if (wireframe) {
-				R_DrawWireframeMesh(ren, current_mo);
-			} else {
-				R_DrawSolidMesh(ren, current_mo);
-			}
+		if (!(e->status.state & FCS_CULL_OUT)) {
+			R_TransformWorldToView(current_view, e);
+			R_CullBackFaces(current_view, e);
+			R_TransformViewToClip(current_view, e);
+			R_TransformClipToScreen(current_view, e);
+			R_DrawMesh(rbe->vid_sys, cmds, e, false);
 		}
 	}
+#endif
 
-	ApplyRenderCommand(rc, ShowScreen, "");
-	EndRenderCommand(rc, ShowScreen);
-
-	ApplyRenderCommand(rc, ClearScreen, "%d", OffsetOf(fill_color, ClearScreen), 0);
-	EndRenderCommand(rc, ClearScreen);
-
-	ExecuteRenderCommands(rc, ren);
-
+	R_EndFrame(rbe->vid_sys, cmds);
 	{
 		static int last_time = Sys_GetMilliseconds();
 		int	now_time = Sys_GetMilliseconds();
@@ -618,7 +614,7 @@ SysEvent Com_GetEvent() {
 }
 
 static int Com_ModifyFrameMsec(int frame_msec) {
-	int clamped_msec = MSEC_PER_SIM + MSEC_PER_SIM;
+	int clamped_msec = (int)(MSEC_PER_SIM + MSEC_PER_SIM);
 	if (frame_msec > clamped_msec) {
 		frame_msec = clamped_msec;
 	}

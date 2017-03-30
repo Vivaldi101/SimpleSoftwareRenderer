@@ -3,7 +3,7 @@
 #include "win_local.h"
 
 struct WinHandles {
-	HDC			dc;
+	HDC			hdc;
 	HDC			hdc_dib_section;	// DC compatible with DIB section
 	HWND		window;
 	HBITMAP		dib_section;		// DIB section

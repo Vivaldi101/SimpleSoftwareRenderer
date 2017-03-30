@@ -28,27 +28,27 @@
     <ClInclude Include="keys.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="win_renderer.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="plg_loader.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="renderer_types.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="render_queue.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="renderer.h">
       <Filter>headers</Filter>
     </ClInclude>
+    <ClInclude Include="r_types.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="win_r.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="r_cmds.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="entity.h">
+      <Filter>headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common.cc">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="cvar.cc">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="win_console.cc">
@@ -66,16 +66,7 @@
     <ClCompile Include="input.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="renderer_main.cc">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="win_renderer_dib.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="plg_loader.cc">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer_cmds.cc">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="win_main_window.cc">
@@ -84,13 +75,25 @@
     <ClCompile Include="math.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="renderer_init.cc">
+    <ClCompile Include="r_cmds.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="render_queue.cc">
+    <ClCompile Include="r_init.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="files.cc">
+    <ClCompile Include="r_main.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="r_scene.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_r.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="r_backend.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="entity.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

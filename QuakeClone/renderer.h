@@ -3,8 +3,9 @@
 
 #include "shared.h"
 #include "common.h"
-#include "renderer_types.h"
 #include "win_shared.h"
+#include "r_types.h"
+#include "r_cmds.h"
 
 // FIXME: maybe move all the constants these into .cc file if only impl needs access
 
@@ -25,11 +26,6 @@
 #define POLY_ATTR_SHADE_MODE_FLAT		0x0040
 #define POLY_ATTR_SHADE_MODE_GOURAUD	0x0080
 #define POLY_ATTR_SHADE_MODE_PHONG		0x0100
-
-// max values
-
-#define	MAX_POLYS		600
-#define	MAX_POLYVERTS	3000
 
 enum VertexTransformState {
 	VTS_LOCAL_ONLY = 0,
@@ -57,15 +53,13 @@ enum {
 
 struct VidSystem {
 	byte *			buffer;		
-	int				pitch;		
+	u32				pitch;		
 	int				width;          
 	int				height;
-	int				bpp;
+	u32				bpp;
 
 	WinHandles 		win_handles;
-	union {
-		b32 full_screen;
-	} state;
+	b32				full_screen;
 };
 
 struct ViewSystem {
@@ -76,9 +70,9 @@ struct ViewSystem {
 	Orientation		world_orientation;
 	Vec3			target;
 
-	r32				viewport_x,		viewport_y;
-	r32				viewport_width, viewport_height;
-	r32				viewplane_width, viewplane_height;
+	u32				viewport_x,		viewport_y;
+	u32				viewport_width, viewport_height;
+	u32				viewplane_width, viewplane_height;
 
 	r32				fov_x, fov_y;
 	r32				view_dist;	
@@ -89,41 +83,55 @@ struct ViewSystem {
 	r32				aspect_ratio;
 };
 
-struct Renderer {
-	struct RenderCommands *	commands;
-	Poly *					polys;			
-	Vec3 *					poly_verts;		
-	VidSystem 				vid_sys;
-	ViewSystem				current_view;	
+struct RendererFrontend {
+	ViewSystem	current_view;	
 };
 
+struct RendererBackend {
+	RenderCommands 			cmds;
+	VidSystem *				vid_sys;
+	Entity *				entities;
+	Poly **					polys;			
+	int						num_polys;
+};
 
-//extern unsigned global_8to24able[256]; 
+struct RenderingSystem {
+	RendererFrontend	front_end;
+	RendererBackend		back_end;
+};
 
+//
+//	renderer frontend
+//
+extern RenderingSystem *R_Init(const Platform *pf, void *hinstance, void *wndproc); 
+extern void R_BeginFrame(VidSystem *vs, RenderCommands *rc);
+extern void R_EndFrame(VidSystem *vs, RenderCommands *rc);
+extern void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Entity *e, b32 solid = true);
 
-extern Renderer *R_Init(MemoryStack *mem_stack, void *hinstance, void *wndproc); 
+extern void R_RenderView(ViewSystem *vs);
 
-extern void R_GenerateDrawSurfs(Renderer *ren);
-extern void R_RenderView(Renderer *ren);
+extern void R_SetupFrustum(ViewSystem *vs);
+extern void R_SetupProjection(ViewSystem *vs);
 
-extern void R_BeginFrame(Renderer *ren, byte fill_color);
-extern void R_EndFrame(Renderer *ren);
-
-extern void R_SetupFrustum(Renderer *ren);
-//extern void R_SetupEulerView(Renderer *ren, r32 pitch, r32 yaw, r32 roll, r32 view_orig_x, r32 view_orig_y, r32 view_orig_z);
-extern void R_SetupProjection(Renderer *ren);
-
-extern void R_TransformModelToWorld(Renderer *ren, Entity *md, VertexTransformState ts = VTS_LOCAL_TO_TRANSFORMED);
-extern void R_TransformWorldToView(Renderer *ren, Entity *md);
-extern void R_TransformViewToClip(Renderer *ren, Entity *md);
-extern void R_TransformClipToScreen(Renderer *ren, Entity *md);
-
-extern void R_DrawWireframeMesh(Renderer *ren, Entity *md);
-extern void R_DrawSolidMesh(Renderer *ren, Entity *md);
+extern void R_TransformModelToWorld(Entity *md, VertexTransformState vts = VTS_LOCAL_TO_TRANSFORMED);
+extern void R_TransformWorldToView(ViewSystem *vs, Entity *md);
+extern void R_TransformViewToClip(ViewSystem *vs, Entity *md);
+extern void R_TransformClipToScreen(ViewSystem *vs, Entity *md);
 
 extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts);
-FrustumClippingState R_CullPointAndRadius(Renderer *ren, Vec3 pt, r32 radius = 0.0f);
-extern void R_CullBackFaces(Renderer *ren, Entity *md);
+FrustumClippingState R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 0.0f);
+extern void R_CullBackFaces(ViewSystem *vs, Entity *md);
+
+
+//
+//	renderer backend
+//
+extern void RB_ExecuteRenderCommands(const void *data);
+//extern void R_DrawWireframeMesh(VidSystem *vs, Entity *md);
+extern void R_DrawSolidMesh(VidSystem *vs, Entity *md);
+extern void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
+					   r32 rmax_x, r32 rmax_y,
+					   r32 R, r32 G, r32 B);
 
 
 #endif	// Header guard

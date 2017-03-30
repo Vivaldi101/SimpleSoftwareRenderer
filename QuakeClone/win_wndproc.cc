@@ -74,9 +74,9 @@ static int MapKey (int key) {
 LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) {
 	LRESULT result = 0;
 	switch (msg) {
-		case WM_CREATE: {
-			global_win_vars.hwnd = window;
-		} break;
+		//case WM_CREATE: {
+		//	global_win_vars.hwnd = window;
+		//} break;
 
 		// FIXME: not sure about the int casts
 		case WM_SYSKEYDOWN:

@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 #include "shared.h"		
-#include "renderer_types.h"
+#include "r_types.h"
 #include "keys.h"
 
 #define MAX_UPS 60
@@ -25,8 +25,8 @@
 #define PLAYER_CONTROLLER 0
 #define MAX_NUM_CONTROLLERS 1
 enum ControllerIndexEnum { KEY_INVALID = -1, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_PAUSE, KEY_SPACE, KEY_MAX };
-union Controller {
-	Key buttons[6];
+union KeyState {
+	Key buttons[KEY_MAX];
 	struct {
 		Key		up;
 		Key		down;
@@ -38,7 +38,7 @@ union Controller {
 	};
 };
 struct Input {
-	Controller controllers[MAX_NUM_CONTROLLERS];
+	KeyState key_state[MAX_NUM_CONTROLLERS];
 };
 
 struct Entity {
@@ -61,43 +61,37 @@ struct Entity {
 		int		num_polys;
 	} status;
 
-	union {
-		struct {
-			Controller input;
-		} player;
-	};
-
 	Mesh *	mesh;
 };
 
 struct GameState {
-	Entity 		entities[MAX_ENTITIES];
+	Entity 		entities[MAX_NUM_ENTITIES];
 	int			num_entities;
 };
 
 struct StackAllocator {
 	// FIXME: make a single double ended stack, 
+	// with temp and perm allocations coming from the opposite sides
 	MemoryStack * 	perm_data;
 	MemoryStack * 	temp_data; 
 };
 
 struct Platform {
-	// with temp and perm allocations coming from the opposite sides
-	StackAllocator 		stack_allocator;
-	Input		*		input;
+	StackAllocator 		main_memory_stack;
+	Input				input_state;
 	GameState	*		game_state;
 };
 
 enum SysEventType {
-	SET_NONE = 0,		// evTime is still valid
-	SET_KEY,			// evValue is a key code, evValue2 is the down flag
-	SET_CHAR,			// evValue is an ascii char
-	SET_MOUSE,			// evValue and evValue2 are reletive signed x / y moves
-	SET_CONSOLE			// evPtr is a char*
+	SET_NONE = 0,		
+	SET_KEY,			
+	SET_CHAR,			
+	SET_MOUSE,			
+	SET_CONSOLE			
 };
 
 struct SysEvent {
-	int					time;
+	u32					time;
 	SysEventType		type;
 	int					value, value2;
 	int					data_size;			
@@ -114,7 +108,7 @@ static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
 extern Platform Com_Init(void *hinstance, void *wndproc);
-extern void Com_RunFrame(Platform *pf, struct Renderer *ren);
+extern void Com_RunFrame(Platform *pf, struct RenderingSystem *rs);
 extern void Com_Quit();
 
 // Events
