@@ -577,9 +577,10 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 #endif
 	R_TransformViewToClip(current_view, rbe->poly_verts, rbe->num_verts);
 	R_TransformClipToScreen(current_view, rbe->poly_verts, rbe->num_verts);
-	R_DrawMesh(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, false);
+	R_DrawMesh(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, true);
 
 	R_EndFrame(rbe->vid_sys, cmds);
+
 	// FIXME: move these into ending routine
 	rbe->num_polys = 0;
 	rbe->num_verts = 0;

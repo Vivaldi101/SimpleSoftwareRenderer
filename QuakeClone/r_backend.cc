@@ -272,8 +272,8 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, u32 bpp,
 			// x derived from the point-slope form of the line
 			r32 m = (y2 - y0) / (x2 - x0);
 			r32 x = (y1 - y0) / m + x0;
-			R_DrawFlatBottomTriangle(buffer, pitch, bpp, color, x0, y0, x1, y1, x2, y2, width, height);
-			R_DrawFlatTopTriangle(buffer, pitch, bpp, color, x0, y0, x1, y1, x2, y2, width, height);
+			R_DrawFlatBottomTriangle(buffer, pitch, bpp, color, x0, y0, x, y1, x1, y1, width, height);
+			R_DrawFlatTopTriangle(buffer, pitch, bpp, color, x1, y1, x, y1, x2, y2, width, height);
 		}
 	}
 }
