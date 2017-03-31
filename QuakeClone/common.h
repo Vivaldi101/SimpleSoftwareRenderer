@@ -59,7 +59,7 @@ struct Entity {
 
 		int		num_verts;
 		int		num_polys;
-	} status;
+	} status;	// FIXME: remove the status var
 
 	Mesh *	mesh;
 };

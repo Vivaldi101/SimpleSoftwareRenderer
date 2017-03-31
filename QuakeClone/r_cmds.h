@@ -15,14 +15,23 @@ struct RenderCommands {
 	size_t	used_buffer_size;
 };
 
+//struct RenderListCmd {
+//	int		cmd_id;
+//	byte *	buffer;		
+//	Poly **	polys;
+//	Vec3 *	verts;
+//	int		num_polys;
+//};
+
 struct DrawMeshCmd {
 	int		cmd_id;
 	byte *	buffer;		
 	Poly *	polys;
-	Vec3 *	verts;
+	Vec3 *	poly_verts;
 	int		num_polys;
 	u32		pitch;		
 	u32		bpp;		
+	u32		color;		
 	int		width;          
 	int		height;
 	b32		solid;

@@ -260,11 +260,11 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	//IN_ClearKeyStates(pf.input);
 
 	// just for prototyping purposes
-	Entity *player_mo = PushStruct(pf.main_memory_stack.perm_data, Entity);
-	player_mo->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
-	player_mo->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	player_mo->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	player_mo->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
+	Entity *player_ent = PushStruct(pf.main_memory_stack.perm_data, Entity);
+	player_ent->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
+	player_ent->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	player_ent->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	player_ent->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
 
 	// FIXME: move file api elsewhere
 	// FIXME: maybe replace the CRT file i/o with win32 api
@@ -279,25 +279,25 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	Sys_Print("\nOpening PLG file\n");
 
 	Vec3 world_pos = {};
-	PLG_LoadMesh(player_mo, &fp, world_pos);
-	memcpy(&pf.game_state->entities[pf.game_state->num_entities++], player_mo, sizeof(Entity));
+	PLG_LoadMesh(player_ent, &fp, world_pos);
+	memcpy(&pf.game_state->entities[pf.game_state->num_entities++], player_ent, sizeof(Entity));
 
-	const int num_entities = 10;
+	const int num_entities = 5;
 	for (int i = 0; i < num_entities; ++i) {
 		// just for prototyping purposes
-		Entity *mo = PushStruct(pf.main_memory_stack.perm_data, Entity);
-		mo->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
-		mo->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-		mo->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-		mo->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
+		Entity *ent = PushStruct(pf.main_memory_stack.perm_data, Entity);
+		ent->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
+		ent->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+		ent->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+		ent->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
 
 
 		// FIXME: move elsewhere
 		// position the objects randomly
 		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
-		PLG_LoadMesh(mo, &fp, world_pos);
+		PLG_LoadMesh(ent, &fp, world_pos);
 
-		memcpy(&pf.game_state->entities[pf.game_state->num_entities++], mo, sizeof(Entity));
+		memcpy(&pf.game_state->entities[pf.game_state->num_entities++], ent, sizeof(Entity));
 	}
 
 	if (fp) {
@@ -549,12 +549,13 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 
 #if 1
 	R_BeginFrame(rbe->vid_sys, cmds);
-	// FIXME: 0 index hardcoded for player in the entities array
+	// FIXME: 0 index hardcoded for player in the entities array for now
 	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
 		Entity *e = &entities[i];
 		// FIXME: reduce the indirection overhead
 		Vec3 *verts = e->mesh->local_verts->vert_array;
+		Vec3 *trans_verts = e->mesh->trans_verts->vert_array;
 
 		if (i) {
 			R_RotatePoints(rot_mat_z, verts, e->status.num_verts); 
@@ -563,20 +564,25 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 
 		R_TransformModelToWorld(e); 
 
-		if (i) {
+		if (i != 0) {
 			e->status.state = R_CullPointAndRadius(current_view, e->status.world_pos);			
 		}
 		if (!(e->status.state & FCS_CULL_OUT)) {
 			R_TransformWorldToView(current_view, e);
-			R_CullBackFaces(current_view, e);
-			R_TransformViewToClip(current_view, e);
-			R_TransformClipToScreen(current_view, e);
-			R_DrawMesh(rbe->vid_sys, cmds, e, false);
+			R_AddPolys(rbe, trans_verts, e->mesh->polys->poly_array,
+					   ArrayCount(e->mesh->polys->poly_array->vert_indices), e->status.num_polys);
+			R_CullBackFaces(current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
 		}
 	}
 #endif
+	R_TransformViewToClip(current_view, rbe->poly_verts, rbe->num_verts);
+	R_TransformClipToScreen(current_view, rbe->poly_verts, rbe->num_verts);
+	R_DrawMesh(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, false);
 
 	R_EndFrame(rbe->vid_sys, cmds);
+	// FIXME: move these into ending routine
+	rbe->num_polys = 0;
+	rbe->num_verts = 0;
 	{
 		static int last_time = Sys_GetMilliseconds();
 		int	now_time = Sys_GetMilliseconds();

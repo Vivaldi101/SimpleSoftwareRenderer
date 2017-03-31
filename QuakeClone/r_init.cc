@@ -9,7 +9,9 @@ RenderingSystem *R_Init(const Platform *pf, void *hinstance, void *wndproc) {
 
 	// init backend
 	rs->back_end.vid_sys = PushStruct(pf->main_memory_stack.perm_data, VidSystem);
-	rs->back_end.polys = PushArray(pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly*);
+	rs->back_end.polys = PushArray(pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
+	rs->back_end.poly_verts = PushArray(pf->main_memory_stack.perm_data, MAX_NUM_POLY_VERTS, Vec3);
+	Assert(MAX_NUM_POLYS < 0xffff);
 
 	// FIXME: this into a proper function
 	const int render_buffer_size = MEGABYTES(4);

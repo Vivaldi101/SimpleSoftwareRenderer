@@ -124,35 +124,35 @@ FrustumClippingState R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	return FCS_CULL_IN;
 }
 
-void R_TransformViewToClip(ViewSystem *vs, Entity *md) {
-	int num_verts = md->status.num_verts;
-	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
+	//int num_verts = md->status.num_verts;
+	//Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 	r32 (*m)[4] = vs->projection_matrix;
 	r32 in[4];
 	r32 out[4];
 
 	for (int i = 0; i < num_verts; ++i) {
-		in[0] = trans_verts[i][0];
-		in[1] = trans_verts[i][1];
-		in[2] = trans_verts[i][2];
+		in[0] = poly_verts[i][0];
+		in[1] = poly_verts[i][1];
+		in[2] = poly_verts[i][2];
 		in[3] = 1.0f;
 
 		Mat1x4Mul(out, in, m);  
-		trans_verts[i][0] = out[0] / out[3];
-		trans_verts[i][1] = out[1] / out[3];
-		trans_verts[i][2] = out[2] / out[3];
+		poly_verts[i][0] = out[0] / out[3];
+		poly_verts[i][1] = out[1] / out[3];
+		poly_verts[i][2] = out[2] / out[3];
 	}
 }
 
-void R_TransformClipToScreen(ViewSystem *vs, Entity *md) {
-	int num_verts = md->status.num_verts;
-	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
+	//int num_verts = md->status.num_verts;
+	//Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 
 	r32 screen_width_factor = (0.5f * vs->viewport_width) - 0.5f;
 	r32 screen_height_factor = (0.5f * vs->viewport_height) - 0.5f;
 	for (int i = 0; i < num_verts; ++i) {
-		trans_verts[i][0] = screen_width_factor + (trans_verts[i][0] * screen_width_factor);
-		trans_verts[i][1] = screen_height_factor - (trans_verts[i][1] * screen_height_factor);
+		poly_verts[i][0] = screen_width_factor + (poly_verts[i][0] * screen_width_factor);
+		poly_verts[i][1] = screen_height_factor - (poly_verts[i][1] * screen_height_factor);
 	}
 }
 
@@ -168,25 +168,30 @@ void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
 	}
 }
 
-void R_CullBackFaces(ViewSystem *vs, Entity *md) {
-	Poly *polys = md->mesh->polys->poly_array;
-	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys) {
+	//Poly *polys = md->mesh->polys->poly_array;
+	//Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+	//int num_polys = md->status.num_polys;
 	Vec3 p = {};
-	int num_polys = md->status.num_polys;
 
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE) || !(polys[i].state & POLY_STATE_ACTIVE)) {
 			continue;
 		}
 
-		int v0 = polys[i].vert_indices[0];
-		int v1 = polys[i].vert_indices[1];
-		int v2 = polys[i].vert_indices[2];
+		Vec3 v0 = polys[i].vertex_array[0];
+		Vec3 v1 = polys[i].vertex_array[1];
+		Vec3 v2 = polys[i].vertex_array[2];
+		//r32 v0 = v[0];
+		//r32 v1 = v[1];
+		//r32 v2 = v[2];
+		//int v1 = polys[i].vertex_array[1];
+		//int v2 = polys[i].vertex_array[2];
 
-		Vec3 u = Vector3Build(trans_verts[v0], trans_verts[v1]);
-		Vec3 v = Vector3Build(trans_verts[v0], trans_verts[v2]);
+		Vec3 u = Vector3Build(v0, v1);
+		Vec3 v = Vector3Build(v0, v2);
 		Vec3 n = Vector3CrossProduct(u, v);
-		Vec3 view = Vector3Build(trans_verts[v0], p);
+		Vec3 view = Vector3Build(v0, p);
 
 		r32 dot = Vec3Dot(view, n);
 

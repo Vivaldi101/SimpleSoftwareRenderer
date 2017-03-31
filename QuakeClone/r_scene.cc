@@ -1,16 +1,26 @@
 #include "r_types.h"
 #include "renderer.h"
 
-#if 0
-void R_AddPolysToScene(RendererBackend *rb, const PolyVert *verts, int num_polys) {
+void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_verts, int num_polys) {
 	Poly *poly;
-	Assert(num_polys <= MAX_NUM_POLYS);
+	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
 
-	//for (int i = 0; i < num_polys; ++i) {
-		//poly = &rb->polys[rb->num_polys];
-		//poly->numVerts = numVerts;
-		poly->verts = &backEndData[tr.smpFrame]->polyVerts[r_numpolyverts];
+	for (int i = 0; i < num_polys; ++i) {
+		poly = &rb->polys[rb->num_polys];
+		poly->num_verts = num_verts;
+		poly->state = poly_array[i].state;
+		poly->color = poly_array[i].color;
+		poly->vertex_array = &rb->poly_verts[rb->num_verts];
+
+		for (int j = 0; j < num_verts; ++j) {
+			poly->vertex_array[j] = verts[poly_array[i].vert_indices[j]];
+		}
+
+		++rb->num_polys; 
+		rb->num_verts += num_verts;
+	}
 		
+#if 0
 		Com_Memcpy( poly->verts, &verts[numVerts*j], numVerts * sizeof( *verts ) );
 
 		if ( glConfig.hardwareType == GLHW_RAGEPRO ) {
@@ -54,5 +64,5 @@ void R_AddPolysToScene(RendererBackend *rb, const PolyVert *verts, int num_polys
 		}
 		poly->fogIndex = fogIndex;
 	}
-}
 #endif
+}

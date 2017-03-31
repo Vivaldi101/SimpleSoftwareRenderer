@@ -1,9 +1,9 @@
 #include "entity.h"
-void Update(Entity* entity, r32 dt) {
+void Update(Entity2* entity, r32 dt) {
 	//global_dpt[entity->type].Update(entity, dt);
 }
 
-void Draw(Entity* entity) {
+void Draw(Entity2* entity) {
 	//global_dpt[entity->type].Draw(entity);
 }
 

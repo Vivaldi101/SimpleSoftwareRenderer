@@ -9,7 +9,7 @@ enum EntityTypeEnum {
 	MAX_NUM_ENTITY_TYPES
 };
 
-struct Entity {
+struct Entity2 {
 	EntityTypeEnum	type;
 
 	union {
@@ -20,7 +20,7 @@ struct Entity {
 };
 
 struct DispatchTable {
-    void (*Update)(Entity*, r32);
-    void (*Draw)(Entity*);
+    void (*Update)(Entity2*, r32);
+    void (*Draw)(Entity2*);
 };
 #endif	// Header guard

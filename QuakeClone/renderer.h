@@ -91,8 +91,11 @@ struct RendererBackend {
 	RenderCommands 			cmds;
 	VidSystem *				vid_sys;
 	Entity *				entities;
-	Poly **					polys;			
+	Poly *					polys;			
+	Vec3 *					poly_verts;			
+	u16						poly_indices[MAX_NUM_POLYS];			
 	int						num_polys;
+	int						num_verts;
 };
 
 struct RenderingSystem {
@@ -106,29 +109,30 @@ struct RenderingSystem {
 extern RenderingSystem *R_Init(const Platform *pf, void *hinstance, void *wndproc); 
 extern void R_BeginFrame(VidSystem *vs, RenderCommands *rc);
 extern void R_EndFrame(VidSystem *vs, RenderCommands *rc);
-extern void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Entity *e, b32 solid = true);
+extern void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
 
 extern void R_RenderView(ViewSystem *vs);
 
 extern void R_SetupFrustum(ViewSystem *vs);
 extern void R_SetupProjection(ViewSystem *vs);
 
-extern void R_TransformModelToWorld(Entity *md, VertexTransformState vts = VTS_LOCAL_TO_TRANSFORMED);
-extern void R_TransformWorldToView(ViewSystem *vs, Entity *md);
-extern void R_TransformViewToClip(ViewSystem *vs, Entity *md);
-extern void R_TransformClipToScreen(ViewSystem *vs, Entity *md);
+extern void R_TransformModelToWorld(Entity *ent, VertexTransformState vts = VTS_LOCAL_TO_TRANSFORMED);
+extern void R_TransformWorldToView(ViewSystem *vs, Entity *ent);
+extern void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
+extern void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
 
 extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts);
 FrustumClippingState R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 0.0f);
-extern void R_CullBackFaces(ViewSystem *vs, Entity *md);
+extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys);
+extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_verts, int num_polys);
 
 
 //
 //	renderer backend
 //
 extern void RB_ExecuteRenderCommands(const void *data);
-//extern void R_DrawWireframeMesh(VidSystem *vs, Entity *md);
-extern void R_DrawSolidMesh(VidSystem *vs, Entity *md);
+//extern void R_DrawWireframeMesh(VidSystem *vs, Entity *ent);
+//extern void R_DrawSolidMesh(VidSystem *vs, Entity *ent);
 extern void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
 					   r32 rmax_x, r32 rmax_y,
 					   r32 R, r32 G, r32 B);

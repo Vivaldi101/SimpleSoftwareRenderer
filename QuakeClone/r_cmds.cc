@@ -25,16 +25,17 @@ void R_IssueRenderCommands(RenderCommands *rc) {
 }
 
 // FIXME: maybe pass only num of meshes, polys and transformed verts
-void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Entity *e, b32 solid) {
+void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid) {
 	DrawMeshCmd *cmd = GetRenderCmdType(rc, DrawMeshCmd);
 
 	cmd->cmd_id = RCMD_MESH;
 	cmd->buffer = vs->buffer;
-	cmd->polys = e->mesh->polys->poly_array;
-	cmd->verts = e->mesh->trans_verts->vert_array;
-	cmd->num_polys = e->status.num_polys;
+	cmd->polys = polys;
+	cmd->poly_verts = poly_verts;
+	cmd->num_polys = num_polys;
 	cmd->pitch = vs->pitch;
 	cmd->bpp = vs->bpp;
+	cmd->color = polys->color;
 	cmd->width = vs->width;
 	cmd->height = vs->height;
 	cmd->solid = solid;

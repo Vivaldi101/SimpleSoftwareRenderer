@@ -97,7 +97,8 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 
 // max values
 #define	MAX_NUM_ENTITIES	256
-#define	MAX_NUM_POLYS		512
+#define	MAX_NUM_POLYS		256
+#define	MAX_NUM_POLY_VERTS	512
 
 // util tools
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
@@ -127,7 +128,7 @@ MATHLIB
 */
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846f	// matches value in gcc v2 math.h
+#define M_PI 3.14159265358979323846f	
 #endif
 
 #define Vec3Init(v, x, y, z)		((v)[0] = (x), (v)[1] = (y), (v)[2] = (z))
@@ -149,6 +150,23 @@ MATHLIB
 #define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		
 #define Square(s)					((s) * (s))
 
+union Vec2 {
+	struct {	r32 x, y;		} v;
+	r32 data[2];
+
+	r32			&operator[](int i)			{ return data[i]; }
+	const r32	&operator[](int i) const	{ return data[i]; }
+};
+
+inline Vec2 MakeVec2(r32 x, r32 y) {
+	Vec2 v;
+
+	v[0] = x;
+	v[1] = y;
+
+	return v;
+}
+
 union Vec3 {
 	struct {	r32 x, y, z;		} v;
 	struct {	r32 r, g, b;		} c;
@@ -158,6 +176,16 @@ union Vec3 {
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
 
+inline Vec3 MakeVec3(r32 x, r32 y, r32 z) {
+	Vec3 v;
+
+	v[0] = x;
+	v[1] = y;
+	v[2] = z;
+
+	return v;
+}
+
 union Vec4 {
 	struct {	r32 x, y, z, w;		} v;
 	struct {	r32 r, g, b, a;		} c;
@@ -166,6 +194,17 @@ union Vec4 {
 	r32			&operator[](int i)			{ return data[i]; }
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
+
+inline Vec4 MakeVec4(r32 x, r32 y, r32 z, r32 w) {
+	Vec4 v;
+
+	v[0] = x;
+	v[1] = y;
+	v[2] = z;
+	v[3] = w;
+
+	return v;
+}
 
 inline Vec3 operator +(Vec3 a, Vec3 b) {
 	Vec3 v = {};

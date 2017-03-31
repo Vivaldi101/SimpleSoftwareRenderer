@@ -53,6 +53,7 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 	}
 }
 
+// NOTE: this parser routine is just for prototyping, aka ignoring all overflows atm
 b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
 	const char *parsed_string;
@@ -79,9 +80,9 @@ b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
 		}
 
 		sscanf_s(parsed_string, "%f %f %f",
-				 &mesh->local_verts->vert_array[i].v.x,
-				 &mesh->local_verts->vert_array[i].v.y,
-				 &mesh->local_verts->vert_array[i].v.z);
+				 &mesh->local_verts->vert_array[i][0],
+				 &mesh->local_verts->vert_array[i][1],
+				 &mesh->local_verts->vert_array[i][2]);
 		//ent->local_vertex_list[i].v.w = 1.0f;		disabled the Vec4 for now
 
 		mesh->local_verts->vert_array[i][0] *= scale;
@@ -126,7 +127,7 @@ b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
 			poly_surface_desc = atoi(tmp_poly_surface_desc);
 		}
 
-		mesh->polys->poly_array[i].vertex_list = mesh->local_verts->vert_array;
+		mesh->polys->poly_array[i].vertex_array = mesh->local_verts->vert_array;
 
 		if (poly_surface_desc & PLX_2SIDED_FLAG) {
 			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;

@@ -7,12 +7,12 @@ struct PolyVert {
 	Vec3	v;	
 };
 
-// based on a vertex list
 struct Poly {
-	Vec3 *		vertex_list;	// points to the mesh containing the poly
+	Vec3 *		vertex_array;	
+	int			vert_indices[3];
+	int			num_verts;
 	int			state;
 	u32			color;
-	int			vert_indices[3];
 };
 
 // self contained

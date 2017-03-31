@@ -7,10 +7,9 @@
 
 struct Key {
 	b32		pressed;
-	u32		repeats;		// if > 1, it is autorepeating
+	u32		repeats;		
 	char *	binding;
 };
-//extern Key	global_keys[MAX_KEYS];
 
 
 #endif	// Header guard
