@@ -127,9 +127,8 @@ u32 Sys_PumpEvents() {
 	u32 time = 0;
     MSG msg;
 
-	// pump the message loop
-	while (PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE)) {
-		if (!GetMessage( &msg, NULL, 0, 0)) {
+	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+		if (!GetMessage(&msg, NULL, 0, 0)) {
 			Sys_Quit();
 		}
 		time = msg.time;

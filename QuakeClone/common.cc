@@ -309,36 +309,34 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	return pf;
 }
 
-static void ProcessEvent(Input *in, SysEvent se) {
-
-	if (se.value == VK_ESCAPE) {
-		Sys_Quit();
-	}
-
-	// FIXME: handles only up, down, left, right, space and pause keys
-	if (se.type == SET_KEY) {
-		int mapped_key = IN_MapKeyToIndex(in, se.value, se.value2, se.time);
-
-		// valid key
-		// FIXME: make into switch
-		if (mapped_key > ControllerIndexEnum::KEY_INVALID) {
-			if ((mapped_key == ControllerIndexEnum::KEY_PAUSE) && !IN_IsKeyDown(in, mapped_key)) {
-				paused = !paused;
-			} else if ((mapped_key == ControllerIndexEnum::KEY_SPACE) && !IN_IsKeyDown(in, mapped_key)) {
-				wireframe = !wireframe;
-			} else if ((mapped_key == ControllerIndexEnum::KEY_UP) && IN_IsKeyDown(in, mapped_key)) {
-			} else if ((mapped_key == ControllerIndexEnum::KEY_DOWN) && IN_IsKeyDown(in, mapped_key)) {
-			}
-		}
-
-		if (se.value == VK_RETURN) {
-			reset = true;
-		}
-	}
+static void ProcessEvent(SysEvent se) {
 }
 
 static void Com_RunEventLoop(GameState *gs, Input *in) {
 	SysEvent se;
+
+	if (in->keys[ESC_KEY].released) {
+		Sys_Quit();
+	}
+
+	// test stuff
+	forward = false;
+	backward = false;
+	turn_left = false;
+	turn_right = false;
+
+	if (in->keys['W'].down) {
+		forward = true;
+	}
+	if (in->keys['A'].down) {
+		turn_left = true;
+	}
+	if (in->keys['S'].down) {
+		backward = true;
+	}
+	if (in->keys['D'].down) {
+		turn_right = true;
+	}
 
 	for (;;) {
 		se = Com_GetEvent();
@@ -348,7 +346,7 @@ static void Com_RunEventLoop(GameState *gs, Input *in) {
 			return;
 		}
 
-		ProcessEvent(in, se);
+		ProcessEvent(se);
 	}
 }
 
@@ -359,6 +357,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 
 void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	Sys_GenerateEvents();
+	IN_UpdateKeyboard(&pf->input_state);
 	Com_RunEventLoop(pf->game_state, &pf->input_state);
 
 	// test stuff
@@ -591,7 +590,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		last_time = now_time;
 		char buffer[64];
 		sprintf_s(buffer, "Frame time: %d, Yaw: %f\n", frame_msec, yaw);
-		OutputDebugStringA(buffer);
+		//OutputDebugStringA(buffer);
 	}
 
 	if (first_run) {
@@ -629,36 +628,6 @@ static int Com_ModifyFrameMsec(int frame_msec) {
 	return frame_msec;
 }
 
-#if 0
-void ProcessStruct(X* x, char *format, ...) {
-	char *start, *p, *q = (char *)x;
-	VaStart(start, format);
-
-	p = format;
-	for (; *p; ++p) {
-		if (*p == '%') {
-			switch (*(p + 1)) {
-				case 'd': {
-					int offset = VaArg(start, int);
-					Assert(offset >= 0);
-					Assert(offset < sizeof(*x));
-					int data = VaArg(start, int);
-					*(int *)(q + offset) = data;
-				} break;
-				case 'f': {
-					int offset = VaArg(start, int);
-					Assert(offset >= 0);
-					Assert(offset < sizeof(*x));
-					double data = VaArg(start, double);
-					*(float *)(q + offset) = (float)data;
-				} break;
-
-				default: break;
-			}
-		}
-	}
-}
-#endif
 
 
 

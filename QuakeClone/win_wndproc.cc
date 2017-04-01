@@ -1,29 +1,6 @@
 #include "win_local.h"
 #include "common.h"
 
-#if 0
-static int MapKey (int key) {
-	int result;
-	int modified;
-	b32 is_extended;
-
-	modified = (key >> 16) & 255;
-
-	if (modified > 127) {
-		return 0;
-	}
-	if (key & ( 1 << 24)) {
-		is_extended = true;
-	} else {
-		is_extended = false;
-	}
-
-	result = global_scan_to_key[modified];
-
-	return result;
-}
-#endif
-
 LRESULT WINAPI MainWndProc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam) {
 	LRESULT result = 0;
 	switch (msg) {

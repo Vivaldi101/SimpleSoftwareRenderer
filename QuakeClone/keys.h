@@ -3,12 +3,11 @@
 #include "shared.h"
 #include "keycodes.h"
 
-#define	MAX_NUM_KEYS 256
-
 struct Key {
-	b32		pressed;
+	b32		pressed;	// edge condition, !down -> down
+	b32		released;	// edge condition, down -> !down
+	b32		down;		// current status 		
 	u32		repeats;		
-	char *	binding;
 };
 
 

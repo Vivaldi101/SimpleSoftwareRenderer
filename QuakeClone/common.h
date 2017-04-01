@@ -22,23 +22,24 @@
 #endif	// PLATFORM_FULLSCREEN
 
 
-#define PLAYER_CONTROLLER 0
-#define MAX_NUM_CONTROLLERS 1
-enum ControllerIndexEnum { KEY_INVALID = -1, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_PAUSE, KEY_SPACE, KEY_MAX };
-union KeyState {
-	Key buttons[KEY_MAX];
-	struct {
-		Key		up;
-		Key		down;
-		Key		left;
-		Key		right;
+//#define PLAYER_CONTROLLER 0
+//#define MAX_NUM_CONTROLLERS 1
+//enum ControllerIndexEnum { KEY_INVALID = -1, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_PAUSE, KEY_SPACE, KEY_MAX };
+//union KeyState {
+//	Key buttons[KEY_MAX];
+//	struct {
+//		Key		up;
+//		Key		down;
+//		Key		left;
+//		Key		right;
+//
+//		Key		pause;
+//		Key		space;
+//	};
+//};
 
-		Key		pause;
-		Key		space;
-	};
-};
 struct Input {
-	KeyState key_state[MAX_NUM_CONTROLLERS];
+	Key keys[MAX_NUM_KEYS];
 };
 
 struct Entity {
@@ -117,9 +118,7 @@ extern struct SysEvent Com_GetEvent();
 extern struct SysEvent Sys_GetEvent();
 
 // Input
-extern b32 IN_IsKeyDown(Input *in, int key);
-extern void IN_HandleControllerEvent(int key);
-extern int IN_MapKeyToIndex(Input *in, int key, b32 down, u32 time);
+extern void IN_UpdateKeyboard(Input *in);
 extern void IN_ClearKeyStates(Input *in);
 
 #endif	// Header guard
