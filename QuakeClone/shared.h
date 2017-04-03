@@ -236,6 +236,15 @@ inline Vec3 operator -(Vec3 a, Vec3 b) {
 	return v;
 }
 
+inline Vec3 operator +(Vec3 a, r32 s) {
+	Vec3 v = {};
+
+	v[0] = a[0] + s;
+	v[1] = a[1] + s;
+	v[2] = a[2] + s;
+
+	return v;
+}
 inline Vec3 operator *(Vec3 a, r32 s) {
 	Vec3 v = {};
 
@@ -246,7 +255,7 @@ inline Vec3 operator *(Vec3 a, r32 s) {
 	return v;
 }
 
-static inline Vec3 Vector3CrossProduct(Vec3 v1, Vec3 v2) {
+static inline Vec3 Vec3Cross(Vec3 v1, Vec3 v2) {
 	Vec3 cross = {};
 
 	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
@@ -256,7 +265,7 @@ static inline Vec3 Vector3CrossProduct(Vec3 v1, Vec3 v2) {
 	return cross;
 }
 
-static inline r32 Vector3Len(const Vec3 *v) {
+static inline r32 Vec3Len(const Vec3 *v) {
 	r32	len;
 
 	len = Vec3Dot(*v, *v);
@@ -265,7 +274,7 @@ static inline r32 Vector3Len(const Vec3 *v) {
 	return len;
 }
 
-static inline Vec3 Vector3Normalize(const Vec3 *v) {
+static inline Vec3 Vec3Norm(const Vec3 *v) {
 	Vec3 n = {};
 	r32	len, ilen;
 
@@ -282,7 +291,7 @@ static inline Vec3 Vector3Normalize(const Vec3 *v) {
 	return n;
 }
 
-static inline Vec3 Vector3Normalize(Vec3 v) {
+static inline Vec3 Vec3Norm(Vec3 v) {
 	Vec3 n = {};
 	r32	len, ilen;
 
@@ -290,7 +299,7 @@ static inline Vec3 Vector3Normalize(Vec3 v) {
 	len = sqrt(len);
 
 	if (len) {
-		ilen = 1 / len;
+		ilen = 1.0f / len;
 		n[0] = v[0] * ilen;
 		n[1] = v[1] * ilen;
 		n[2] = v[2] * ilen;
@@ -299,7 +308,7 @@ static inline Vec3 Vector3Normalize(Vec3 v) {
 	return n;
 }
 
-static inline Vec3 Vector3Build(Vec3 p0, Vec3 p1) {
+static inline Vec3 MakeVec3(Vec3 p0, Vec3 p1) {
 	Vec3 v = {};
 
 	v[0] = p1[0] - p0[0];

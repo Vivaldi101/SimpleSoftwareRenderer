@@ -34,16 +34,15 @@ RenderingSystem *R_Init(const Platform *pf, void *hinstance, void *wndproc) {
 
 	// init frontend
 	Vec3Init(rs->front_end.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-	Vec3Init(rs->front_end.current_view.target, 0.0f, 0.0f, 1.0f);
 
-	rs->front_end.current_view.world_orientation.dir = rs->front_end.current_view.target;
+	Vec3Init(rs->front_end.current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
 	rs->front_end.current_view.aspect_ratio = (r32)rs->back_end.vid_sys->width / (r32)rs->back_end.vid_sys->height;
 
 	// FIXME: handle non-homogeneous viewplanes
 	rs->front_end.current_view.viewplane_width = 2;	// normalized viewplane
 	rs->front_end.current_view.viewplane_height = 2;
 
-	rs->front_end.current_view.fov_y = 75.0f;
+	rs->front_end.current_view.fov_y = 90.0f;
 
 	rs->front_end.current_view.z_near = 50.0f;
 	rs->front_end.current_view.z_far = 500.0f;

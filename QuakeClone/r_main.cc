@@ -72,7 +72,7 @@ void R_SetupFrustum(ViewSystem *vs) {
 
 	// normalize
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
-		frustum[i].unit_normal = Vector3Normalize(frustum[i].unit_normal);
+		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
 		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, vs->world_orientation.origin);
 	}
 
@@ -125,8 +125,6 @@ FrustumClippingState R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 }
 
 void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
-	//int num_verts = md->status.num_verts;
-	//Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
 	r32 (*m)[4] = vs->projection_matrix;
 	r32 in[4];
 	r32 out[4];
@@ -145,9 +143,6 @@ void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 }
 
 void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
-	//int num_verts = md->status.num_verts;
-	//Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
-
 	r32 screen_width_factor = (0.5f * vs->viewport_width) - 0.5f;
 	r32 screen_height_factor = (0.5f * vs->viewport_height) - 0.5f;
 	for (int i = 0; i < num_verts; ++i) {
@@ -169,9 +164,6 @@ void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
 }
 
 void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys) {
-	//Poly *polys = md->mesh->polys->poly_array;
-	//Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
-	//int num_polys = md->status.num_polys;
 	Vec3 p = {};
 
 	for (int i = 0; i < num_polys; ++i) {
@@ -182,16 +174,10 @@ void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int nu
 		Vec3 v0 = polys[i].vertex_array[0];
 		Vec3 v1 = polys[i].vertex_array[1];
 		Vec3 v2 = polys[i].vertex_array[2];
-		//r32 v0 = v[0];
-		//r32 v1 = v[1];
-		//r32 v2 = v[2];
-		//int v1 = polys[i].vertex_array[1];
-		//int v2 = polys[i].vertex_array[2];
-
-		Vec3 u = Vector3Build(v0, v1);
-		Vec3 v = Vector3Build(v0, v2);
-		Vec3 n = Vector3CrossProduct(u, v);
-		Vec3 view = Vector3Build(v0, p);
+		Vec3 u = MakeVec3(v0, v1);
+		Vec3 v = MakeVec3(v0, v2);
+		Vec3 n = Vec3Cross(u, v);
+		Vec3 view = MakeVec3(v0, p);
 
 		r32 dot = Vec3Dot(view, n);
 
@@ -211,13 +197,13 @@ static void R_RotateForViewer(ViewSystem *vs) {
 	Vec3 n = vs->world_orientation.dir;
 	// placeholder for v
 	Vec3 v = {0.0f, 1.0f, 0.0f};	
-	Vec3 u = Vector3CrossProduct(v, n);
+	Vec3 u = Vec3Cross(v, n);
 	// recompute v
-	v = Vector3CrossProduct(n, u);
+	v = Vec3Cross(n, u);
 
-	u = Vector3Normalize(u);
-	v = Vector3Normalize(v);
-	n = Vector3Normalize(n);
+	u = Vec3Norm(u);
+	v = Vec3Norm(v);
+	n = Vec3Norm(n);
 
 	vs->world_orientation.axis[0] = u;
 	vs->world_orientation.axis[1] = v;
@@ -250,11 +236,4 @@ void R_RenderView(ViewSystem *vs) {
 	R_RotateForViewer(vs);
 	R_SetupProjection(vs);
 	R_SetupFrustum(vs);					
-
-	//R_GenerateDrawSurfs();
-
-	//R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
-
-	//// draw main system development information (surface outlines, etc)
-	//R_DebugGraphics();
 }

@@ -22,22 +22,6 @@
 #endif	// PLATFORM_FULLSCREEN
 
 
-//#define PLAYER_CONTROLLER 0
-//#define MAX_NUM_CONTROLLERS 1
-//enum ControllerIndexEnum { KEY_INVALID = -1, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_PAUSE, KEY_SPACE, KEY_MAX };
-//union KeyState {
-//	Key buttons[KEY_MAX];
-//	struct {
-//		Key		up;
-//		Key		down;
-//		Key		left;
-//		Key		right;
-//
-//		Key		pause;
-//		Key		space;
-//	};
-//};
-
 struct Input {
 	Key keys[MAX_NUM_KEYS];
 };
@@ -54,6 +38,7 @@ struct Entity {
 		r32		max_radius;
 
 		//r32	world_matrix[4][4];	// currently unused
+		Vec3	dir;
 		Vec3	world_pos;
 		Vec3	orientation;
 		Vec3	velocity;
@@ -62,6 +47,7 @@ struct Entity {
 		int		num_polys;
 	} status;	// FIXME: remove the status var
 
+	// FIXME: remove
 	Mesh *	mesh;
 };
 
@@ -119,6 +105,6 @@ extern struct SysEvent Sys_GetEvent();
 
 // Input
 extern void IN_UpdateKeyboard(Input *in);
-extern void IN_ClearKeyStates(Input *in);
+extern void IN_ClearKeys(Input *in);
 
 #endif	// Header guard

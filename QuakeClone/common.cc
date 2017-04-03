@@ -23,168 +23,6 @@ static inline u32 NextPO2(u32 v) {
 	return v;
 }
 
-
-#if 0
-//
-// fixed size allocator
-//
-
-#define BYTE_INDEX_16	1		// index of first 16-byte payload
-#define BYTE_INDEX_32	18		// index of first 16-byte payload
-#define BYTE_INDEX_64	51		// index of first 16-byte payload
-#define BYTE_INDEX_128	116		// index of first 16-byte payload
-#define BYTE_INDEX_256	245		// index of first 16-byte payload
-#define BYTE_INDEX_512	502		// index of first 16-byte payload
-#define BYTE_INDEX_1024	1015	// index of first 16-byte payload
-#define BYTE_INDEX_2048	2040	// index of first 16-byte payload
-
-#define BLOCK_STATE(data, index)	((data)[(index) - 1])	// check if empty block
-
-// ids for blocks
-#define FREE_BLOCK 0xfb
-#define ALLOCATED_BLOCK 0xab
-
-#define LIST_ROW_SIZE	4088	// size of a row of entries in table
-
-
-static void InitColumn(FBAllocator *fba, int index) {
-	int num_rows = fba->num_rows;
-	for (int i = 0; i < num_rows; ++i) {
-		BLOCK_STATE(fba->data, index) = FREE_BLOCK;
-		index += LIST_ROW_SIZE;
-	}
-}
-
-static void DestroyFixedBlockAllocator(FBAllocator *fba) {
-	fba->num_rows = 0;
-	fba->max_size = 0;
-	VirtualFree(fba->data, 0, MEM_RELEASE);
-}
-
-static int SearchColumn(FBAllocator *fba, int index) {
-	int num_rows = fba->num_rows;
-
-	for (int i = 0; i < num_rows; ++i) {
-		if (BLOCK_STATE(fba->data, index) == FREE_BLOCK) {
-			BLOCK_STATE(fba->data, index) = ALLOCATED_BLOCK;
-
-			return index;
-		}
-		index += LIST_ROW_SIZE;
-	}
-
-	return 0;
-}
-
-void *Allocate(FBAllocator *la, size_t num_bytes) {
-	int index;
-
-	if (!la->data) {
-		Sys_Print("FixedBlock memory system not initialized\n");
-		Sys_Quit();
-	}
-
-	// FIXME: check for alignment
-
-	if (num_bytes <= 16) {
-		if (index = SearchColumn(la, BYTE_INDEX_16)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 32) {
-		if (index = SearchColumn(la, BYTE_INDEX_32)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 64) {
-		if (index = SearchColumn(la, BYTE_INDEX_64)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 128) {
-		if (index = SearchColumn(la, BYTE_INDEX_128)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 256) {
-		if (index = SearchColumn(la, BYTE_INDEX_256)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 512) {
-		if (index = SearchColumn(la, BYTE_INDEX_512)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 1024) {
-		if (index = SearchColumn(la, BYTE_INDEX_1024)) {
-			return &la->data[index];
-		}
-	} else if (num_bytes <= 2048) {
-		if (index = SearchColumn(la, BYTE_INDEX_2048)) {
-			return &la->data[index];
-		}
-	}
-
-	Sys_Print("Couldn't allocate memory\n");
-	return 0;
-}
-
-void Free(FBAllocator *la, void **ptr) {
-	int index = (int)((byte *)(*ptr) - la->data);
-	index = index % LIST_ROW_SIZE;
-	*ptr = 0;
-
-	if (index >= 1 || index < la->max_size) {
-		BLOCK_STATE(la->data, index) = FREE_BLOCK;
-		switch (index) {
-			case BYTE_INDEX_16: {
-				memset(&la->data[index], 0, 16); 
-			} break; 
-			case BYTE_INDEX_32: {
-				memset(&la->data[index], 0, 32); 
-			} break; 
-			case BYTE_INDEX_64: {
-				memset(&la->data[index], 0, 64); 
-			} break; 
-			case BYTE_INDEX_128: {
-				memset(&la->data[index], 0, 128); 
-			} break; 
-			case BYTE_INDEX_256: {
-				memset(&la->data[index], 0, 256); 
-			} break; 
-			case BYTE_INDEX_512: {
-				memset(&la->data[index], 0, 512); 
-			} break; 
-			case BYTE_INDEX_1024: {
-				memset(&la->data[index], 0, 1024); 
-			} break; 
-			case BYTE_INDEX_2048: {
-				memset(&la->data[index], 0, 2048); 
-			} break; 
-		}
-	}
-}
-
-static byte *InitFixedBlockMemory(size_t num_bytes) {
-	FBAllocator *la = (FBAllocator *)VirtualAlloc(0, num_bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-
-	if (!la) {
-		Sys_Print("Failed to init the fixed sized allocator\n");
-		Sys_Quit();
-	}
-
-	la->max_size = num_bytes;
-	la->num_rows = (int)num_bytes / LIST_ROW_SIZE;
-	la->data = (byte *)la + sizeof(FBAllocator);
-
-	InitColumn(la, BYTE_INDEX_16);
-	InitColumn(la, BYTE_INDEX_32);
-	InitColumn(la, BYTE_INDEX_64);
-	InitColumn(la, BYTE_INDEX_128);
-	InitColumn(la, BYTE_INDEX_256);
-	InitColumn(la, BYTE_INDEX_512);
-	InitColumn(la, BYTE_INDEX_1024);
-	InitColumn(la, BYTE_INDEX_2048);
-
-	return (byte *)la;
-}
-#endif
-
 //
 // stack based allocator
 //
@@ -233,13 +71,6 @@ static int global_game_frame;
 
 // just for prototyping purposes, will get removed
 static r32 yaw = 0.0f;
-static b32 forward;
-static b32 backward;
-
-static b32 turn_left;
-static b32 turn_right;
-
-static Vec3 rot_mat_y[3];
 
 static b32 paused;
 static b32 reset;
@@ -315,29 +146,6 @@ static void ProcessEvent(SysEvent se) {
 static void Com_RunEventLoop(GameState *gs, Input *in) {
 	SysEvent se;
 
-	if (in->keys[ESC_KEY].released) {
-		Sys_Quit();
-	}
-
-	// test stuff
-	forward = false;
-	backward = false;
-	turn_left = false;
-	turn_right = false;
-
-	if (in->keys['W'].down) {
-		forward = true;
-	}
-	if (in->keys['A'].down) {
-		turn_left = true;
-	}
-	if (in->keys['S'].down) {
-		backward = true;
-	}
-	if (in->keys['D'].down) {
-		turn_right = true;
-	}
-
 	for (;;) {
 		se = Com_GetEvent();
 
@@ -350,8 +158,71 @@ static void Com_RunEventLoop(GameState *gs, Input *in) {
 	}
 }
 
-static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in) {
+static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in, ViewSystem *vs) {
+	// test stuff
+	static r32 rot_mat_y[3][3];
+	rot_mat_y[1][0] = 0.0f;
+	rot_mat_y[1][1] = 1.0f;
+	rot_mat_y[1][2] = 0.0f;
+	r32 speed = 800.0f;
+	Vec3 acc = Vec3Norm(vs->world_orientation.dir);
+
 	for (int i = 0; i < num_frames; ++i) {
+		if (in->keys['W'].down) {
+			acc = acc * 1.0f;
+		}
+		if (in->keys['A'].down) {
+			yaw -= 3.0f;
+			rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
+			rot_mat_y[0][1] = 0.0f;
+			rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
+
+			rot_mat_y[2][0] = -sin(DEG2RAD(3.0f));
+			rot_mat_y[2][1] = 0.0f;
+			rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
+
+			vs->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+			vs->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+
+			Vec3 *verts = ents[0].mesh->local_verts->vert_array;
+			for (int i = 0; i < ents[0].status.num_verts; ++i) {
+				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+			}
+		}
+		if (in->keys['S'].down) {
+			acc = acc * (-1.0f);
+		}
+		if (in->keys['D'].down) {
+			yaw += 3.0f;
+			rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
+			rot_mat_y[0][1] = 0.0f;
+			rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
+
+			rot_mat_y[2][0] = sin(DEG2RAD(3.0f));
+			rot_mat_y[2][1] = 0.0f;
+			rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
+
+			vs->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+			vs->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+
+			Vec3 *verts = ents[0].mesh->local_verts->vert_array;
+			for (int i = 0; i < ents[0].status.num_verts; ++i) {
+				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+			}
+		}
+
+		acc = acc * speed;
+		if (in->keys['W'].down || in->keys['S'].down) {
+			vs->world_orientation.origin = (acc * 0.5f * Square(dt)) + (vs->velocity * dt) + vs->world_orientation.origin;
+			vs->velocity = (acc * dt) + vs->velocity;
+		} else {
+			vs->velocity = vs->velocity * 0.0f;
+		}
+	}
+	{
+		//char buffer[64];
+		//sprintf_s(buffer, "Acc in z: %f\n", acc[2]);
+		//OutputDebugStringA(buffer);
 	}
 }
 
@@ -359,10 +230,9 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	Sys_GenerateEvents();
 	IN_UpdateKeyboard(&pf->input_state);
 	Com_RunEventLoop(pf->game_state, &pf->input_state);
-
 	// test stuff
-	if (paused) {
-		return;
+	if (pf->input_state.keys[ESC_KEY].released) {
+		Sys_Quit();
 	}
 
 	// test stuff
@@ -371,11 +241,16 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	int num_game_frames_to_run = 0;
 
 	r32 rot_mat_x[3][3];
-	r32 rot_mat_z[3][3];
-	r32 rot_theta = DEG2RAD(-1.0f);
-	static r32 view_angle = 0.0f;
-	static r32 rot_mat_y[3][3];
+	rot_mat_x[0][0] = 1.0f;
+	rot_mat_x[0][1] = 0.0f;
+	rot_mat_x[0][2] = 0.0f;
 
+	r32 rot_mat_z[3][3];
+	rot_mat_z[2][0] = 0.0f;
+	rot_mat_z[2][1] = 0.0f;
+	rot_mat_z[2][2] = 1.0f;
+
+	r32 rot_theta = DEG2RAD(-1.0f);
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -404,101 +279,40 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		Sys_Sleep(0);
 	}
 
-	Entity *entities = pf->game_state->entities;
-	Com_SimFrame(MSEC_PER_SIM, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state);
-	
-
 	// FIXME: will be moved
+	// entities
+	Entity *entities = pf->game_state->entities;
 	// render
 	ViewSystem *current_view = &rs->front_end.current_view;
 	RendererBackend *rbe = &rs->back_end;
 	RenderCommands *cmds = &rs->back_end.cmds;
-	if (reset) {
-		Vec3Init(current_view->world_orientation.dir, 0.0f, 0.0f, 1.0f);
-		Vec3Init(current_view->world_orientation.origin, 0.0f, 0.0f, 0.0f);
-		
-		rot_mat_y[0][0] = cos(DEG2RAD(yaw));
-		rot_mat_y[0][2] = sin(DEG2RAD(yaw));
+	Com_SimFrame(MSEC_PER_SIM / 1000.0f, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state, current_view);
+	//Com_DrawFrame();
 
-		rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
-		rot_mat_y[2][2] = cos(DEG2RAD(yaw));
+	//if (reset) {
+	//	Vec3Init(current_view->world_orientation.dir, 0.0f, 0.0f, 1.0f);
+	//	Vec3Init(current_view->world_orientation.origin, 0.0f, 0.0f, 0.0f);
+	//	
+	//	rot_mat_y[0][0] = cos(DEG2RAD(yaw));
+	//	rot_mat_y[0][2] = sin(DEG2RAD(yaw));
 
-		// reset player camera
-		if (yaw != 0.0f) {
-			Vec3 *verts = entities[0].mesh->local_verts->vert_array;
-			for (int i = 0; i < entities[0].status.num_verts; ++i) {
-				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
-			}
-		}
+	//	rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
+	//	rot_mat_y[2][2] = cos(DEG2RAD(yaw));
 
-		reset = false;
-		yaw = 0.0f;
-	}
+	//	// reset player camera
+	//	if (yaw != 0.0f) {
+	//		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
+	//		for (int i = 0; i < entities[0].status.num_verts; ++i) {
+	//			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+	//		}
+	//	}
 
-	// FIXME: will be moved
-	// movement testing
-	if (forward) {
-		current_view->world_orientation.origin = 
-			current_view->world_orientation.origin + (current_view->world_orientation.dir * 10.0f);
-	}
+	//	reset = false;
+	//	yaw = 0.0f;
+	//}
 
-	if (backward) {
-		current_view->world_orientation.origin = 
-			current_view->world_orientation.origin - (current_view->world_orientation.dir * 10.0f);
-	}
-
-	if (turn_left) {
-		yaw -= 1.0f;
-
-		rot_mat_y[0][0] = cos(DEG2RAD(1.0f));
-		rot_mat_y[0][1] = 0.0f;
-		rot_mat_y[0][2] = sin(DEG2RAD(1.0f));
-
-		rot_mat_y[1][0] = 0.0f;
-		rot_mat_y[1][1] = 1.0f;
-		rot_mat_y[1][2] = 0.0f;
-
-		rot_mat_y[2][0] = -sin(DEG2RAD(1.0f));
-		rot_mat_y[2][1] = 0.0f;
-		rot_mat_y[2][2] = cos(DEG2RAD(1.0f));
-
-		current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-		current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-
-		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
-		for (int i = 0; i < entities[0].status.num_verts; ++i) {
-			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
-		}
-	}
-
-	if (turn_right) {
-		yaw += 1.0f;
-
-		rot_mat_y[0][0] = cos(DEG2RAD(1.0f));
-		rot_mat_y[0][1] = 0.0f;
-		rot_mat_y[0][2] = -sin(DEG2RAD(1.0f));
-
-		rot_mat_y[1][0] = 0.0f;
-		rot_mat_y[1][1] = 1.0f;
-		rot_mat_y[1][2] = 0.0f;
-
-		rot_mat_y[2][0] = sin(DEG2RAD(1.0f));
-		rot_mat_y[2][1] = 0.0f;
-		rot_mat_y[2][2] = cos(DEG2RAD(1.0f));
-
-		current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-		current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-
-		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
-		for (int i = 0; i < entities[0].status.num_verts; ++i) {
-			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
-		}
-	}
 
 	// test stuff
-	rot_mat_x[0][0] = 1.0f;
-	rot_mat_x[0][1] = 0.0f;
-	rot_mat_x[0][2] = 0.0f;
 
 	rot_mat_x[1][0] = 0.0f;
 	rot_mat_x[1][1] = cos(rot_theta);
@@ -516,9 +330,6 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	rot_mat_z[1][1] = cos(rot_theta);
 	rot_mat_z[1][2] = 0.0f;
 
-	rot_mat_z[2][0] = 0.0f;
-	rot_mat_z[2][1] = 0.0f;
-	rot_mat_z[2][2] = 1.0f;
 
 
 	// test stuff
@@ -589,8 +400,10 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		int	frame_msec = now_time - last_time;
 		last_time = now_time;
 		char buffer[64];
-		sprintf_s(buffer, "Frame time: %d, Yaw: %f\n", frame_msec, yaw);
-		//OutputDebugStringA(buffer);
+		sprintf_s(buffer, "Origin x, y, z: %f %f %f\n", current_view->world_orientation.origin[0], 
+				  current_view->world_orientation.origin[1], 
+				  current_view->world_orientation.origin[2]);
+		OutputDebugStringA(buffer);
 	}
 
 	if (first_run) {

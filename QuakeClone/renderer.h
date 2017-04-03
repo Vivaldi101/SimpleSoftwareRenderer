@@ -69,6 +69,7 @@ struct ViewSystem {
 
 	Orientation		world_orientation;
 	Vec3			target;
+	Vec3			velocity;
 
 	u32				viewport_x,		viewport_y;
 	u32				viewport_width, viewport_height;
