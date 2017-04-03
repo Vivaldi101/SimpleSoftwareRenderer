@@ -9,7 +9,8 @@ enum KeyNum {
 	CTRL_KEY = VK_CONTROL,
 	ALT_KEY = VK_MENU,
 	SHIFT_KEY = VK_SHIFT,
-	PAUSE_KEY = VK_PAUSE
+	PAUSE_KEY = VK_PAUSE,
+	ENTER_KEY = VK_RETURN
 };
 
 #endif	// Header guard

@@ -17,7 +17,7 @@ static void IN_HandleKeyDown(Key *k, b32 down) {
 	k->down = down;
 }
 
-void IN_UpdateKeyboard(Input *in) {
+void IN_GetInput(Input *in) {
 	BYTE kb[MAX_NUM_KEYS];
 	Assert(GetKeyboardState(kb));
 

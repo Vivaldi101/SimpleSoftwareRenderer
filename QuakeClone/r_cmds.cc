@@ -25,7 +25,7 @@ void R_IssueRenderCommands(RenderCommands *rc) {
 }
 
 // FIXME: maybe pass only num of meshes, polys and transformed verts
-void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid) {
+void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid) {
 	DrawMeshCmd *cmd = GetRenderCmdType(rc, DrawMeshCmd);
 
 	cmd->cmd_id = RCMD_MESH;
@@ -51,10 +51,8 @@ void R_BeginFrame(VidSystem *vs, RenderCommands *rc) {
 
 void R_EndFrame(VidSystem *vs, RenderCommands *rc) {
 	SwapBuffersCmd *cmd = GetRenderCmdType(rc, SwapBuffersCmd);
+	Assert(cmd);
 
-	if (!cmd) {
-		return;
-	}
 	cmd->cmd_id = RCMD_SWAP_BUFFERS;
 	cmd->hdc = vs->win_handles.hdc;
 	cmd->hdc_dib_section = vs->win_handles.hdc_dib_section;

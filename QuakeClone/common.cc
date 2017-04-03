@@ -73,7 +73,6 @@ static int global_game_frame;
 static r32 yaw = 0.0f;
 
 static b32 paused;
-static b32 reset;
 static b32 wireframe;
 
 Platform Com_Init(void *hinstance, void *wndproc) {
@@ -161,6 +160,7 @@ static void Com_RunEventLoop(GameState *gs, Input *in) {
 static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in, ViewSystem *vs) {
 	// test stuff
 	static r32 rot_mat_y[3][3];
+	// FIXME: add matrix returning routines
 	rot_mat_y[1][0] = 0.0f;
 	rot_mat_y[1][1] = 1.0f;
 	rot_mat_y[1][2] = 0.0f;
@@ -173,6 +173,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 		}
 		if (in->keys['A'].down) {
 			yaw -= 3.0f;
+			// FIXME: add matrix returning routines
 			rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
 			rot_mat_y[0][1] = 0.0f;
 			rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
@@ -194,6 +195,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 		}
 		if (in->keys['D'].down) {
 			yaw += 3.0f;
+			// FIXME: add matrix returning routines
 			rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
 			rot_mat_y[0][1] = 0.0f;
 			rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
@@ -209,6 +211,26 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 			for (int i = 0; i < ents[0].status.num_verts; ++i) {
 				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 			}
+		}
+		if (in->keys[ENTER_KEY].released) {
+			Vec3Init(vs->world_orientation.dir, 0.0f, 0.0f, 1.0f);
+			Vec3Init(vs->world_orientation.origin, 0.0f, 0.0f, 0.0f);
+			
+			rot_mat_y[0][0] = cos(DEG2RAD(yaw));
+			rot_mat_y[0][2] = sin(DEG2RAD(yaw));
+
+			rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
+			rot_mat_y[2][2] = cos(DEG2RAD(yaw));
+
+			// reset player camera
+			if (yaw != 0.0f) {
+				Vec3 *verts = ents[0].mesh->local_verts->vert_array;
+				for (int i = 0; i < ents[0].status.num_verts; ++i) {
+					Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+				}
+			}
+
+			yaw = 0.0f;
 		}
 
 		acc = acc * speed;
@@ -227,15 +249,20 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 }
 
 void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
+	Entity *entities = pf->game_state->entities;
+	ViewSystem *current_view = &rs->front_end.current_view;
+	RendererBackend *rbe = &rs->back_end;
+	RenderCommands *cmds = &rs->back_end.cmds;
+
 	Sys_GenerateEvents();
-	IN_UpdateKeyboard(&pf->input_state);
-	Com_RunEventLoop(pf->game_state, &pf->input_state);
-	// test stuff
+	IN_GetInput(&pf->input_state);
 	if (pf->input_state.keys[ESC_KEY].released) {
 		Sys_Quit();
 	}
 
-	// test stuff
+	Com_RunEventLoop(pf->game_state, &pf->input_state);
+
+
 	static b32 first_run = true;
 
 	int num_game_frames_to_run = 0;
@@ -279,41 +306,9 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		Sys_Sleep(0);
 	}
 
-	// FIXME: will be moved
-	// entities
-	Entity *entities = pf->game_state->entities;
-	// render
-	ViewSystem *current_view = &rs->front_end.current_view;
-	RendererBackend *rbe = &rs->back_end;
-	RenderCommands *cmds = &rs->back_end.cmds;
 	Com_SimFrame(MSEC_PER_SIM / 1000.0f, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state, current_view);
-	//Com_DrawFrame();
 
-	//if (reset) {
-	//	Vec3Init(current_view->world_orientation.dir, 0.0f, 0.0f, 1.0f);
-	//	Vec3Init(current_view->world_orientation.origin, 0.0f, 0.0f, 0.0f);
-	//	
-	//	rot_mat_y[0][0] = cos(DEG2RAD(yaw));
-	//	rot_mat_y[0][2] = sin(DEG2RAD(yaw));
-
-	//	rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
-	//	rot_mat_y[2][2] = cos(DEG2RAD(yaw));
-
-	//	// reset player camera
-	//	if (yaw != 0.0f) {
-	//		Vec3 *verts = entities[0].mesh->local_verts->vert_array;
-	//		for (int i = 0; i < entities[0].status.num_verts; ++i) {
-	//			Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
-	//		}
-	//	}
-
-	//	reset = false;
-	//	yaw = 0.0f;
-	//}
-
-
-	// test stuff
-
+	// FIXME: add matrix returning routines
 	rot_mat_x[1][0] = 0.0f;
 	rot_mat_x[1][1] = cos(rot_theta);
 	rot_mat_x[1][2] = sin(rot_theta);
@@ -330,9 +325,6 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	rot_mat_z[1][1] = cos(rot_theta);
 	rot_mat_z[1][2] = 0.0f;
 
-
-
-	// test stuff
 	// FIXME: extract this into a function
 	int num_entities = pf->game_state->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
@@ -348,7 +340,6 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		}
 	}
 
-	// FIXME: these will go through the backend
 	R_RenderView(current_view);
 
 	// FIXME: 0 index hardcoded for player in the entities array
@@ -387,13 +378,14 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 #endif
 	R_TransformViewToClip(current_view, rbe->poly_verts, rbe->num_verts);
 	R_TransformClipToScreen(current_view, rbe->poly_verts, rbe->num_verts);
-	R_DrawMesh(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, true);
+	R_AddDrawPolysCmd(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, true);
 
 	R_EndFrame(rbe->vid_sys, cmds);
 
 	// FIXME: move these into ending routine
 	rbe->num_polys = 0;
 	rbe->num_verts = 0;
+
 	{
 		static int last_time = Sys_GetMilliseconds();
 		int	now_time = Sys_GetMilliseconds();
@@ -410,6 +402,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		first_run = false;
 	}
 }
+
 void Com_Quit() {
 	Sys_Quit();
 }

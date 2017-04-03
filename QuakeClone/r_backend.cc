@@ -38,8 +38,8 @@ static void R_DrawLine(byte *buffer, u32 pitch, u32 bpp, u32 color, int x0, int 
 			break;
 		} else {
 			// Casting the operands to reals so div by zero wont cause exeption, only inf
-			r32 x;
-			r32 y;
+			r32 x = 0.0f;
+			r32 y = 0.0f;
 			r32 m = (r32)(y1 - y0) / (r32)(x1 - x0);
 
 			// Clip the line segment(s) laying outside of the screen

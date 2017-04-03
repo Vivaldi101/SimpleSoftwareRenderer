@@ -78,7 +78,7 @@ struct ViewSystem {
 	r32				fov_x, fov_y;
 	r32				view_dist;	
 
-	Plane			frustum[4];			// order of left, right, top, bottom, FIXME: add near and far z
+	Plane			frustum[4];			// order f left, right, top, bottom, FIXME: add near and far z
 	r32				z_far, z_near;
 
 	r32				aspect_ratio;
@@ -110,7 +110,7 @@ struct RenderingSystem {
 extern RenderingSystem *R_Init(const Platform *pf, void *hinstance, void *wndproc); 
 extern void R_BeginFrame(VidSystem *vs, RenderCommands *rc);
 extern void R_EndFrame(VidSystem *vs, RenderCommands *rc);
-extern void R_DrawMesh(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
+extern void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
 
 extern void R_RenderView(ViewSystem *vs);
 
@@ -132,11 +132,6 @@ extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array,
 //	renderer backend
 //
 extern void RB_ExecuteRenderCommands(const void *data);
-//extern void R_DrawWireframeMesh(VidSystem *vs, Entity *ent);
-//extern void R_DrawSolidMesh(VidSystem *vs, Entity *ent);
-extern void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
-					   r32 rmax_x, r32 rmax_y,
-					   r32 R, r32 G, r32 B);
 
 
 #endif	// Header guard

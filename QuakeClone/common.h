@@ -104,7 +104,7 @@ extern struct SysEvent Com_GetEvent();
 extern struct SysEvent Sys_GetEvent();
 
 // Input
-extern void IN_UpdateKeyboard(Input *in);
+extern void IN_GetInput(Input *in);
 extern void IN_ClearKeys(Input *in);
 
 #endif	// Header guard
