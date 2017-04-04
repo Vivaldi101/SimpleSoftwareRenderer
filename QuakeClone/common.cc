@@ -72,7 +72,6 @@ static int global_game_frame;
 static r32 yaw = 0.0f;
 
 static b32 paused;
-static b32 wireframe;
 
 Platform Com_Init(void *hinstance, void *wndproc) {
 	Platform pf = {};
@@ -87,37 +86,9 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	pf.game_state = PushStruct(pf.main_memory_stack.perm_data, GameState);
 
 	// TESTING!!!!!
-	pf.game_state->num_entities = 1;
+	pf.game_state->num_entities = 10;
 
 	//IN_ClearKeyStates(pf.input);
-
-	// just for prototyping purposes
-
-	//player_cube->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
-	//player_cube->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	//player_cube->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	//player_cube->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
-
-
-	//const int num_entities = 5;
-	//for (int i = 0; i < num_entities; ++i) {
-	//	// just for prototyping purposes
-	//	Entity *ent = PushStruct(pf.main_memory_stack.perm_data, Entity);
-	//	ent->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
-	//	ent->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	//	ent->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	//	ent->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
-
-
-	//	// FIXME: move elsewhere
-	//	// position the objects randomly
-	//	Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
-	//	PLG_LoadMesh(ent, &fp, world_pos);
-
-	//	memcpy(&pf.game_state->entities[pf.game_state->num_entities++], ent, sizeof(Entity));
-	//}
-
-
 
 	return pf;
 }
@@ -136,11 +107,11 @@ void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 	Sys_Print("\nOpening PLG file\n");
 
 	// FIXME: 0 hardcoded for player for now
-	Vec3 world_pos = {};
 	for (int i = 0; i < gs->num_entities; ++i) {
+		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
 		Entity *ent = &gs->entities[i];
 		PLG_LoadCubeMesh(ent, &fp);
-		ent->status.world_pos = MakeVec3(0.0f, 0.0f, 0.0f);
+		ent->status.world_pos = world_pos;
 	}
 
 	if (fp) {
@@ -379,14 +350,15 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(ent->cube.local_vertex_array), ent->status.world_pos); 
 
 		if (i != 0) {
-			//e->status.state = R_CullPointAndRadius(&rfe->current_view, e->status.world_pos);			
+			ent->status.state = R_CullPointAndRadius(&rfe->current_view, ent->status.world_pos);			
 		}
 		if (!(ent->status.state & FCS_CULL_OUT)) {
 			R_TransformWorldToView(&rfe->current_view, trans_verts, ArrayCount(ent->cube.trans_vertex_array));
+			// NOTE: 3 for triangles
 			R_AddPolys(rbe, trans_verts, ent->cube.polys, 3, ent->status.num_polys);
-			//R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
 		}
 	}
+	R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
 	R_TransformViewToClip(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
 	R_TransformClipToScreen(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
 	R_AddDrawPolysCmd(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, rfe->is_wireframe);

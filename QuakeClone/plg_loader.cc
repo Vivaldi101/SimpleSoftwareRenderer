@@ -114,36 +114,38 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 			return false;
 		}
 
-		sscanf_s(parsed_string, "%s %d %d %d", 
+		sscanf_s(parsed_string, "%s %d %d %d %d", 
 				 tmp_poly_surface_desc,
 				 sizeof(tmp_poly_surface_desc),
+				 &poly_surface_desc,
 				 &ent->cube.polys[i].vert_indices[0],
 				 &ent->cube.polys[i].vert_indices[1],
 				 &ent->cube.polys[i].vert_indices[2]);
-	}
-		//if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
-		//	sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
-		//} else {
-		//	poly_surface_desc = atoi(tmp_poly_surface_desc);
-		//}
+	
+		if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
+			sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
+		} else {
+			poly_surface_desc = atoi(tmp_poly_surface_desc);
+		}
 
 		//mesh->polys->poly_array[i].vertex_array = mesh->local_verts->vert_array;
 
-	//	if (poly_surface_desc & PLX_2SIDED_FLAG) {
-	//		//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
-	//	}
+		if (poly_surface_desc & PLX_2SIDED_FLAG) {
+			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
+		}
 
-	//	if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
-	//		//ent->poly_array[i].attr |= POLY_ATTR_RGB16;
-	//		int red = (poly_surface_desc & 0x0f00) >> 8;
-	//		int green = (poly_surface_desc & 0x00f0) >> 4;
-	//		int blue = (poly_surface_desc & 0x000f);
+		if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
+			//ent->poly_array[i].attr |= POLY_ATTR_RGB16;
+			int red = (poly_surface_desc & 0x0f00) >> 8;
+			int green = (poly_surface_desc & 0x00f0) >> 4;
+			int blue = (poly_surface_desc & 0x000f);
 
-	//		mesh->polys->poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
-	//	} else {
-	//		//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
-	//		mesh->polys->poly_array[i].color = poly_surface_desc & 0x00ff;
-	//	}
+			ent->cube.polys[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
+			//ent->cube.polys[i]. = RGB_888To565(red * 16, green * 16, blue * 16);
+		} else {
+			//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
+			ent->cube.polys[i].color = poly_surface_desc & 0x00ff;
+		}
 
 	//	int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
 
@@ -165,8 +167,8 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 	//		}
 	//	}
 
-	//	mesh->polys->poly_array[i].state = POLY_STATE_ACTIVE;
-	
+		ent->cube.polys[i].state = POLY_STATE_ACTIVE;
+	}
 
 	Sys_Print("\nMesh data loading complete\n");
 	fseek(*fp, 0, SEEK_SET);
