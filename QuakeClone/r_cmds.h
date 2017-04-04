@@ -15,14 +15,6 @@ struct RenderCommands {
 	size_t	used_buffer_size;
 };
 
-//struct RenderListCmd {
-//	int		cmd_id;
-//	byte *	buffer;		
-//	Poly **	polys;
-//	Vec3 *	verts;
-//	int		num_polys;
-//};
-
 struct DrawPolyListCmd {
 	int		cmd_id;
 	byte *	buffer;		

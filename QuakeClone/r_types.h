@@ -9,7 +9,7 @@ struct PolyVert {
 
 struct Poly {
 	Vec3 *		vertex_array;	
-	int			vert_indices[3];
+	u16			vert_indices[3];
 	int			num_verts;
 	int			state;
 	u32			color;
@@ -27,21 +27,4 @@ struct LinkedPoly {
 	LinkedPoly *	next;
 	LinkedPoly *	prev;
 };
-
-// FIXME: remove 
-struct VertexGroup {
-	Vec3	vert_array[85];		// cacheline friendly
-};
-
-struct PolyGroup {
-	Poly	poly_array[64];		// cacheline friendly
-};
-
-struct Mesh {
-	VertexGroup	*	local_verts;		// original
-	VertexGroup	* 	trans_verts;		// transformed
-
-	PolyGroup *		polys;
-};
-
 #endif	// Header guard

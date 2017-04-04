@@ -26,10 +26,26 @@ struct Input {
 	Key keys[MAX_NUM_KEYS];
 };
 
+// FIXME: move into entities.h 
+#define SetupEntity(table, e, fn) (table)[EntityTypeEnum::##e].fn = (fn##e)
+enum EntityTypeEnum {
+	INVALID,
+	PLAYER,
+	CUBE,
+	MAX_NUM_ENTITY_TYPES
+};
+
+static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
+	"Invalid",
+	"Player", 
+	"Cube"
+};
+
 struct Entity {
+	EntityTypeEnum type_enum;
 	struct {
 		int		guid;
-		char	name[64];
+		char	type_name[64];
 
 		int		state;
 		int		attr;
@@ -47,8 +63,15 @@ struct Entity {
 		int		num_polys;
 	} status;	// FIXME: remove the status var
 
-	// FIXME: remove
-	Mesh *	mesh;
+	// FIXME: currently handling only cubes atm!!
+	union {
+		struct {
+			// FIXME: is this a good way to capture vertex arrays?
+			Poly 	polys[12];
+			Vec3	local_vertex_array[8];		
+			Vec3	trans_vertex_array[8];		
+		} cube;
+	};
 };
 
 struct GameState {
@@ -94,6 +117,7 @@ extern int Sys_GetMilliseconds();
 static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
+extern void Com_LoadEntities(GameState *gs, struct RendererBackend *rb);
 extern Platform Com_Init(void *hinstance, void *wndproc);
 extern void Com_RunFrame(Platform *pf, struct RenderingSystem *rs);
 extern void Com_Quit();
@@ -107,4 +131,6 @@ extern struct SysEvent Sys_GetEvent();
 extern void IN_GetInput(Input *in);
 extern void IN_ClearKeys(Input *in);
 
+// Strings
+int CaseInsStrCmp(const char* a, const char* b);
 #endif	// Header guard

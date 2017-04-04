@@ -79,32 +79,20 @@ void R_SetupFrustum(ViewSystem *vs) {
 	memcpy(&vs->frustum, &frustum, sizeof(frustum));
 }
 
-void R_TransformWorldToView(ViewSystem *vs, Entity *md) {
-	int num_verts = md->status.num_verts;
-	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
+void R_TransformWorldToView(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
 		r32 vert[4], tmp[4];
-		Vec3Copy(vert, trans_verts[i]);
+		Vec3Copy(vert, poly_verts[i]);
 		vert[3] = 1.0f;
 
 		Mat1x4Mul(tmp, vert, vs->view_matrix);  
-		Vec3Copy(trans_verts[i], tmp);
+		Vec3Copy(poly_verts[i], tmp);
 	}
 }
 
-void R_TransformModelToWorld(Entity *md, VertexTransformState vts) {
-	int num_verts = md->status.num_verts;
-	Vec3 *local_verts = md->mesh->local_verts->vert_array;
-	Vec3 *trans_verts = md->mesh->trans_verts->vert_array;
-
-	if (vts == VTS_LOCAL_TO_TRANSFORMED) {
-		for (int i = 0; i < num_verts; ++i) {
-			Vector3Add(local_verts[i], md->status.world_pos, trans_verts[i]);
-		}
-	} else if (vts == VTS_TRANSFORMED_ONLY) {
-		for (int i = 0; i < num_verts; ++i) {
-			Vector3Add(trans_verts[i], md->status.world_pos, trans_verts[i]);
-		}
+void R_TransformModelToWorld(Vec3 *local_poly_verts, Vec3 *trans_poly_verts, int num_verts, Vec3 world_pos) {
+	for (int i = 0; i < num_verts; ++i) {
+		Vector3Add(local_poly_verts[i], world_pos, trans_poly_verts[i]);
 	}
 }
 

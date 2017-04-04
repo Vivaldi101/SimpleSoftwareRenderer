@@ -1,7 +1,7 @@
 # begin plg/plx file
 # simple cube, 8 vertices, 12 polygons
-tri 8 12
-# vertex list in x y z format
+Cube 8 12
+# vertex array in x y z format
 10 10 10
 -10 10 10
 -10 10 -10
@@ -10,7 +10,8 @@ tri 8 12
 -10 -10 10
 -10 -10 -10
 10 -10 -10
-# polygon list
+# polygon array
+# indices into the vertex array
 # each poly has 3 vertices
 0xcddd 3 0 1 2
 0xcddd 3 0 2 3

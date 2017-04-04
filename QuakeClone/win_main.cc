@@ -156,6 +156,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 
 	Platform pf = Com_Init(hinstance, MainWndProc);
 	RenderingSystem *rs = R_Init(&pf, hinstance, MainWndProc);
+	Com_LoadEntities(pf.game_state, &rs->back_end);
 
 	for (;;) {
 		// run 1 frame of update and render  

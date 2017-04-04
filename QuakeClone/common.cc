@@ -2,7 +2,6 @@
 #include "r_cmds.h"
 #include "plg_loader.h"
 
-
 /*
 ==============================================================
 
@@ -87,15 +86,43 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	pf.main_memory_stack.temp_data = InitStackMemory(MAX_TEMP_MEMORY);
 	pf.game_state = PushStruct(pf.main_memory_stack.perm_data, GameState);
 
+	// TESTING!!!!!
+	pf.game_state->num_entities = 1;
+
 	//IN_ClearKeyStates(pf.input);
 
 	// just for prototyping purposes
-	Entity *player_ent = PushStruct(pf.main_memory_stack.perm_data, Entity);
-	player_ent->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
-	player_ent->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	player_ent->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-	player_ent->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
 
+	//player_cube->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
+	//player_cube->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	//player_cube->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	//player_cube->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
+
+
+	//const int num_entities = 5;
+	//for (int i = 0; i < num_entities; ++i) {
+	//	// just for prototyping purposes
+	//	Entity *ent = PushStruct(pf.main_memory_stack.perm_data, Entity);
+	//	ent->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
+	//	ent->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	//	ent->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
+	//	ent->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
+
+
+	//	// FIXME: move elsewhere
+	//	// position the objects randomly
+	//	Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
+	//	PLG_LoadMesh(ent, &fp, world_pos);
+
+	//	memcpy(&pf.game_state->entities[pf.game_state->num_entities++], ent, sizeof(Entity));
+	//}
+
+
+
+	return pf;
+}
+
+void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 	// FIXME: move file api elsewhere
 	// FIXME: maybe replace the CRT file i/o with win32 api
 	FILE *fp;
@@ -108,35 +135,18 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 
 	Sys_Print("\nOpening PLG file\n");
 
+	// FIXME: 0 hardcoded for player for now
 	Vec3 world_pos = {};
-	PLG_LoadMesh(player_ent, &fp, world_pos);
-	memcpy(&pf.game_state->entities[pf.game_state->num_entities++], player_ent, sizeof(Entity));
-
-	const int num_entities = 5;
-	for (int i = 0; i < num_entities; ++i) {
-		// just for prototyping purposes
-		Entity *ent = PushStruct(pf.main_memory_stack.perm_data, Entity);
-		ent->mesh = PushStruct(pf.main_memory_stack.perm_data, Mesh);
-		ent->mesh->local_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-		ent->mesh->trans_verts = PushStruct(pf.main_memory_stack.perm_data, VertexGroup);
-		ent->mesh->polys = PushStruct(pf.main_memory_stack.perm_data, PolyGroup);
-
-
-		// FIXME: move elsewhere
-		// position the objects randomly
-		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
-		PLG_LoadMesh(ent, &fp, world_pos);
-
-		memcpy(&pf.game_state->entities[pf.game_state->num_entities++], ent, sizeof(Entity));
+	for (int i = 0; i < gs->num_entities; ++i) {
+		Entity *ent = &gs->entities[i];
+		PLG_LoadCubeMesh(ent, &fp);
+		ent->status.world_pos = MakeVec3(0.0f, 0.0f, 0.0f);
 	}
 
 	if (fp) {
 		Sys_Print("\nClosing PLG file\n");
 		fclose(fp);
 	}
-
-
-	return pf;
 }
 
 static void ProcessEvent(SysEvent se) {
@@ -185,7 +195,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 			rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 			rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
-			Vec3 *verts = ents[0].mesh->local_verts->vert_array;
+			Vec3 *verts = ents[0].cube.local_vertex_array;
 			for (int i = 0; i < ents[0].status.num_verts; ++i) {
 				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 			}
@@ -207,7 +217,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 			rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 			rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
-			Vec3 *verts = ents[0].mesh->local_verts->vert_array;
+			Vec3 *verts = ents[0].cube.local_vertex_array;
 			for (int i = 0; i < ents[0].status.num_verts; ++i) {
 				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 			}
@@ -224,7 +234,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 
 			// reset player camera
 			if (yaw != 0.0f) {
-				Vec3 *verts = ents[0].mesh->local_verts->vert_array;
+				Vec3 *verts = ents[0].cube.local_vertex_array;
 				for (int i = 0; i < ents[0].status.num_verts; ++i) {
 					Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
 				}
@@ -251,6 +261,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 	}
 }
 
+#if 1
 void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	Entity *entities = pf->game_state->entities;
 	RendererFrontend *rfe = &rs->front_end;
@@ -331,12 +342,12 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	// FIXME: extract this into a function
 	int num_entities = pf->game_state->num_entities;
 	for (int i = 0; i < num_entities; ++i) {
-		Entity *current_mo = &entities[i];
-		int num_polys = current_mo->status.num_polys;
+		Entity *ent = &entities[i];
+		int num_polys = ent->status.num_polys;
 
 		// clear mesh states
 		// FIXME: reduce the indirection overhead
-		Poly *polys = current_mo->mesh->polys->poly_array;
+		Poly *polys = ent->cube.polys;
 		for (int j = 0; j < num_polys; ++j) {
 			polys[j].state = polys[j].state & (~POLY_STATE_BACKFACE);
 			polys[j].state = polys[j].state & (~FCS_CULL_OUT);
@@ -351,34 +362,31 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		rfe->current_view.world_orientation.origin + (rfe->current_view.world_orientation.dir * 60.0f);
 	entities[0].status.world_pos[1] -= 20.0f;
 
-#if 1
 	R_BeginFrame(rbe->vid_sys, cmds);
 	// FIXME: 0 index hardcoded for player in the entities array for now
 	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
-		Entity *e = &entities[i];
+		Entity *ent = &entities[i];
 		// FIXME: reduce the indirection overhead
-		Vec3 *verts = e->mesh->local_verts->vert_array;
-		Vec3 *trans_verts = e->mesh->trans_verts->vert_array;
+		Vec3 *local_verts = ent->cube.local_vertex_array;
+		Vec3 *trans_verts = ent->cube.trans_vertex_array;
 
 		if (i) {
-			R_RotatePoints(rot_mat_z, verts, e->status.num_verts); 
-			R_RotatePoints(rot_mat_x, verts, e->status.num_verts); 
+			R_RotatePoints(rot_mat_z, local_verts, ent->status.num_verts); 
+			R_RotatePoints(rot_mat_x, local_verts, ent->status.num_verts); 
 		}
 
-		R_TransformModelToWorld(e); 
+		R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(ent->cube.local_vertex_array), ent->status.world_pos); 
 
 		if (i != 0) {
-			e->status.state = R_CullPointAndRadius(&rfe->current_view, e->status.world_pos);			
+			//e->status.state = R_CullPointAndRadius(&rfe->current_view, e->status.world_pos);			
 		}
-		if (!(e->status.state & FCS_CULL_OUT)) {
-			R_TransformWorldToView(&rfe->current_view, e);
-			R_AddPolys(rbe, trans_verts, e->mesh->polys->poly_array,
-					   ArrayCount(e->mesh->polys->poly_array->vert_indices), e->status.num_polys);
-			R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
+		if (!(ent->status.state & FCS_CULL_OUT)) {
+			R_TransformWorldToView(&rfe->current_view, trans_verts, ArrayCount(ent->cube.trans_vertex_array));
+			R_AddPolys(rbe, trans_verts, ent->cube.polys, 3, ent->status.num_polys);
+			//R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
 		}
 	}
-#endif
 	R_TransformViewToClip(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
 	R_TransformClipToScreen(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
 	R_AddDrawPolysCmd(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, rfe->is_wireframe);
@@ -405,6 +413,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		first_run = false;
 	}
 }
+#endif
 
 void Com_Quit() {
 	Sys_Quit();
@@ -436,6 +445,31 @@ static int Com_ModifyFrameMsec(int frame_msec) {
 
 	return frame_msec;
 }
+
+
+/*
+==============================================================
+
+String handling
+
+==============================================================
+*/
+
+int CaseInsStrCmp(const char* a, const char* b) {
+	Assert(a && b);
+	do {
+		if(*a < *b) {
+			return -1;
+		} else if(*a > *b) {
+			return 1;
+		}
+	} while(*a++ && *b++);
+
+	return 0;
+}
+
+
+
 
 
 

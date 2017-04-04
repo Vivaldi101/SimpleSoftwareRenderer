@@ -5,5 +5,5 @@
 #include "renderer.h"
 #include "win_local.h"
 
-extern b32 PLG_LoadMesh(Entity *md, FILE **fp, Vec3 world_pos, r32 scale = 1.0f);
+extern b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale = 1.0f);
 #endif	// header guard

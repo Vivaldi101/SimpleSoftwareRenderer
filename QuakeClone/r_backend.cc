@@ -344,8 +344,8 @@ static void RB_ClearMemset(void *buffer, u32 pitch, int height) {
 	memset(buffer, 40, pitch * height);
 }
 
-static void RB_Blit(HDC hdc, HDC hdc_dib, int x, int y, int width, int height) {
-	BitBlt(hdc, x, y, width, height, hdc_dib, 0, 0, SRCCOPY);
+static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2 min_xy, Vec2 max_xy) {
+	BitBlt(hdc, (int)min_xy[0], (int)min_xy[1], (int)max_xy[0], (int)max_xy[1], hdc_dib, 0, 0, SRCCOPY);
 }
 
 static const void *RB_DrawMesh(const void *data) {
@@ -363,7 +363,7 @@ static const void *RB_DrawMesh(const void *data) {
 
 static const void *RB_SwapBuffers(const void *data) {
 	SwapBuffersCmd *cmd = (SwapBuffersCmd *)data;
-	RB_Blit(cmd->hdc, cmd->hdc_dib_section, 0, 0, cmd->width, cmd->height);
+	RB_Blit(cmd->hdc, cmd->hdc_dib_section, MakeVec2(0.0f, 0.0f), MakeVec2((r32)cmd->width, (r32)cmd->height));
 
 	return (const void *)(cmd + 1);
 }

@@ -54,23 +54,29 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 }
 
 // NOTE: this parser routine is just for prototyping, aka ignoring all overflows atm
-b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
+b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
 	const char *parsed_string;
 
-	ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
-	ent->status.world_pos = world_pos;
+	//ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
 
-	Mesh *mesh = ent->mesh;
-
-	// get the object desc
+	// get the object description
 	if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 		Sys_Print("\nError while reading lines from an opened PLG file, it should be a name of the mesh to be loaded,"
 				  "number of verts and number polys");
 		return false;
 	}
 
-	sscanf_s(parsed_string, "%s %d %d", ent->status.name, sizeof(ent->status.name), &ent->status.num_verts, &ent->status.num_polys);
+	sscanf_s(parsed_string, "%s %d %d", ent->status.type_name, sizeof(ent->status.type_name), &ent->status.num_verts, &ent->status.num_polys);
+
+	// FIXME: add proper checkings!!!
+	// check the entity type
+	if (CaseInsStrCmp(ent->status.type_name, global_entity_names[CUBE]) == 0) {
+		ent->type_enum = CUBE;
+	} else {
+		InvalidCodePath("Unhandled entitity type!");
+		Sys_Quit();
+	}
 
 	int num_verts = ent->status.num_verts;
 	for (int i = 0; i < num_verts; ++i) {
@@ -80,21 +86,16 @@ b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
 		}
 
 		sscanf_s(parsed_string, "%f %f %f",
-				 &mesh->local_verts->vert_array[i][0],
-				 &mesh->local_verts->vert_array[i][1],
-				 &mesh->local_verts->vert_array[i][2]);
-		//ent->local_vertex_list[i].v.w = 1.0f;		disabled the Vec4 for now
-
-		mesh->local_verts->vert_array[i][0] *= scale;
-		mesh->local_verts->vert_array[i][1] *= scale;
-		mesh->local_verts->vert_array[i][2] *= scale;
+				 &ent->cube.local_vertex_array[i][0],
+				 &ent->cube.local_vertex_array[i][1],
+				 &ent->cube.local_vertex_array[i][2]);
 
 		// NOTE: convert from the ccw into cw vertex order for our left-handed system
-		r32 v0 = mesh->local_verts->vert_array[i][0];
-		r32 v2 = mesh->local_verts->vert_array[i][2];
+		r32 v0 = ent->cube.local_vertex_array[i][0];
+		r32 v2 = ent->cube.local_vertex_array[i][2];
 
-		mesh->local_verts->vert_array[i][0] = v2;
-		mesh->local_verts->vert_array[i][2] = v0;
+		ent->cube.local_vertex_array[i][0] = v2;
+		ent->cube.local_vertex_array[i][2] = v0;
 	}
 
 
@@ -113,60 +114,59 @@ b32 PLG_LoadMesh(Entity *ent, FILE **fp, Vec3 world_pos, r32 scale) {
 			return false;
 		}
 
-		sscanf_s(parsed_string, "%s %d %d %d %d", 
+		sscanf_s(parsed_string, "%s %d %d %d", 
 				 tmp_poly_surface_desc,
 				 sizeof(tmp_poly_surface_desc),
-				 &poly_num_verts,
-				 &mesh->polys->poly_array[i].vert_indices[0],
-				 &mesh->polys->poly_array[i].vert_indices[1],
-				 &mesh->polys->poly_array[i].vert_indices[2]);
-
-		if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
-			sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
-		} else {
-			poly_surface_desc = atoi(tmp_poly_surface_desc);
-		}
-
-		mesh->polys->poly_array[i].vertex_array = mesh->local_verts->vert_array;
-
-		if (poly_surface_desc & PLX_2SIDED_FLAG) {
-			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
-		}
-
-		if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
-			//ent->poly_array[i].attr |= POLY_ATTR_RGB16;
-			int red = (poly_surface_desc & 0x0f00) >> 8;
-			int green = (poly_surface_desc & 0x00f0) >> 4;
-			int blue = (poly_surface_desc & 0x000f);
-
-			mesh->polys->poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
-		} else {
-			//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
-			mesh->polys->poly_array[i].color = poly_surface_desc & 0x00ff;
-		}
-
-		int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
-
-		switch (shade_mode) {
-			case PLX_SHADE_MODE_PURE_FLAG: {
-				//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PURE;
-			} break;
-			case PLX_SHADE_MODE_FLAT_FLAG: {
-				//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_FLAT;
-			} break;
-			case PLX_SHADE_MODE_GOURAUD_FLAG: {
-				//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_GOURAUD;
-			} break;
-			case PLX_SHADE_MODE_PHONG_FLAG: {
-				//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PHONG;
-			} break;
-			default: {
-				Sys_Print("\nShading mode is invalid, it should be 1 of: 0x0000, 0x2000, 0x4000, 0x6000\n");
-			}
-		}
-
-		mesh->polys->poly_array[i].state = POLY_STATE_ACTIVE;
+				 &ent->cube.polys[i].vert_indices[0],
+				 &ent->cube.polys[i].vert_indices[1],
+				 &ent->cube.polys[i].vert_indices[2]);
 	}
+		//if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
+		//	sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
+		//} else {
+		//	poly_surface_desc = atoi(tmp_poly_surface_desc);
+		//}
+
+		//mesh->polys->poly_array[i].vertex_array = mesh->local_verts->vert_array;
+
+	//	if (poly_surface_desc & PLX_2SIDED_FLAG) {
+	//		//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
+	//	}
+
+	//	if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
+	//		//ent->poly_array[i].attr |= POLY_ATTR_RGB16;
+	//		int red = (poly_surface_desc & 0x0f00) >> 8;
+	//		int green = (poly_surface_desc & 0x00f0) >> 4;
+	//		int blue = (poly_surface_desc & 0x000f);
+
+	//		mesh->polys->poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
+	//	} else {
+	//		//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
+	//		mesh->polys->poly_array[i].color = poly_surface_desc & 0x00ff;
+	//	}
+
+	//	int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
+
+	//	switch (shade_mode) {
+	//		case PLX_SHADE_MODE_PURE_FLAG: {
+	//			//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PURE;
+	//		} break;
+	//		case PLX_SHADE_MODE_FLAT_FLAG: {
+	//			//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_FLAT;
+	//		} break;
+	//		case PLX_SHADE_MODE_GOURAUD_FLAG: {
+	//			//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_GOURAUD;
+	//		} break;
+	//		case PLX_SHADE_MODE_PHONG_FLAG: {
+	//			//mo->poly_array[i].attr |= POLY_ATTR_SHADE_MODE_PHONG;
+	//		} break;
+	//		default: {
+	//			Sys_Print("\nShading mode is invalid, it should be 1 of: 0x0000, 0x2000, 0x4000, 0x6000\n");
+	//		}
+	//	}
+
+	//	mesh->polys->poly_array[i].state = POLY_STATE_ACTIVE;
+	
 
 	Sys_Print("\nMesh data loading complete\n");
 	fseek(*fp, 0, SEEK_SET);

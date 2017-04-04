@@ -95,7 +95,6 @@ struct RendererBackend {
 	Entity *				entities;
 	Poly *					polys;			
 	Vec3 *					poly_verts;			
-	u16						poly_indices[MAX_NUM_POLYS];			
 	int						num_polys;
 	int						num_verts;
 };
@@ -118,8 +117,8 @@ extern void R_RenderView(ViewSystem *vs);
 extern void R_SetupFrustum(ViewSystem *vs);
 extern void R_SetupProjection(ViewSystem *vs);
 
-extern void R_TransformModelToWorld(Entity *ent, VertexTransformState vts = VTS_LOCAL_TO_TRANSFORMED);
-extern void R_TransformWorldToView(ViewSystem *vs, Entity *ent);
+extern void R_TransformModelToWorld(Vec3 *local_poly_verts, Vec3 *trans_poly_verts, int num_verts, Vec3 world_pos);
+extern void R_TransformWorldToView(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
 extern void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
 extern void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
 
