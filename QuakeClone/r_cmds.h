@@ -23,7 +23,7 @@ struct RenderCommands {
 //	int		num_polys;
 //};
 
-struct DrawMeshCmd {
+struct DrawPolyListCmd {
 	int		cmd_id;
 	byte *	buffer;		
 	Poly *	polys;
@@ -34,7 +34,7 @@ struct DrawMeshCmd {
 	u32		color;		
 	int		width;          
 	int		height;
-	b32		solid;
+	b32		is_wireframe;
 };
 
 struct SwapBuffersCmd {

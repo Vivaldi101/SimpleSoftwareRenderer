@@ -25,7 +25,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
 	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		
-	win_dib_info->bmiHeader.biHeight        = -(int)vid_sys->height; // top down buffer, from unsigned to signed to get unary minus
+	win_dib_info->bmiHeader.biHeight        = vid_sys->height; 
 	win_dib_info->bmiHeader.biPlanes        = 1;
 	win_dib_info->bmiHeader.biBitCount      = (WORD)(vid_sys->bpp * 8);
 	win_dib_info->bmiHeader.biCompression   = BI_RGB;

@@ -86,6 +86,7 @@ struct ViewSystem {
 
 struct RendererFrontend {
 	ViewSystem	current_view;	
+	b32			is_wireframe;
 };
 
 struct RendererBackend {

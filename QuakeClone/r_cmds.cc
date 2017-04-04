@@ -25,8 +25,8 @@ void R_IssueRenderCommands(RenderCommands *rc) {
 }
 
 // FIXME: maybe pass only num of meshes, polys and transformed verts
-void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid) {
-	DrawMeshCmd *cmd = GetRenderCmdType(rc, DrawMeshCmd);
+void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 is_wireframe) {
+	DrawPolyListCmd *cmd = GetRenderCmdType(rc, DrawPolyListCmd);
 
 	cmd->cmd_id = RCMD_MESH;
 	cmd->buffer = vs->buffer;
@@ -38,7 +38,7 @@ void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *pol
 	cmd->color = polys->color;
 	cmd->width = vs->width;
 	cmd->height = vs->height;
-	cmd->solid = solid;
+	cmd->is_wireframe = is_wireframe;
 }
 void R_BeginFrame(VidSystem *vs, RenderCommands *rc) {
 	ClearBufferCmd *cmd = GetRenderCmdType(rc, ClearBufferCmd);

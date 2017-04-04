@@ -157,7 +157,7 @@ static void Com_RunEventLoop(GameState *gs, Input *in) {
 	}
 }
 
-static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in, ViewSystem *vs) {
+static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in, RendererFrontend *rf) {
 	// test stuff
 	static r32 rot_mat_y[3][3];
 	// FIXME: add matrix returning routines
@@ -165,7 +165,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 	rot_mat_y[1][1] = 1.0f;
 	rot_mat_y[1][2] = 0.0f;
 	r32 speed = 800.0f;
-	Vec3 acc = Vec3Norm(vs->world_orientation.dir);
+	Vec3 acc = Vec3Norm(rf->current_view.world_orientation.dir);
 
 	for (int i = 0; i < num_frames; ++i) {
 		if (in->keys['W'].down) {
@@ -182,8 +182,8 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 			rot_mat_y[2][1] = 0.0f;
 			rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
 
-			vs->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-			vs->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+			rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+			rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
 			Vec3 *verts = ents[0].mesh->local_verts->vert_array;
 			for (int i = 0; i < ents[0].status.num_verts; ++i) {
@@ -204,8 +204,8 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 			rot_mat_y[2][1] = 0.0f;
 			rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
 
-			vs->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-			vs->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+			rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+			rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 
 			Vec3 *verts = ents[0].mesh->local_verts->vert_array;
 			for (int i = 0; i < ents[0].status.num_verts; ++i) {
@@ -213,8 +213,8 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 			}
 		}
 		if (in->keys[ENTER_KEY].released) {
-			Vec3Init(vs->world_orientation.dir, 0.0f, 0.0f, 1.0f);
-			Vec3Init(vs->world_orientation.origin, 0.0f, 0.0f, 0.0f);
+			Vec3Init(rf->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
+			Vec3Init(rf->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
 			
 			rot_mat_y[0][0] = cos(DEG2RAD(yaw));
 			rot_mat_y[0][2] = sin(DEG2RAD(yaw));
@@ -232,13 +232,16 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 
 			yaw = 0.0f;
 		}
+		if (in->keys[SPACE_KEY].released) {
+			rf->is_wireframe = !rf->is_wireframe;
+		}
 
 		acc = acc * speed;
 		if (in->keys['W'].down || in->keys['S'].down) {
-			vs->world_orientation.origin = (acc * 0.5f * Square(dt)) + (vs->velocity * dt) + vs->world_orientation.origin;
-			vs->velocity = (acc * dt) + vs->velocity;
+			rf->current_view.world_orientation.origin = (acc * 0.5f * Square(dt)) + (rf->current_view.velocity * dt) + rf->current_view.world_orientation.origin;
+			rf->current_view.velocity = (acc * dt) + rf->current_view.velocity;
 		} else {
-			vs->velocity = vs->velocity * 0.0f;
+			rf->current_view.velocity = rf->current_view.velocity * 0.0f;
 		}
 	}
 	{
@@ -250,7 +253,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, 
 
 void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	Entity *entities = pf->game_state->entities;
-	ViewSystem *current_view = &rs->front_end.current_view;
+	RendererFrontend *rfe = &rs->front_end;
 	RendererBackend *rbe = &rs->back_end;
 	RenderCommands *cmds = &rs->back_end.cmds;
 
@@ -306,7 +309,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		Sys_Sleep(0);
 	}
 
-	Com_SimFrame(MSEC_PER_SIM / 1000.0f, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state, current_view);
+	Com_SimFrame(MSEC_PER_SIM / 1000.0f, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state, rfe);
 
 	// FIXME: add matrix returning routines
 	rot_mat_x[1][0] = 0.0f;
@@ -340,12 +343,12 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		}
 	}
 
-	R_RenderView(current_view);
+	R_RenderView(&rfe->current_view);
 
 	// FIXME: 0 index hardcoded for player in the entities array
 	// hacky player third person cam test stuff
 	entities[0].status.world_pos = 
-		current_view->world_orientation.origin + (current_view->world_orientation.dir * 60.0f);
+		rfe->current_view.world_orientation.origin + (rfe->current_view.world_orientation.dir * 60.0f);
 	entities[0].status.world_pos[1] -= 20.0f;
 
 #if 1
@@ -366,19 +369,19 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		R_TransformModelToWorld(e); 
 
 		if (i != 0) {
-			e->status.state = R_CullPointAndRadius(current_view, e->status.world_pos);			
+			e->status.state = R_CullPointAndRadius(&rfe->current_view, e->status.world_pos);			
 		}
 		if (!(e->status.state & FCS_CULL_OUT)) {
-			R_TransformWorldToView(current_view, e);
+			R_TransformWorldToView(&rfe->current_view, e);
 			R_AddPolys(rbe, trans_verts, e->mesh->polys->poly_array,
 					   ArrayCount(e->mesh->polys->poly_array->vert_indices), e->status.num_polys);
-			R_CullBackFaces(current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
+			R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
 		}
 	}
 #endif
-	R_TransformViewToClip(current_view, rbe->poly_verts, rbe->num_verts);
-	R_TransformClipToScreen(current_view, rbe->poly_verts, rbe->num_verts);
-	R_AddDrawPolysCmd(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, true);
+	R_TransformViewToClip(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
+	R_TransformClipToScreen(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
+	R_AddDrawPolysCmd(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, rfe->is_wireframe);
 
 	R_EndFrame(rbe->vid_sys, cmds);
 
@@ -392,9 +395,9 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		int	frame_msec = now_time - last_time;
 		last_time = now_time;
 		char buffer[64];
-		sprintf_s(buffer, "Origin x, y, z: %f %f %f\n", current_view->world_orientation.origin[0], 
-				  current_view->world_orientation.origin[1], 
-				  current_view->world_orientation.origin[2]);
+		sprintf_s(buffer, "Origin x, y, z: %f %f %f\n", rfe->current_view.world_orientation.origin[0], 
+				  rfe->current_view.world_orientation.origin[1], 
+				  rfe->current_view.world_orientation.origin[2]);
 		OutputDebugStringA(buffer);
 	}
 

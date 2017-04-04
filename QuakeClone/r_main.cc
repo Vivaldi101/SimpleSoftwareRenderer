@@ -147,7 +147,7 @@ void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 	r32 screen_height_factor = (0.5f * vs->viewport_height) - 0.5f;
 	for (int i = 0; i < num_verts; ++i) {
 		poly_verts[i][0] = screen_width_factor + (poly_verts[i][0] * screen_width_factor);
-		poly_verts[i][1] = screen_height_factor - (poly_verts[i][1] * screen_height_factor);
+		poly_verts[i][1] = screen_height_factor + (poly_verts[i][1] * screen_height_factor);
 	}
 }
 

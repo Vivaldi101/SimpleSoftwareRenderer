@@ -349,13 +349,13 @@ static void RB_Blit(HDC hdc, HDC hdc_dib, int x, int y, int width, int height) {
 }
 
 static const void *RB_DrawMesh(const void *data) {
-	DrawMeshCmd *cmd = (DrawMeshCmd *)data;
+	DrawPolyListCmd *cmd = (DrawPolyListCmd *)data;
 
 	// FIXME: stop passing the bpp!!!  (macro constant)
-	if (cmd->solid) {
-		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->color, cmd->width, cmd->height, cmd->num_polys);
-	} else {
+	if (cmd->is_wireframe) {
 		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->color, cmd->width, cmd->height, cmd->num_polys);
+	} else {
+		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->color, cmd->width, cmd->height, cmd->num_polys);
 	}
 
 	return (const void *)(cmd + 1);
