@@ -10,7 +10,7 @@
 
 #undef MAX_PERM_MEMORY
 #undef MAX_TEMP_MEMORY
-#define MAX_PERM_MEMORY MEGABYTES(16) 
+#define MAX_PERM_MEMORY MEGABYTES(256) 
 #define MAX_TEMP_MEMORY MEGABYTES(64) 
 
 #ifdef PLATFORM_FULLSCREEN
@@ -29,15 +29,15 @@ struct Input {
 // FIXME: move into entities.h 
 #define SetupEntity(table, e, fn) (table)[EntityTypeEnum::##e].fn = (fn##e)
 enum EntityTypeEnum {
-	INVALID,
-	PLAYER,
-	CUBE,
+	EntityType_invalid,
+	EntityType_player,
+	EntityType_cube,
 	MAX_NUM_ENTITY_TYPES
 };
 
 static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
 	"Invalid",
-	"Player", 
+	"Player",
 	"Cube"
 };
 
@@ -63,14 +63,18 @@ struct Entity {
 		int		num_polys;
 	} status;	// FIXME: remove the status var
 
-	// FIXME: currently handling only cubes atm!!
 	union {
+		// FIXME: is this a good way to capture vertex arrays?
 		struct {
-			// FIXME: is this a good way to capture vertex arrays?
 			Poly 	polys[12];
 			Vec3	local_vertex_array[8];		
 			Vec3	trans_vertex_array[8];		
-		} cube;
+		} cube;		// cube is npc
+		struct {
+			Poly 	polys[12];
+			Vec3	local_vertex_array[8];		
+			Vec3	trans_vertex_array[8];		
+		} player;
 	};
 };
 

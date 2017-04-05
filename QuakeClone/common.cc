@@ -86,7 +86,7 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	pf.game_state = PushStruct(pf.main_memory_stack.perm_data, GameState);
 
 	// TESTING!!!!!
-	pf.game_state->num_entities = 10;
+	pf.game_state->num_entities = 50;
 
 	//IN_ClearKeyStates(pf.input);
 
@@ -106,8 +106,12 @@ void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 
 	Sys_Print("\nOpening PLG file\n");
 
+	// FIXME: testing!!
+	Entity *ent = &gs->entities[0];
+	PLG_LoadCubeMesh(ent, &fp);
+	ent->type_enum = EntityType_player;
 	// FIXME: 0 hardcoded for player for now
-	for (int i = 0; i < gs->num_entities; ++i) {
+	for (int i = 1; i < gs->num_entities; ++i) {
 		Vec3 world_pos = {-100.0f + (i * 50.0f), 20.0f, 200.0f};
 		Entity *ent = &gs->entities[i];
 		PLG_LoadCubeMesh(ent, &fp);
@@ -117,6 +121,21 @@ void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 	if (fp) {
 		Sys_Print("\nClosing PLG file\n");
 		fclose(fp);
+	}
+}
+
+void ResetEntities(GameState *gs) {
+	int num_entities = gs->num_entities;
+	for (int i = 0; i < num_entities; ++i) {
+		Entity *ent = &gs->entities[i];
+		int num_polys = ent->status.num_polys;
+
+		// clear mesh states
+		Poly *polys = ent->cube.polys;
+		for (int j = 0; j < num_polys; ++j) {
+			polys[j].state = polys[j].state & (~POLY_STATE_BACKFACE);
+			polys[j].state = polys[j].state & (~FCS_CULL_OUT);
+		}
 	}
 }
 
@@ -138,97 +157,97 @@ static void Com_RunEventLoop(GameState *gs, Input *in) {
 	}
 }
 
-static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, Entity *ents, Input *in, RendererFrontend *rf) {
+// FIXME: pass only camera information rather than the renderer frontend
+static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entities, Entity *ents, Input *in, RendererFrontend *rf) {
 	// test stuff
 	static r32 rot_mat_y[3][3];
 	// FIXME: add matrix returning routines
 	rot_mat_y[1][0] = 0.0f;
 	rot_mat_y[1][1] = 1.0f;
 	rot_mat_y[1][2] = 0.0f;
+
+	// FIXME: scaling of the world
 	r32 speed = 800.0f;
 	Vec3 acc = Vec3Norm(rf->current_view.world_orientation.dir);
 
 	for (int i = 0; i < num_frames; ++i) {
-		if (in->keys['W'].down) {
-			acc = acc * 1.0f;
-		}
-		if (in->keys['A'].down) {
-			yaw -= 3.0f;
-			// FIXME: add matrix returning routines
-			rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
-			rot_mat_y[0][1] = 0.0f;
-			rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
-
-			rot_mat_y[2][0] = -sin(DEG2RAD(3.0f));
-			rot_mat_y[2][1] = 0.0f;
-			rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
-
-			rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-			rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-
-			Vec3 *verts = ents[0].cube.local_vertex_array;
-			for (int i = 0; i < ents[0].status.num_verts; ++i) {
-				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
-			}
-		}
-		if (in->keys['S'].down) {
-			acc = acc * (-1.0f);
-		}
-		if (in->keys['D'].down) {
-			yaw += 3.0f;
-			// FIXME: add matrix returning routines
-			rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
-			rot_mat_y[0][1] = 0.0f;
-			rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
-
-			rot_mat_y[2][0] = sin(DEG2RAD(3.0f));
-			rot_mat_y[2][1] = 0.0f;
-			rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
-
-			rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-			rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-
-			Vec3 *verts = ents[0].cube.local_vertex_array;
-			for (int i = 0; i < ents[0].status.num_verts; ++i) {
-				Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
-			}
-		}
-		if (in->keys[ENTER_KEY].released) {
-			Vec3Init(rf->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
-			Vec3Init(rf->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
-			
-			rot_mat_y[0][0] = cos(DEG2RAD(yaw));
-			rot_mat_y[0][2] = sin(DEG2RAD(yaw));
-
-			rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
-			rot_mat_y[2][2] = cos(DEG2RAD(yaw));
-
-			// reset player camera
-			if (yaw != 0.0f) {
-				Vec3 *verts = ents[0].cube.local_vertex_array;
-				for (int i = 0; i < ents[0].status.num_verts; ++i) {
-					Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+		for (int j = 0; j < num_entities; ++j) {
+			if (auto player = GetAnonType(&ents[j], player, EntityType_)) {
+				Vec3 *verts = player->local_vertex_array;
+				if (in->keys['W'].down) {
+					acc = acc * 1.0f;
 				}
-			}
+				if (in->keys['A'].down) {
+					yaw -= 3.0f;
+					// FIXME: add matrix returning routines
+					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
+					rot_mat_y[0][1] = 0.0f;
+					rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
 
-			yaw = 0.0f;
-		}
-		if (in->keys[SPACE_KEY].released) {
-			rf->is_wireframe = !rf->is_wireframe;
-		}
+					rot_mat_y[2][0] = -sin(DEG2RAD(3.0f));
+					rot_mat_y[2][1] = 0.0f;
+					rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
 
-		acc = acc * speed;
-		if (in->keys['W'].down || in->keys['S'].down) {
-			rf->current_view.world_orientation.origin = (acc * 0.5f * Square(dt)) + (rf->current_view.velocity * dt) + rf->current_view.world_orientation.origin;
-			rf->current_view.velocity = (acc * dt) + rf->current_view.velocity;
-		} else {
-			rf->current_view.velocity = rf->current_view.velocity * 0.0f;
+					rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+					rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+
+					for (int i = 0; i < ents[0].status.num_verts; ++i) {
+						Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+					}
+				}
+				if (in->keys['S'].down) {
+					acc = acc * (-1.0f);
+				}
+				if (in->keys['D'].down) {
+					yaw += 3.0f;
+					// FIXME: add matrix returning routines
+					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
+					rot_mat_y[0][1] = 0.0f;
+					rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
+
+					rot_mat_y[2][0] = sin(DEG2RAD(3.0f));
+					rot_mat_y[2][1] = 0.0f;
+					rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
+
+					rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+					rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+
+					for (int i = 0; i < ents[0].status.num_verts; ++i) {
+						Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+					}
+				}
+				if (in->keys[ENTER_KEY].released) {
+					Vec3Init(rf->current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
+					Vec3Init(rf->current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
+					
+					rot_mat_y[0][0] = cos(DEG2RAD(yaw));
+					rot_mat_y[0][2] = sin(DEG2RAD(yaw));
+
+					rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
+					rot_mat_y[2][2] = cos(DEG2RAD(yaw));
+
+					// reset player camera
+					if (yaw != 0.0f) {
+						for (int i = 0; i < ents[0].status.num_verts; ++i) {
+							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+						}
+					}
+
+					yaw = 0.0f;
+				}
+				if (in->keys[SPACE_KEY].released) {
+					rf->is_wireframe = !rf->is_wireframe;
+				}
+
+				acc = acc * speed;
+				if (in->keys['W'].down || in->keys['S'].down) {
+					rf->current_view.world_orientation.origin = (acc * 0.5f * Square(dt)) + (rf->current_view.velocity * dt) + rf->current_view.world_orientation.origin;
+					rf->current_view.velocity = (acc * dt) + rf->current_view.velocity;
+				} else {
+					rf->current_view.velocity = rf->current_view.velocity * 0.0f;
+				}
+			} 
 		}
-	}
-	{
-		//char buffer[64];
-		//sprintf_s(buffer, "Acc in z: %f\n", acc[2]);
-		//OutputDebugStringA(buffer);
 	}
 }
 
@@ -291,7 +310,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		Sys_Sleep(0);
 	}
 
-	Com_SimFrame(MSEC_PER_SIM / 1000.0f, global_game_time_residual, num_game_frames_to_run, entities, &pf->input_state, rfe);
+	Com_SimFrame(MSEC_PER_SIM / 1000.0f, global_game_time_residual, num_game_frames_to_run, pf->game_state->num_entities, entities, &pf->input_state, rfe);
 
 	// FIXME: add matrix returning routines
 	rot_mat_x[1][0] = 0.0f;
@@ -310,52 +329,40 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	rot_mat_z[1][1] = cos(rot_theta);
 	rot_mat_z[1][2] = 0.0f;
 
-	// FIXME: extract this into a function
-	int num_entities = pf->game_state->num_entities;
-	for (int i = 0; i < num_entities; ++i) {
-		Entity *ent = &entities[i];
-		int num_polys = ent->status.num_polys;
 
-		// clear mesh states
-		// FIXME: reduce the indirection overhead
-		Poly *polys = ent->cube.polys;
-		for (int j = 0; j < num_polys; ++j) {
-			polys[j].state = polys[j].state & (~POLY_STATE_BACKFACE);
-			polys[j].state = polys[j].state & (~FCS_CULL_OUT);
-		}
-	}
-
+	ResetEntities(pf->game_state);
 	R_RenderView(&rfe->current_view);
 
-	// FIXME: 0 index hardcoded for player in the entities array
 	// hacky player third person cam test stuff
 	entities[0].status.world_pos = 
 		rfe->current_view.world_orientation.origin + (rfe->current_view.world_orientation.dir * 60.0f);
 	entities[0].status.world_pos[1] -= 20.0f;
 
 	R_BeginFrame(rbe->vid_sys, cmds);
+
+	int num_entities = pf->game_state->num_entities;
 	// FIXME: 0 index hardcoded for player in the entities array for now
-	// FIXME: will be move elsewhere
 	for (int i = 0; i < num_entities; ++i) {
-		Entity *ent = &entities[i];
-		// FIXME: reduce the indirection overhead
-		Vec3 *local_verts = ent->cube.local_vertex_array;
-		Vec3 *trans_verts = ent->cube.trans_vertex_array;
+		if (auto cube = GetAnonType(&entities[i], cube, EntityType_)) {
+			Vec3 *local_verts = cube->local_vertex_array;
+			Vec3 *trans_verts = cube->trans_vertex_array;
 
-		if (i) {
-			R_RotatePoints(rot_mat_z, local_verts, ent->status.num_verts); 
-			R_RotatePoints(rot_mat_x, local_verts, ent->status.num_verts); 
-		}
-
-		R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(ent->cube.local_vertex_array), ent->status.world_pos); 
-
-		if (i != 0) {
-			ent->status.state = R_CullPointAndRadius(&rfe->current_view, ent->status.world_pos);			
-		}
-		if (!(ent->status.state & FCS_CULL_OUT)) {
-			R_TransformWorldToView(&rfe->current_view, trans_verts, ArrayCount(ent->cube.trans_vertex_array));
-			// NOTE: 3 for triangles
-			R_AddPolys(rbe, trans_verts, ent->cube.polys, 3, ent->status.num_polys);
+			R_RotatePoints(rot_mat_z, local_verts, ArrayCount(cube->local_vertex_array)); 
+			R_RotatePoints(rot_mat_x, local_verts, ArrayCount(cube->local_vertex_array)); 
+			R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(cube->local_vertex_array), entities[i].status.world_pos); 
+			entities[i].status.state = R_CullPointAndRadius(&rfe->current_view, entities[i].status.world_pos);			
+			if (!(entities[i].status.state & FCS_CULL_OUT)) {
+				R_TransformWorldToView(&rfe->current_view, trans_verts, ArrayCount(cube->trans_vertex_array));
+				// NOTE: 3 for triangles(only primitive currently drawable)
+				R_AddPolys(rbe, trans_verts, cube->polys, 3, ArrayCount(cube->polys));
+			}
+		} else if (auto player = GetAnonType(&entities[i], player, EntityType_)) {
+			Vec3 *local_verts = player->local_vertex_array;
+			Vec3 *trans_verts = player->trans_vertex_array;
+			R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(player->local_vertex_array), entities[i].status.world_pos); 
+			R_TransformWorldToView(&rfe->current_view, trans_verts, ArrayCount(player->trans_vertex_array));
+			// NOTE: 3 for triangles(only primitive currently drawable)
+			R_AddPolys(rbe, trans_verts, player->polys, 3, ArrayCount(player->polys));
 		}
 	}
 	R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);

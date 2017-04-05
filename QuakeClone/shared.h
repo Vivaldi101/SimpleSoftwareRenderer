@@ -95,10 +95,11 @@ static inline u16 RGB_888To565(int r, int g, int b) {
     (((Address - ((((size_t)Alignment)-1) & Address))))
 
 
+// FIXME: tune these
 // max values
 #define	MAX_NUM_ENTITIES	256
-#define	MAX_NUM_POLYS		256
-#define	MAX_NUM_POLY_VERTS	512
+#define	MAX_NUM_POLYS		1 << 10
+#define	MAX_NUM_POLY_VERTS	1 << 12
 
 // util tools
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
@@ -110,6 +111,7 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define PointerSizeOf(v) ((sizeof(v) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
 #define VaStart(va, v) ((va) = (char *)&(v) + PointerSizeOf(v))
 #define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
+#define GetAnonType(value, type, pref) (((value)->type_enum == pref##type) ? &(value)->type : 0)
 
 
 #undef MAX

@@ -69,10 +69,11 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 
 	sscanf_s(parsed_string, "%s %d %d", ent->status.type_name, sizeof(ent->status.type_name), &ent->status.num_verts, &ent->status.num_polys);
 
+	// FIXME: add other types
 	// FIXME: add proper checkings!!!
 	// check the entity type
-	if (CaseInsStrCmp(ent->status.type_name, global_entity_names[CUBE]) == 0) {
-		ent->type_enum = CUBE;
+	if (CaseInsStrCmp(ent->status.type_name, global_entity_names[EntityType_cube]) == 0) {
+		ent->type_enum = EntityType_cube;
 	} else {
 		InvalidCodePath("Unhandled entitity type!");
 		Sys_Quit();

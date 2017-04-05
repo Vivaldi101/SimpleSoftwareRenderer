@@ -13,11 +13,13 @@ void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int nu
 		poly->color = poly_array[i].color;
 		poly->vertex_array = &rb->poly_verts[rb->num_verts];
 
+		//memcpy(poly->vertex_array, &verts[*poly_array[i].vert_indices], num_verts * sizeof(*verts));
 		for (int j = 0; j < num_verts; ++j) {
 			poly->vertex_array[j] = verts[poly_array[i].vert_indices[j]];
 		}
 
 		++rb->num_polys; 
 		rb->num_verts += num_verts;
+		//verts += num_verts;
 	}
 }
