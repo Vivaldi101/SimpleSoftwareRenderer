@@ -21,7 +21,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		}
 	}
 
-	vid_sys->bpp = 4;
+	vid_sys->bpp = 1;
 
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
 	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		
@@ -35,10 +35,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	win_dib_info->bmiHeader.biClrUsed       = /*256*/ 0;
 	win_dib_info->bmiHeader.biClrImportant  = /*256*/ 0;
 
-#if 0
-	/*
-	** fill in the palette
-	*/
+#if 1
 	for (int i = 0; i < 256; ++i) {
 		//dib.colors[i].rgbRed   = (global_8to24able[i] >> 0)  & 0xff;
 		//dib.colors[i].rgbGreen = (global_8to24able[i] >> 8)  & 0xff;

@@ -25,7 +25,7 @@ static int R_GetLineClipCode(int x, int y, int width, int height) {
 }
 
 // FIXME: pack the points into structures
-static void R_DrawLine(byte *buffer, u32 pitch, u32 bpp, u32 color, int x0, int y0, int x1, int y1, int width, int height) {
+static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int y0, int x1, int y1, int width, int height) {
 	int outcode0 = R_GetLineClipCode(x0, y0, width, height);
 	int outcode1 = R_GetLineClipCode(x1, y1, width, height);
 	b32 accept = false;
@@ -120,26 +120,26 @@ static void R_DrawLine(byte *buffer, u32 pitch, u32 bpp, u32 color, int x0, int 
 			num_pixels	= dy;
 			add			= dx;
 		}
-		u32 *line = (u32*)buffer;
-		line = (line + (stride * y0)) + x0;
+		byte *line = (byte*)buffer;
+		line = (line + (stride * (y0 * bpp))) + x0 * bpp;
 
 		for (int i = 0; i < num_pixels; ++i) {
-			*line = color;
+			*line = 100;
 			numerator += add;
 			if (numerator >= denominator) {
 				numerator -= denominator;
-				line += x2_inc;	// inc x in case of y-dominant line
-				line += y2_inc; // inc y in case of x-dominant line
+				line += (x2_inc * bpp);	// inc x in case of y-dominant line
+				line += (y2_inc * bpp); // inc y in case of x-dominant line
 			}
-			line += x1_inc;
-			line += y1_inc;
+			line += (x1_inc * bpp);
+			line += (y1_inc * bpp);
 		}
 	}
 }
 
 #if 1
 // FIXME: pack the points into structures
-static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, u32 bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
+static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
 	if (x1 < x2) {
 		AnySwap(x1, x2, r32);
 	}
@@ -163,7 +163,7 @@ static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, u32 bpp, u32 color
 #endif
 
 // FIXME: pack the points into structures
-static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, u32 bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
+static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
 	if (x1 < x0) {
 		AnySwap(x1, x0, r32);
 	}
@@ -185,7 +185,7 @@ static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, u32 bpp, u32 color, r
 	}
 }
 
-void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, u32 bpp, u32 color, int width, int height, int num_polys) {
+void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, u32 color, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -219,7 +219,7 @@ void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, u32 
 }
 
 #if 1
-void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, u32 bpp, u32 color, int width, int height, int num_polys) {
+void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, u32 color, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -280,7 +280,7 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, u32 bpp,
 #endif
 
 static void R_DrawRect(byte *buffer, u32 pitch, 
-				       u32 bpp, int width, int height,
+				       int bpp, int width, int height,
 				       r32 r, r32 g, r32 b) {
 	Assert(bpp == 4);
 	u32 color = (roundReal32ToU32(r * 255.0f) << 16 |
@@ -321,7 +321,7 @@ void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y,
 	}
 
 	u32 pitch	= vs->pitch;
-	u32 bpp		= vs->bpp;
+	int bpp		= vs->bpp;
 
 	Assert(bpp == 4);
 	u32 color	= (roundReal32ToU32(r * 255.0f) << 16 |
@@ -351,7 +351,6 @@ static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2 min_xy, Vec2 max_xy) {
 static const void *RB_DrawMesh(const void *data) {
 	DrawPolyListCmd *cmd = (DrawPolyListCmd *)data;
 
-	// FIXME: stop passing the bpp!!!  (macro constant)
 	if (cmd->is_wireframe) {
 		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->color, cmd->width, cmd->height, cmd->num_polys);
 	} else {

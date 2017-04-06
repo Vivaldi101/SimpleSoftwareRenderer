@@ -22,7 +22,7 @@ struct DrawPolyListCmd {
 	Vec3 *	poly_verts;
 	int		num_polys;
 	u32		pitch;		
-	u32		bpp;		
+	int		bpp;		
 	u32		color;		
 	int		width;          
 	int		height;

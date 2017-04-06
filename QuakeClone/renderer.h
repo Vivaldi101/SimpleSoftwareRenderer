@@ -53,10 +53,10 @@ enum {
 
 struct VidSystem {
 	byte *			buffer;		
-	u32				pitch;		
+	int				pitch;		
 	int				width;          
 	int				height;
-	u32				bpp;
+	int				bpp;
 
 	WinHandles 		win_handles;
 	b32				full_screen;
