@@ -32,18 +32,45 @@ enum EntityTypeEnum {
 	EntityType_invalid,
 	EntityType_player,
 	EntityType_cube,
+	EntityType_tower,
 	EntityType_slider,
 	MAX_NUM_ENTITY_TYPES
 };
 
 static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
-	"Invalid",
-	"Player",
-	"Cube",
-	"Slider"
+	"invalid",
+	"player",
+	"cube",
+	"tower",
+	"slider"
 };
 
 struct Entity {
+	union {
+		// FIXME: is this a good way to capture vertex arrays?
+		// FIXME: hardcoded arrays for now, must match the vertex and poly numbers in the plg file
+		struct {
+			Poly 	polys[12];
+			Vec3	local_vertex_array[8];		
+			Vec3	trans_vertex_array[8];		
+		} cube;		
+		struct {
+			Poly 	polys[12];
+			Vec3	local_vertex_array[8];		
+			Vec3	trans_vertex_array[8];		
+		} player;
+		struct {
+			Poly 	polys[19];
+			Vec3	local_vertex_array[21];		
+			Vec3	trans_vertex_array[21];		
+		} slider;
+		struct {
+			Poly 	polys[18];
+			Vec3	local_vertex_array[16];		
+			Vec3	trans_vertex_array[16];		
+		} tower;
+	};
+
 	EntityTypeEnum type_enum;
 	struct {
 		int		guid;
@@ -63,27 +90,7 @@ struct Entity {
 
 		int		num_verts;
 		int		num_polys;
-	} status;	// FIXME: remove the status var
-
-	union {
-		// FIXME: is this a good way to capture vertex arrays?
-		// FIXME: hardcoded arrays for now
-		struct {
-			Poly 	polys[12];
-			Vec3	local_vertex_array[8];		
-			Vec3	trans_vertex_array[8];		
-		} cube;		// cube is npc
-		struct {
-			Poly 	polys[12];
-			Vec3	local_vertex_array[8];		
-			Vec3	trans_vertex_array[8];		
-		} player;
-		struct {
-			Poly 	polys[19];
-			Vec3	local_vertex_array[21];		
-			Vec3	trans_vertex_array[21];		
-		} slider;
-	};
+	} status;	
 };
 
 struct GameState {
@@ -144,5 +151,5 @@ extern void IN_GetInput(Input *in);
 extern void IN_ClearKeys(Input *in);
 
 // Strings
-int CaseInsStrCmp(const char* a, const char* b);
+int StrCmp(const char* a, const char* b);
 #endif	// Header guard

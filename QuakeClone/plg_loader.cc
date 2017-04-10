@@ -53,11 +53,15 @@ static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 }
 
 // NOTE: this parser routine is just for prototyping, aka ignoring all overflows atm
-b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
+b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
 	const char *parsed_string;
+	// FIXME: add proper checkings!!!
+	// check the entity types
+	int local_verts_offset = 0;
+	int polys_offset = 0;
 
-	//ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
+	//typeless_ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
 
 	// get the object description
 	if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
@@ -66,21 +70,36 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 		return false;
 	}
 
-	sscanf_s(parsed_string, "%s %d %d", ent->status.type_name, sizeof(ent->status.type_name), &ent->status.num_verts, &ent->status.num_polys);
+	if (typeless_ent->type_enum == EntityType_player) {
+		sscanf_s(parsed_string, "%s %d %d", typeless_ent->status.type_name, sizeof(typeless_ent->status.type_name), &typeless_ent->status.num_verts, &typeless_ent->status.num_polys);
+		local_verts_offset = OffsetOf(player.local_vertex_array, Entity);
 
-	// FIXME: add other types
-	// FIXME: add proper checkings!!!
-	// check the entity type
-	if (CaseInsStrCmp(ent->status.type_name, global_entity_names[EntityType_cube]) == 0) {
-		ent->type_enum = EntityType_cube;
-	} else if (CaseInsStrCmp(ent->status.type_name, global_entity_names[EntityType_slider]) == 0) {
-		ent->type_enum = EntityType_slider;
+		polys_offset = OffsetOf(player.polys, Entity);
 	} else {
-		InvalidCodePath("Unhandled entitity type!");
-		Sys_Quit();
-	}
+		sscanf_s(parsed_string, "%s %d %d", typeless_ent->status.type_name, sizeof(typeless_ent->status.type_name), &typeless_ent->status.num_verts, &typeless_ent->status.num_polys);
 
-	int num_verts = ent->status.num_verts;
+		if (StrCmp(typeless_ent->status.type_name, global_entity_names[EntityType_cube]) == 0) {
+			typeless_ent->type_enum = EntityType_cube;
+			local_verts_offset = OffsetOf(cube.local_vertex_array, Entity);
+
+			polys_offset = OffsetOf(cube.polys, Entity);
+		} else if (StrCmp(typeless_ent->status.type_name, global_entity_names[EntityType_slider]) == 0) {
+			typeless_ent->type_enum = EntityType_slider;
+			local_verts_offset = OffsetOf(slider.local_vertex_array, Entity);
+
+			polys_offset = OffsetOf(slider.polys, Entity);
+		} else if (StrCmp(typeless_ent->status.type_name, global_entity_names[EntityType_tower]) == 0) {
+			typeless_ent->type_enum = EntityType_tower;
+			local_verts_offset = OffsetOf(tower.local_vertex_array, Entity);
+
+			polys_offset = OffsetOf(tower.polys, Entity);
+		} else {
+			InvalidCodePath("Unhandled entitity type!");
+		}
+	}
+	Vec3 *local_vertex_array = (Vec3 *)((byte *)typeless_ent + local_verts_offset);  
+	int num_verts = typeless_ent->status.num_verts;
+
 	for (int i = 0; i < num_verts; ++i) {
 		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("\nError while reading lines from an opened PLG file, it should be a vertex in the x y z order");
@@ -88,16 +107,18 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 		}
 
 		sscanf_s(parsed_string, "%f %f %f",
-				 &ent->cube.local_vertex_array[i][0],
-				 &ent->cube.local_vertex_array[i][1],
-				 &ent->cube.local_vertex_array[i][2]);
+				 &local_vertex_array[i][0],
+				 &local_vertex_array[i][1],
+				 &local_vertex_array[i][2]);
 
-		// NOTE: convert from the ccw into cw vertex order for our left-handed system
-		r32 v0 = ent->cube.local_vertex_array[i][0];
-		r32 v2 = ent->cube.local_vertex_array[i][2];
+		//if (typeless_ent->type_enum != EntityType_tower) {
+			// NOTE: convert from the ccw into cw vertex order for our left-handed system
+			r32 v0 = local_vertex_array[i][0];
+			r32 v2 = local_vertex_array[i][2];
 
-		ent->cube.local_vertex_array[i][0] = v2;
-		ent->cube.local_vertex_array[i][2] = v0;
+			local_vertex_array[i][0] = v2;
+			local_vertex_array[i][2] = v0;
+		//}
 	}
 
 
@@ -108,7 +129,8 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 	int poly_surface_desc = 0;
 	char tmp_poly_surface_desc[8];
 
-	int num_polys = ent->status.num_polys;
+	Poly *poly_array = (Poly *)((byte *)typeless_ent + polys_offset);  
+	int num_polys = typeless_ent->status.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
 		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("\nError while reading lines from an opened PLG file," 
@@ -120,17 +142,15 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 				 tmp_poly_surface_desc,
 				 sizeof(tmp_poly_surface_desc),
 				 &poly_surface_desc,
-				 &ent->cube.polys[i].vert_indices[0],
-				 &ent->cube.polys[i].vert_indices[1],
-				 &ent->cube.polys[i].vert_indices[2]);
+				 &poly_array[i].vert_indices[0],
+				 &poly_array[i].vert_indices[1],
+				 &poly_array[i].vert_indices[2]);
 	
 		if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
 			sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
 		} else {
 			poly_surface_desc = atoi(tmp_poly_surface_desc);
 		}
-
-		//mesh->polys->poly_array[i].vertex_array = mesh->local_verts->vert_array;
 
 		if (poly_surface_desc & PLX_2SIDED_FLAG) {
 			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
@@ -142,11 +162,11 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 			int green = (poly_surface_desc & 0x00f0) >> 4;
 			int blue = (poly_surface_desc & 0x000f);
 
-			ent->cube.polys[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
+			poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
 			//ent->cube.polys[i]. = RGB_888To565(red * 16, green * 16, blue * 16);
 		} else {
+			poly_array[i].color = poly_surface_desc & 0x00ff;
 			//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
-			ent->cube.polys[i].color = poly_surface_desc & 0x00ff;
 		}
 
 	//	int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
@@ -169,7 +189,7 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 	//		}
 	//	}
 
-		ent->cube.polys[i].state = POLY_STATE_ACTIVE;
+		poly_array[i].state = POLY_STATE_ACTIVE;
 	}
 
 	Sys_Print("\nMesh data loading complete\n");

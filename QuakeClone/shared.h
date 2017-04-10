@@ -406,7 +406,7 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 // windows specific
 #ifdef _WIN32
 #include <Windows.h>
-#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Assert(0); } while(0)
+#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Sys_Quit(); } while(0)
 #define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
 #define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
 #else

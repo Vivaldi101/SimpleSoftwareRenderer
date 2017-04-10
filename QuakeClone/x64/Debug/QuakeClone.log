@@ -1,7 +1,7 @@
-﻿Build started 10/04/2017 16:17:29.
+﻿Build started 13/04/2017 16:01:06.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
+         Touching "x64\Debug\QuakeClone.unsuccessfulbuild".
        ClCompile:
          F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /Od /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt common.cc
          common.cc
@@ -35,4 +35,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.59
+Time Elapsed 00:00:00.76

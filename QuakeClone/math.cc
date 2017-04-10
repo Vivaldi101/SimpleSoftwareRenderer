@@ -1,5 +1,13 @@
 #include "shared.h"
 
+// globals to be exported
+//const Vec3 global_origin = { 0.0f, 0.0f, 0.0f };
+//const Vec3 global_default_basis[3] = { 
+//	{ 1.0f, 0.0f, 0.0f }, 
+//	{ 0.0f, 1.0f, 0.0f }, 
+//	{ 0.0f, 0.0f, 1.0f } 
+//};
+
 void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]) {
 	r32 a00 = (*a)[0], a01 = (*a)[1], a02 = (*a)[2];
 

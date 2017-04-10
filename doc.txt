@@ -1,4 +1,0 @@
-TODO: 
-perspective correct texture mapping.
-unity build.
-homogeneous clipping.
