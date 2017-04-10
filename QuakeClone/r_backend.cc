@@ -120,11 +120,14 @@ static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int 
 			num_pixels	= dy;
 			add			= dx;
 		}
+
 		byte *line = (byte*)buffer;
-		line = (line + (stride * (y0 * bpp))) + x0 * bpp;
+		line = (line + (pitch * y0)) + x0 * bpp;
 
 		for (int i = 0; i < num_pixels; ++i) {
-			*line = 100;
+			for (int j = 0; j < bpp; ++j) {
+				line[j] = (color >> (j * 8)) & 0xff;
+			}
 			numerator += add;
 			if (numerator >= denominator) {
 				numerator -= denominator;
@@ -279,60 +282,23 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp,
 }
 #endif
 
-static void R_DrawRect(byte *buffer, u32 pitch, 
-				       int bpp, int width, int height,
-				       r32 r, r32 g, r32 b) {
-	Assert(bpp == 4);
-	u32 color = (roundReal32ToU32(r * 255.0f) << 16 |
-				 roundReal32ToU32(g * 255.0f) << 8  |
-				 roundReal32ToU32(b * 255.0f));
-		
-	byte *ptr = buffer;
-
-	for (int i = 0; i < height; ++i){
-		u32 *pixel	= (u32*)ptr;
-		for (int j = 0; j < width; ++j) {
-			*pixel++ = color;
-		}
-		ptr += pitch;
-	}
-}
-
 void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
 				r32 rmax_x, r32 rmax_y,
-				r32 r, r32 g, r32 b) {
+				byte color) {
 	i32 min_x = roundReal32ToI32(rmin_x);
 	i32 min_y = roundReal32ToI32(rmin_y);
 
 	i32 max_x = roundReal32ToI32(rmax_x);
 	i32 max_y = roundReal32ToI32(rmax_y);
 
-	if (min_x < 0) {
-		min_x = 0;
-	}
-	if (min_y < 0) {
-		min_y = 0;
-	}
-	if (max_x > vs->width) {
-		max_x = vs->width;
-	}
-	if (max_y > vs->height) {
-		max_y = vs->height;
-	}
-
 	u32 pitch	= vs->pitch;
 	int bpp		= vs->bpp;
 
-	Assert(bpp == 4);
-	u32 color	= (roundReal32ToU32(r * 255.0f) << 16 |
-				   roundReal32ToU32(g * 255.0f) << 8  |
-				   roundReal32ToU32(b * 255.0f));
-		
 	byte *start = vs->buffer;
 	byte *ptr = start + (pitch * min_y) + (min_x * bpp);	
 
 	for (int i = min_y; i < max_y; ++i){
-		u32 *pixel	= (u32*)ptr;
+		byte *pixel	= ptr;
 		for (int j = min_x; j < max_x; ++j) {
 			*pixel++ = color;
 		}
@@ -341,7 +307,7 @@ void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y,
 }
 
 static void RB_ClearMemset(void *buffer, u32 pitch, int height) {
-	memset(buffer, 40, pitch * height);
+	memset(buffer, 0, pitch * height);
 }
 
 static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2 min_xy, Vec2 max_xy) {

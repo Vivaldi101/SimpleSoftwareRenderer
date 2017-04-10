@@ -132,8 +132,10 @@
   <ItemGroup>
     <ClCompile Include="common.cc" />
     <ClCompile Include="entity.cc" />
+    <ClCompile Include="files.cc" />
     <ClCompile Include="input.cc" />
     <ClCompile Include="math.cc" />
+    <ClCompile Include="misc.cc" />
     <ClCompile Include="plg_loader.cc" />
     <ClCompile Include="r_cmds.cc" />
     <ClCompile Include="r_init.cc" />

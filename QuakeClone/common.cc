@@ -86,7 +86,7 @@ Platform Com_Init(void *hinstance, void *wndproc) {
 	pf.game_state = PushStruct(pf.main_memory_stack.perm_data, GameState);
 
 	// TESTING!!!!!
-	pf.game_state->num_entities = 50;
+	pf.game_state->num_entities = 5;
 
 	//IN_ClearKeyStates(pf.input);
 
@@ -181,12 +181,10 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					yaw -= 3.0f;
 					// FIXME: add matrix returning routines
 					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
-					rot_mat_y[0][1] = 0.0f;
 					rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
 
-					rot_mat_y[2][0] = -sin(DEG2RAD(3.0f));
-					rot_mat_y[2][1] = 0.0f;
-					rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
+					rot_mat_y[2][0] = -rot_mat_y[0][2];
+					rot_mat_y[2][2] = rot_mat_y[0][0];
 
 					rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 					rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
@@ -202,12 +200,10 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					yaw += 3.0f;
 					// FIXME: add matrix returning routines
 					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
-					rot_mat_y[0][1] = 0.0f;
 					rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
 
-					rot_mat_y[2][0] = sin(DEG2RAD(3.0f));
-					rot_mat_y[2][1] = 0.0f;
-					rot_mat_y[2][2] = cos(DEG2RAD(3.0f));
+					rot_mat_y[2][0] = -rot_mat_y[0][2];
+					rot_mat_y[2][2] = rot_mat_y[0][0];
 
 					rf->current_view.world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 					rf->current_view.world_orientation.dir[2] = cosf(DEG2RAD(yaw));
@@ -223,10 +219,10 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					rot_mat_y[0][0] = cos(DEG2RAD(yaw));
 					rot_mat_y[0][2] = sin(DEG2RAD(yaw));
 
-					rot_mat_y[2][0] = -sin(DEG2RAD(yaw));
-					rot_mat_y[2][2] = cos(DEG2RAD(yaw));
+					rot_mat_y[2][0] = -rot_mat_y[0][2];
+					rot_mat_y[2][2] = rot_mat_y[0][0];
 
-					// reset player camera
+					// reset player yaw angle
 					if (yaw != 0.0f) {
 						for (int i = 0; i < ents[0].status.num_verts; ++i) {
 							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
@@ -318,15 +314,15 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	rot_mat_x[1][2] = sin(rot_theta);
 
 	rot_mat_x[2][0] = 0.0f;
-	rot_mat_x[2][1] = -sin(rot_theta);
-	rot_mat_x[2][2] = cos(rot_theta);
+	rot_mat_x[2][1] = -rot_mat_x[1][2];
+	rot_mat_x[2][2] = rot_mat_x[1][1];
 
 	rot_mat_z[0][0] = cos(rot_theta);
 	rot_mat_z[0][1] = sin(rot_theta);
 	rot_mat_z[0][2] = 0.0f;
 
-	rot_mat_z[1][0] = -sin(rot_theta);
-	rot_mat_z[1][1] = cos(rot_theta);
+	rot_mat_z[1][0] = -rot_mat_z[0][1];
+	rot_mat_z[1][1] = rot_mat_z[0][0];
 	rot_mat_z[1][2] = 0.0f;
 
 
@@ -368,6 +364,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	R_CullBackFaces(&rfe->current_view, rbe->polys, rbe->poly_verts, rbe->num_polys);
 	R_TransformViewToClip(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
 	R_TransformClipToScreen(&rfe->current_view, rbe->poly_verts, rbe->num_verts);
+
 	R_AddDrawPolysCmd(rbe->vid_sys, cmds, rbe->polys, rbe->poly_verts, rbe->num_polys, rfe->is_wireframe);
 
 	R_EndFrame(rbe->vid_sys, cmds);
@@ -382,9 +379,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		int	frame_msec = now_time - last_time;
 		last_time = now_time;
 		char buffer[64];
-		sprintf_s(buffer, "Origin x, y, z: %f %f %f\n", rfe->current_view.world_orientation.origin[0], 
-				  rfe->current_view.world_orientation.origin[1], 
-				  rfe->current_view.world_orientation.origin[2]);
+		sprintf_s(buffer, "Frame msec %d\n", frame_msec);
 		OutputDebugStringA(buffer);
 	}
 

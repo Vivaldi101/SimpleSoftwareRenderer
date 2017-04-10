@@ -7,6 +7,7 @@
 #include "r_types.h"
 #include "r_cmds.h"
 
+#define BYTES_PER_PIXEL 4
 // FIXME: maybe move all the constants these into .cc file if only impl needs access
 
 // states of polygons and faces
@@ -132,6 +133,10 @@ extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array,
 //	renderer backend
 //
 extern void RB_ExecuteRenderCommands(const void *data);
+// fixme: for testing purposes only
+void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
+				r32 rmax_x, r32 rmax_y,
+				byte color);
 
 
 #endif	// Header guard

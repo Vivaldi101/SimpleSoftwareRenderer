@@ -32,13 +32,15 @@ enum EntityTypeEnum {
 	EntityType_invalid,
 	EntityType_player,
 	EntityType_cube,
+	EntityType_slider,
 	MAX_NUM_ENTITY_TYPES
 };
 
 static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
 	"Invalid",
 	"Player",
-	"Cube"
+	"Cube",
+	"Slider"
 };
 
 struct Entity {
@@ -65,6 +67,7 @@ struct Entity {
 
 	union {
 		// FIXME: is this a good way to capture vertex arrays?
+		// FIXME: hardcoded arrays for now
 		struct {
 			Poly 	polys[12];
 			Vec3	local_vertex_array[8];		
@@ -75,6 +78,11 @@ struct Entity {
 			Vec3	local_vertex_array[8];		
 			Vec3	trans_vertex_array[8];		
 		} player;
+		struct {
+			Poly 	polys[19];
+			Vec3	local_vertex_array[21];		
+			Vec3	trans_vertex_array[21];		
+		} slider;
 	};
 };
 

@@ -31,7 +31,6 @@
 #define MAX_PLG_LINE_LEN 256
 #define IsEmptyChar(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\n' || (c) == '\t') 
 
-
 static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
 	int i;
 	size_t len;
@@ -74,6 +73,8 @@ b32 PLG_LoadCubeMesh(Entity *ent, FILE **fp, r32 scale) {
 	// check the entity type
 	if (CaseInsStrCmp(ent->status.type_name, global_entity_names[EntityType_cube]) == 0) {
 		ent->type_enum = EntityType_cube;
+	} else if (CaseInsStrCmp(ent->status.type_name, global_entity_names[EntityType_slider]) == 0) {
+		ent->type_enum = EntityType_slider;
 	} else {
 		InvalidCodePath("Unhandled entitity type!");
 		Sys_Quit();

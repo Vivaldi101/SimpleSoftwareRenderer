@@ -96,5 +96,11 @@
     <ClCompile Include="entity.cc">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="files.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="misc.cc">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

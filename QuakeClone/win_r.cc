@@ -21,7 +21,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		}
 	}
 
-	vid_sys->bpp = 1;
+	vid_sys->bpp = BYTES_PER_PIXEL;
 
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
 	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		
@@ -35,19 +35,45 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	win_dib_info->bmiHeader.biClrUsed       = /*256*/ 0;
 	win_dib_info->bmiHeader.biClrImportant  = /*256*/ 0;
 
-#if 1
-	for (int i = 0; i < 256; ++i) {
-		//dib.colors[i].rgbRed   = (global_8to24able[i] >> 0)  & 0xff;
-		//dib.colors[i].rgbGreen = (global_8to24able[i] >> 8)  & 0xff;
-		//dib.colors[i].rgbBlue  = (global_8to24able[i] >> 16) & 0xff;
+	if (BYTES_PER_PIXEL == 1) {
+		// FIXME: this is only here for testing!!!!!!!!
+		// FIXME: do proper integrity checking!!!
+		FILE *fp;
+		fopen_s(&fp, "palette.lmp", "r");
+		fseek(fp, 0, SEEK_END);
+		int size = ftell(fp);
+		Assert(size == 256 * 3);
+		fseek(fp, 0, SEEK_SET);
 
-		// placeholder
-		dib.colors[i].rgbRed   = (byte)i;
-		dib.colors[i].rgbGreen = (byte)i;
-		dib.colors[i].rgbBlue  = (byte)i;
+		if (!fp) {
+			Sys_Print("\nCouldn't open pal file\n");
+			Sys_Quit();
+		}
+
+		// FIXME: remove calloc and put on temp memory stack
+		byte *rgb_data = (byte *)calloc(size, 1);
+		byte *ptr = (byte *)rgb_data;
+		fread_s(rgb_data, size, 1, size, fp);
+
+	#if 1
+		for (int i = 0; i < 256; ++i) {
+			dib.colors[i].rgbRed   = ptr[0];
+			dib.colors[i].rgbGreen = ptr[1];
+			dib.colors[i].rgbBlue  = ptr[2];
+
+			ptr += 3;
+		}
+	#endif
+
+		if (fp) {
+			Sys_Print("\nClosing pal file\n");
+			fclose(fp);
+		}
+		// FIXME: remove calloc and put on temp memory stack
+		if(rgb_data) {
+			free(rgb_data);
+		}
 	}
-#endif
-
 	vid_sys->win_handles.dib_section = CreateDIBSection(vid_sys->win_handles.hdc,
 														win_dib_info,
 											 			DIB_RGB_COLORS,
