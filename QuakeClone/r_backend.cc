@@ -124,6 +124,9 @@ static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int 
 		byte *line = (byte*)buffer;
 		line = (line + (pitch * y0)) + x0 * bpp;
 
+		if (color != 0xff) {
+			int x = 42;
+		}
 		for (int i = 0; i < num_pixels; ++i) {
 			for (int j = 0; j < bpp; ++j) {
 				line[j] = (color >> (j * 8)) & 0xff;
@@ -188,7 +191,7 @@ static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r
 	}
 }
 
-void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, u32 color, int width, int height, int num_polys) {
+void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -222,7 +225,7 @@ void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int 
 }
 
 #if 1
-void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, u32 color, int width, int height, int num_polys) {
+void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -260,10 +263,10 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp,
 
 		if (y0 == y1) {
 			// flat top
-			R_DrawFlatTopTriangle(buffer, pitch, bpp, color, x0, y0, x1, y1, x2, y2, width, height);
+			R_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x1, y1, x2, y2, width, height);
 		} else if (y1 == y2) {
 			// flat bottom
-			R_DrawFlatBottomTriangle(buffer, pitch, bpp, color, x0, y0, x1, y1, x2, y2, width, height);
+			R_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x1, y1, x2, y2, width, height);
 		} else {
 			// split the triangle into 2 parts
 
@@ -275,8 +278,8 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp,
 			// x derived from the point-slope form of the line
 			r32 m = (y2 - y0) / (x2 - x0);
 			r32 x = (y1 - y0) / m + x0;
-			R_DrawFlatBottomTriangle(buffer, pitch, bpp, color, x0, y0, x, y1, x1, y1, width, height);
-			R_DrawFlatTopTriangle(buffer, pitch, bpp, color, x1, y1, x, y1, x2, y2, width, height);
+			R_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x, y1, x1, y1, width, height);
+			R_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
 		}
 	}
 }
@@ -306,8 +309,8 @@ void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y,
 	}
 }
 
-static void RB_ClearMemset(void *buffer, u32 pitch, int height) {
-	memset(buffer, 0, pitch * height);
+static void RB_ClearMemset(void *buffer, size_t size) {
+	memset(buffer, 0, size);
 }
 
 static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2 min_xy, Vec2 max_xy) {
@@ -318,9 +321,9 @@ static const void *RB_DrawMesh(const void *data) {
 	DrawPolyListCmd *cmd = (DrawPolyListCmd *)data;
 
 	if (cmd->is_wireframe) {
-		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->color, cmd->width, cmd->height, cmd->num_polys);
+		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->width, cmd->height, cmd->num_polys);
 	} else {
-		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->color, cmd->width, cmd->height, cmd->num_polys);
+		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->width, cmd->height, cmd->num_polys);
 	}
 
 	return (const void *)(cmd + 1);
@@ -335,7 +338,7 @@ static const void *RB_SwapBuffers(const void *data) {
 
 static const void *RB_ClearBuffer(const void *data) {
 	ClearBufferCmd *cmd = (ClearBufferCmd *)data;
-	RB_ClearMemset(cmd->buffer, cmd->pitch, cmd->height);
+	RB_ClearMemset(cmd->buffer, cmd->size);
 
 	return (const void *)(cmd + 1);
 }

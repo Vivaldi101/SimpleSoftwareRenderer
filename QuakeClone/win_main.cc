@@ -50,33 +50,6 @@ void Sys_ToggleFullscreen(HWND window) {
 	}
 }
 
-#if 0
-static void ParseCommandLine(char *cmd_line) {
-	global_sys_argc = 1;
-	global_sys_argv[0] = "exe";
-
-	while (*cmd_line && (global_sys_argc < MAX_NUM_ARGVS)) {
-		while (*cmd_line && ((*cmd_line <= 32) || (*cmd_line > 126))) {
-			++cmd_line;
-		}
-
-		if (*cmd_line) {
-			global_sys_argv[global_sys_argc] = cmd_line;
-			++global_sys_argc;
-
-			while (*cmd_line && ((*cmd_line > 32) && (*cmd_line <= 126))) {
-				cmd_line++;
-			}
-
-			if (*cmd_line) {
-				*cmd_line = 0;
-				++cmd_line;
-			}
-		}
-	}
-}
-#endif
-
 //
 // event queue
 //
@@ -154,7 +127,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	timeBeginPeriod(1);
 	Sys_GetMilliseconds();
 
-	Platform pf = Com_Init(hinstance, MainWndProc);
+	Platform pf = Com_Init();
 	RenderingSystem *rs = R_Init(&pf, hinstance, MainWndProc);
 	Com_LoadEntities(pf.game_state, &rs->back_end);
 

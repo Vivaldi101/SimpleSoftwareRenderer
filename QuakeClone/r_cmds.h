@@ -23,7 +23,6 @@ struct DrawPolyListCmd {
 	int		num_polys;
 	u32		pitch;		
 	int		bpp;		
-	u32		color;		
 	int		width;          
 	int		height;
 	b32		is_wireframe;
@@ -40,8 +39,7 @@ struct SwapBuffersCmd {
 struct ClearBufferCmd {
 	int		cmd_id;
 	byte *	buffer;		
-	u32		pitch;		
-	int		height;
+	size_t	size;
 };
 
 extern void R_IssueRenderCommands(RenderCommands *rc);

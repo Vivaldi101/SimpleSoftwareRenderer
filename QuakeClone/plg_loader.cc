@@ -2,7 +2,7 @@
 
 //	PLG/X format: CSSD | RRRR| GGGG | BBBB
 
-//	C	= 1 for 16-bit, 0 for 8-bit color
+//	C	= 1 for 24-bit, 0 for 8-bit color
 //	SS	= Shading mode used
 //	D	= Double-sided bit, 1 for double sided
 
@@ -18,8 +18,7 @@
 
 // these are the comparison flags after masking
 // color mode of polygon
-#define PLX_COLOR_MODE_RGB_FLAG		0x8000		// poly uses RGB color
-#define PLX_COLOR_MODE_INDEXED_FLAG	0x0000	// poly uses indexed 8-bit color
+#define PLX_COLOR_MODE_8BIT_FLAG	0x8000		// poly uses indexed 8-bit color
 
 //	shading mode of polygon
 #define PLX_SHADE_MODE_PURE_FLAG	0x0000	// poly is a constant color
@@ -83,16 +82,6 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 			local_verts_offset = OffsetOf(cube.local_vertex_array, Entity);
 
 			polys_offset = OffsetOf(cube.polys, Entity);
-		} else if (StrCmp(typeless_ent->status.type_name, global_entity_names[EntityType_slider]) == 0) {
-			typeless_ent->type_enum = EntityType_slider;
-			local_verts_offset = OffsetOf(slider.local_vertex_array, Entity);
-
-			polys_offset = OffsetOf(slider.polys, Entity);
-		} else if (StrCmp(typeless_ent->status.type_name, global_entity_names[EntityType_tower]) == 0) {
-			typeless_ent->type_enum = EntityType_tower;
-			local_verts_offset = OffsetOf(tower.local_vertex_array, Entity);
-
-			polys_offset = OffsetOf(tower.polys, Entity);
 		} else {
 			InvalidCodePath("Unhandled entitity type!");
 		}
@@ -156,17 +145,16 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
 		}
 
-		if (poly_surface_desc & PLX_COLOR_MODE_RGB_FLAG) {
-			//ent->poly_array[i].attr |= POLY_ATTR_RGB16;
+		if (poly_surface_desc & PLX_COLOR_MODE_8BIT_FLAG) {
+			poly_array[i].color = poly_surface_desc & 0x00ff;
+			poly_array[i].color |= POLY_ATTR_8BITCOLOR;
+		} else {
+			poly_array[i].color |= POLY_ATTR_RGB24;
 			int red = (poly_surface_desc & 0x0f00) >> 8;
 			int green = (poly_surface_desc & 0x00f0) >> 4;
 			int blue = (poly_surface_desc & 0x000f);
 
-			poly_array[i].color = RGB_888To565(red * 16, green * 16, blue * 16);
-			//ent->cube.polys[i]. = RGB_888To565(red * 16, green * 16, blue * 16);
-		} else {
-			poly_array[i].color = poly_surface_desc & 0x00ff;
-			//ent->poly_array[i].attr |= POLY_ATTR_8BITCOLOR;
+			poly_array[i].color = RGB_32(255, red * 16, green * 16, blue * 16);
 		}
 
 	//	int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;

@@ -1,13 +1,65 @@
 #include "renderer.h"
 #include "win_r.h"
 
-static HGDIOBJ	s_global_previously_selected_GDI_obj;
+// FIXME: testing stuff
+#if 1
+// sample a 24-bit RGB value to one of the colours on the existing 8-bit palette
+static int Convert24To8(const byte palette[256*3], const int rgb[3]) {
+	int best_index = -1;
+	int best_dist = INT32_MAX;
+
+	for (int i = 0; i < 256; ++i) {
+		int dist = 0;
+
+		for (int j = 0; j < 3; ++j) {
+			// note that we could use RGB luminosity bias for greater accuracy
+			int d = ABS(rgb[j] - palette[i*3+j]);
+			dist += d * d;
+		}
+
+		if (dist < best_dist) {
+			best_index = i;
+			best_dist = dist;
+		}
+	}
+
+	Assert(best_index >= 0);
+	return best_index;
+}
+
+static void GenerateColormap(const byte palette[256*3], byte out_colormap[256*64]) {
+	int num_fullbrights = 24; 
+
+	for (int x = 0; x < 256; ++x) {
+		for (int y = 0; y < 64; ++y) {
+			if (x < 256 - num_fullbrights) {
+				int rgb[3];
+
+				for (int i = 0; i < 3; ++i) {
+					rgb[i] = (palette[x*3+i] * y) / 32; 
+					if (rgb[i] > 255) {
+						rgb[i] = 255;
+					}
+				}
+				out_colormap[y*256+x] = (byte)Convert24To8(palette, rgb);
+
+			} else {
+				// this colour is a fullbright, just keep the original colour
+				out_colormap[y*256+x] = (byte)x;
+			}
+		}
+	}
+}
+#endif
+
+
+static HGDIOBJ	global_previously_selected_GDI_obj;
 struct DibData {
 	BITMAPINFOHEADER	header;
 	RGBQUAD				colors[256];	
 };
 
-b32 DIB_Init(VidSystem *vid_sys) {
+b32 InitDIB(VidSystem *vid_sys) {
 
 	DibData dib;
 	BITMAPINFO *win_dib_info = (BITMAPINFO *)&dib;
@@ -35,9 +87,9 @@ b32 DIB_Init(VidSystem *vid_sys) {
 	win_dib_info->bmiHeader.biClrUsed       = /*256*/ 0;
 	win_dib_info->bmiHeader.biClrImportant  = /*256*/ 0;
 
+	// FIXME: this is only here for testing!!!!!!!!
 	if (BYTES_PER_PIXEL == 1) {
-		// FIXME: this is only here for testing!!!!!!!!
-		// FIXME: do proper integrity checking!!!
+		// FIXME: file io elsewhere
 		FILE *fp;
 		fopen_s(&fp, "palette.lmp", "r");
 		fseek(fp, 0, SEEK_END);
@@ -46,14 +98,16 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		fseek(fp, 0, SEEK_SET);
 
 		if (!fp) {
-			Sys_Print("\nCouldn't open pal file\n");
+			Sys_Print("\nCouldn't open palette.lmp file\n");
 			Sys_Quit();
 		}
 
-		// FIXME: remove calloc and put on temp memory stack
-		byte *rgb_data = (byte *)calloc(size, 1);
-		byte *ptr = (byte *)rgb_data;
-		fread_s(rgb_data, size, 1, size, fp);
+		byte palette[256*3];
+		byte *ptr = palette;
+		fread_s(palette, size, 1, size, fp);
+
+		//Assert(vid_sys->colormap);
+		GenerateColormap(palette, vid_sys->colormap);
 
 	#if 1
 		for (int i = 0; i < 256; ++i) {
@@ -68,10 +122,6 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		if (fp) {
 			Sys_Print("\nClosing pal file\n");
 			fclose(fp);
-		}
-		// FIXME: remove calloc and put on temp memory stack
-		if(rgb_data) {
-			free(rgb_data);
 		}
 	}
 	vid_sys->win_handles.dib_section = CreateDIBSection(vid_sys->win_handles.hdc,
@@ -94,7 +144,7 @@ b32 DIB_Init(VidSystem *vid_sys) {
 		Sys_Print("\nDIB_Init() - CreateCompatibleDC failed\n");
 		return false;
 	}
-	if (!(s_global_previously_selected_GDI_obj = SelectObject(vid_sys->win_handles.hdc_dib_section, vid_sys->win_handles.dib_section))) {
+	if (!(global_previously_selected_GDI_obj = SelectObject(vid_sys->win_handles.hdc_dib_section, vid_sys->win_handles.dib_section))) {
 		Sys_Print("\nDIB_Init() - SelectObject failed\n");
 		return false;
 	}

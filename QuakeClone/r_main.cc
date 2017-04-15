@@ -168,6 +168,9 @@ void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int nu
 		Vec3 view = MakeVec3(v0, p);
 
 		r32 dot = Vec3Dot(view, n);
+		if (polys[i].color != 0xff) {
+			int x = 42;
+		}
 
 		if (dot <= 0.0f) {
 			polys[i].state |= POLY_STATE_BACKFACE;

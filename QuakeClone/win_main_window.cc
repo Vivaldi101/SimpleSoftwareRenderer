@@ -4,12 +4,9 @@
 
 
 #define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
-b32 Vid_CreateWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance) {
+b32 InitWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance) {
 	WNDCLASS wc;
 	memset(&wc, 0, sizeof(wc));
-
-	//VidSystem vid_sys;
-	//memset(&vid_sys, 0, sizeof(vid_sys));
 
 	RECT rect;
 	int	x, y, w, h;
@@ -61,8 +58,6 @@ b32 Vid_CreateWindow(VidSystem *vid_sys, int width, int height, void *wndproc, v
 	SetFocus(vid_sys->win_handles.window);
 
 	Sys_Print("Main window created!\n");
-
-	//memcpy(&ren->vid_sys, &vid_sys, sizeof(vid_sys));
 
 	return true;
 }

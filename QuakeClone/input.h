@@ -1,5 +1,5 @@
-#ifndef KEYS_H
-#define KEYS_H
+#ifndef INPUT_H
+#define INPUT_H
 #include "shared.h"
 #include "keycodes.h"
 
@@ -10,5 +10,12 @@ struct Key {
 	u32		repeats;		
 };
 
+struct Mouse {
+	Key		left_button;
+	Key		right_button;
+	Vec2	window_pos;
+	Vec2	screen_pos;
+	Vec2	pos_delta;
+};
 
 #endif	// Header guard

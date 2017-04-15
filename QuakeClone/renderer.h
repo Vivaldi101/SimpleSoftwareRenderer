@@ -7,7 +7,7 @@
 #include "r_types.h"
 #include "r_cmds.h"
 
-#define BYTES_PER_PIXEL 4
+#define BYTES_PER_PIXEL 1
 // FIXME: maybe move all the constants these into .cc file if only impl needs access
 
 // states of polygons and faces
@@ -54,6 +54,7 @@ enum {
 
 struct VidSystem {
 	byte *			buffer;		
+	byte *			colormap;		
 	int				pitch;		
 	int				width;          
 	int				height;
@@ -72,9 +73,9 @@ struct ViewSystem {
 	Vec3			target;
 	Vec3			velocity;
 
-	u32				viewport_x,		viewport_y;
-	u32				viewport_width, viewport_height;
-	u32				viewplane_width, viewplane_height;
+	int				viewport_x,		viewport_y;
+	int				viewport_width, viewport_height;
+	int				viewplane_width, viewplane_height;
 
 	r32				fov_x, fov_y;
 	r32				view_dist;	
@@ -108,7 +109,7 @@ struct RenderingSystem {
 //
 //	renderer frontend
 //
-extern RenderingSystem *R_Init(const Platform *pf, void *hinstance, void *wndproc); 
+extern RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc); 
 extern void R_BeginFrame(VidSystem *vs, RenderCommands *rc);
 extern void R_EndFrame(VidSystem *vs, RenderCommands *rc);
 extern void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);

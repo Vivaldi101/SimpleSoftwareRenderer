@@ -11,6 +11,9 @@ void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int nu
 		poly->num_verts = num_verts;
 		poly->state = poly_array[i].state;
 		poly->color = poly_array[i].color;
+		if (poly->color != 0xff) {
+			int x = 42;
+		}
 		poly->vertex_array = &rb->poly_verts[rb->num_verts];
 
 		//memcpy(poly->vertex_array, &verts[*poly_array[i].vert_indices], num_verts * sizeof(*verts));

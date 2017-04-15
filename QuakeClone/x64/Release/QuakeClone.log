@@ -1,24 +1,19 @@
-﻿Build started 09/04/2017 22:02:25.
-     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (rebuild target(s)).
+﻿Build started 23/04/2017 14:38:26.
+     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "x64\Release\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /GL /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc100.pdb" /Gd /TP /errorReport:prompt common.cc entity.cc files.cc input.cc math.cc misc.cc plg_loader.cc r_cmds.cc r_init.cc r_main.cc r_scene.cc r_backend.cc win_console.cc win_shared.cc win_main.cc win_main_window.cc win_r.cc win_wndproc.cc
+         F:\Programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /Ox /Oi /GL /D _MBCS /Gm- /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Release\\" /Fd"x64\Release\vc100.pdb" /Gd /TP /errorReport:prompt common.cc input.cc plg_loader.cc r_backend.cc r_cmds.cc r_init.cc r_main.cc r_scene.cc win_console.cc win_main.cc win_main_window.cc win_r.cc win_wndproc.cc
          common.cc
-         entity.cc
-         files.cc
          input.cc
-         math.cc
-         misc.cc
          plg_loader.cc
+         r_backend.cc
          r_cmds.cc
          r_init.cc
          r_main.cc
          r_scene.cc
-         r_backend.cc
          win_console.cc
      1>win_console.cc(46): warning C4101: 'cmd_string' : unreferenced local variable
-         win_shared.cc
          win_main.cc
          win_main_window.cc
          win_r.cc
@@ -50,8 +45,8 @@
        FinalizeBuildStatus:
          Deleting file "x64\Release\QuakeClone.unsuccessfulbuild".
          Touching "x64\Release\QuakeClone.lastbuildstate".
-     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (rebuild target(s)).
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:03.39
+Time Elapsed 00:00:05.78

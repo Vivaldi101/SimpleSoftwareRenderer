@@ -25,9 +25,6 @@
     <ClInclude Include="win_shared.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="keys.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="plg_loader.h">
       <Filter>headers</Filter>
     </ClInclude>
@@ -44,6 +41,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="entity.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

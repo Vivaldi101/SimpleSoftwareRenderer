@@ -101,6 +101,11 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define	MAX_NUM_POLYS		1 << 10
 #define	MAX_NUM_POLY_VERTS	1 << 12
 
+#undef INT32_MAX
+#undef UINT32_MAX
+#define INT32_MAX 0x7FFFFFFF
+#define UINT32_IMAX 0xFFFFFFFF
+
 // util tools
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
 #define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
@@ -111,7 +116,7 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define PointerSizeOf(v) ((sizeof(v) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
 #define VaStart(va, v) ((va) = (char *)&(v) + PointerSizeOf(v))
 #define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
-#define GetAnonType(value, type, pref) (((value)->type_enum == pref##type) ? &(value)->type : 0)
+#define GetAnonType(value, type, prefix) (((value)->type_enum == prefix##type) ? &(value)->type : 0)
 
 
 #undef MAX
@@ -325,15 +330,18 @@ static inline i32 truncateI64(i64 value) {
 	i32 result = (i32)value;
 	return result;
 }
+
 static inline u32 truncateU64(u64 value) {
 	Assert(value <= 0xFFFFFFFF); 
 	u32 result = (u32)value;
 	return result;
 }
+
 static inline i32 roundReal32ToI32(r32 value) {
 	i32 result = (i32)(value + 0.5f);
 	return result;
 }
+
 static inline u32 roundReal32ToU32(r32 value) {
 	u32 result = (u32)(value + 0.5f);
 	return result;
@@ -409,6 +417,7 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Sys_Quit(); } while(0)
 #define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
 #define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
+//#define memset ZeroMemory
 #else
 #define InvalidCodePath do { Assert(0); } while(0)
 #define OutOfMemory do { Assert(0); } while(0)

@@ -2,7 +2,7 @@
 #define COMMON_H
 #include "shared.h"		
 #include "r_types.h"
-#include "keys.h"
+#include "input.h"
 
 #define MAX_UPS 60
 #define MSEC_PER_SIM (1000 / MAX_UPS)
@@ -101,8 +101,8 @@ struct GameState {
 struct StackAllocator {
 	// FIXME: make a single double ended stack, 
 	// with temp and perm allocations coming from the opposite sides
-	MemoryStack * 	perm_data;
-	MemoryStack * 	temp_data; 
+	MemoryStack  	perm_data;
+	MemoryStack  	temp_data; 
 };
 
 struct Platform {
@@ -136,8 +136,8 @@ extern int Sys_GetMilliseconds();
 static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
+extern Platform Com_Init();
 extern void Com_LoadEntities(GameState *gs, struct RendererBackend *rb);
-extern Platform Com_Init(void *hinstance, void *wndproc);
 extern void Com_RunFrame(Platform *pf, struct RenderingSystem *rs);
 extern void Com_Quit();
 

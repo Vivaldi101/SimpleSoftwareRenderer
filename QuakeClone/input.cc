@@ -1,4 +1,4 @@
-#include "keys.h"
+#include "input.h"
 #include "common.h"
 
 void IN_ClearKeys(Input *in) {
@@ -10,7 +10,7 @@ void IN_ClearKeys(Input *in) {
 	}
 }
 
-static void IN_HandleKeyDown(Key *k, b32 down) {
+inline static void IN_HandleKeyDown(Key *k, b32 down) {
 	b32 was_down = k->down;
 	k->pressed = !was_down && down;
 	k->released = was_down && !down;

@@ -9,3 +9,19 @@
 		}
 	}
 #endif
+
+// print the colormap
+#if 0
+void R_DrawColormap(const VidSystem *vid_sys) {
+	// FIXME: testing stuff
+	extern byte global_colormap[256*64];
+	int c = 0;
+	for (int i = 1; i <= 64; ++i) {
+		for (int j = 1; j <= 256; ++j) {
+			R_DrawRect(vid_sys, j * 2.0f, i * 2.0f, j * 2.0f + 50.0f, i * 2.0f + 50.0f, global_colormap[c]);
+			++c;
+		}
+	}
+	BitBlt(vid_sys->win_handles.hdc, 0, 0, 800, 600, vid_sys->win_handles.hdc_dib_section, 0, 0, SRCCOPY);
+}
+#endif

@@ -26,7 +26,7 @@ extern void Sys_Quit();
 //extern void	In_Activate(b32 active);
 //extern void	In_Frame();
 
-extern b32 Vid_CreateWindow(struct VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance);
+extern b32 InitWindow(struct VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
 // events
