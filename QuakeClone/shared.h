@@ -252,6 +252,17 @@ inline Vec3 operator +(Vec3 a, r32 s) {
 
 	return v;
 }
+
+inline Vec3 operator -(Vec3 a, r32 s) {
+	Vec3 v = {};
+
+	v[0] = a[0] - s;
+	v[1] = a[1] - s;
+	v[2] = a[2] - s;
+
+	return v;
+}
+
 inline Vec3 operator *(Vec3 a, r32 s) {
 	Vec3 v = {};
 
@@ -281,21 +292,13 @@ static inline r32 Vec3Len(const Vec3 *v) {
 	return len;
 }
 
-static inline Vec3 Vec3Norm(const Vec3 *v) {
-	Vec3 n = {};
-	r32	len, ilen;
+static inline r32 Vec3Len(Vec3 v) {
+	r32	len;
 
-	len = Vec3Dot(*v, *v);
+	len = Vec3Dot(v, v);
 	len = sqrt(len);
-
-	if (len) {
-		ilen = 1 / len;
-		n[0] = (*v)[0] * ilen;
-		n[1] = (*v)[1] * ilen;
-		n[2] = (*v)[2] * ilen;
-	}
 		
-	return n;
+	return len;
 }
 
 static inline Vec3 Vec3Norm(Vec3 v) {

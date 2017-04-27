@@ -89,6 +89,7 @@ struct ViewSystem {
 struct RendererFrontend {
 	ViewSystem	current_view;	
 	b32			is_wireframe;
+	b32			is_view_changed;
 };
 
 struct RendererBackend {
@@ -127,7 +128,7 @@ extern void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_ve
 extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts);
 FrustumClippingState R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 0.0f);
 extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys);
-extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_verts, int num_polys);
+extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_polys);
 
 
 //
