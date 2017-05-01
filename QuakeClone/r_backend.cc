@@ -146,9 +146,9 @@ static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int 
 #if 1
 // FIXME: pack the points into structures
 static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
-	if (x1 < x2) {
-		AnySwap(x1, x2, r32);
-	}
+	r32 t = x1;
+	x1 = (x1 < x2) ? x2 : x1;
+	x2 = (t < x2) ? t : x2;
 
 	int cy0 = (int)ceil(y0);
 	int cy2 = (int)(ceil(y2) - 1);
@@ -170,9 +170,9 @@ static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color
 
 // FIXME: pack the points into structures
 static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
-	if (x1 < x0) {
-		AnySwap(x1, x0, r32);
-	}
+	r32 t = x1;
+	x1 = (x1 < x0) ? x0 : x1;
+	x0 = (t < x0) ? t : x0;
 
 	int cy0 = (int)ceil(y0);
 	int cy2 = (int)(ceil(y2) - 1);
@@ -244,13 +244,13 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp,
 		r32 x2 = v2.v.x;
 		r32 y2 = v2.v.y;
 
-		// sort p0, p1, p2 in ascending y order
+		// sort v0, v1, v2 in ascending y order
 		if (y1 < y0) {
 			AnySwap(x1, x0, r32);
 			AnySwap(y1, y0, r32);
 		} 
 
-		// now we know that p0 and p1 are in order 
+		// now we know that v0 and v1 are in order 
 		if (y2 < y0) {
 			AnySwap(x2, x0, r32);
 			AnySwap(y2, y0, r32);
@@ -261,38 +261,30 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp,
 			AnySwap(y2, y1, r32);
 		} 
 
-		if (y0 == y1) {
-			// flat top
-			R_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x1, y1, x2, y2, width, height);
-		} else if (y1 == y2) {
-			// flat bottom
-			R_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x1, y1, x2, y2, width, height);
-		} else {
-			// split the triangle into 2 parts
-
-			// m = (y - y0) / (x - x0)
-			// m(x - x0) = y - y0
-			// mx - mx0 = y - y0
-			// x - x0 = (y - y0) / m
-			// x = (y - y0) / m + x0
-			// x derived from the point-slope form of the line
-			r32 m = (y2 - y0) / (x2 - x0);
-			r32 x = (y1 - y0) / m + x0;
-			R_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x, y1, x1, y1, width, height);
-			R_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
-		}
+		// m = (y - y0) / (x - x0)
+		// m(x - x0) = y - y0
+		// mx - mx0 = y - y0
+		// x - x0 = (y - y0) / m
+		// x = (y - y0) / m + x0
+		// x derived from the point-slope form of the line
+		// split the triangle into 2 parts
+		r32 m = (y2 - y0) / (x2 - x0);
+		r32 x = (y1 - y0) / m + x0;
+		R_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x, y1, x1, y1, width, height);
+		R_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
 	}
 }
 #endif
 
+#if 0
 void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
 				r32 rmax_x, r32 rmax_y,
 				byte color) {
-	i32 min_x = roundReal32ToI32(rmin_x);
-	i32 min_y = roundReal32ToI32(rmin_y);
+	s32 min_x = roundReal32ToS32(rmin_x);
+	s32 min_y = roundReal32ToS32(rmin_y);
 
-	i32 max_x = roundReal32ToI32(rmax_x);
-	i32 max_y = roundReal32ToI32(rmax_y);
+	s32 max_x = roundReal32ToS32(rmax_x);
+	s32 max_y = roundReal32ToS32(rmax_y);
 
 	u32 pitch	= vs->pitch;
 	int bpp		= vs->bpp;
@@ -308,6 +300,7 @@ void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y,
 		ptr += pitch;
 	}
 }
+#endif
 
 static void RB_ClearMemset(void *buffer, size_t size) {
 	memset(buffer, 0, size);

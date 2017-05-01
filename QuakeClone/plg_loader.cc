@@ -18,7 +18,7 @@
 
 // these are the comparison flags after masking
 // color mode of polygon
-#define PLX_COLOR_MODE_8BIT_FLAG	0x8000		// poly uses indexed 8-bit color
+//#define PLX_COLOR_MODE_8BIT_FLAG	0x8000		// poly uses indexed 8-bit color
 
 //	shading mode of polygon
 #define PLX_SHADE_MODE_PURE_FLAG	0x0000	// poly is a constant color
@@ -100,14 +100,12 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 				 &local_vertex_array[i][1],
 				 &local_vertex_array[i][2]);
 
-		//if (typeless_ent->type_enum != EntityType_tower) {
-			// NOTE: convert from the ccw into cw vertex order for our left-handed system
-			r32 v0 = local_vertex_array[i][0];
-			r32 v2 = local_vertex_array[i][2];
+		// NOTE: convert from ccw into cw vertex winding order for our left-handed system
+		r32 v0 = local_vertex_array[i][0];
+		r32 v2 = local_vertex_array[i][2];
 
-			local_vertex_array[i][0] = v2;
-			local_vertex_array[i][2] = v0;
-		//}
+		local_vertex_array[i][0] = v2;
+		local_vertex_array[i][2] = v0;
 	}
 
 
@@ -115,19 +113,19 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 
 	int poly_num_verts = 0;
 
-	int poly_surface_desc = 0;
-	char tmp_poly_surface_desc[8];
+	u32 poly_surface_desc = 0;
+	char tmp_poly_surface_desc[10 + 1];		// one for the null terminator
 
 	Poly *poly_array = (Poly *)((byte *)typeless_ent + polys_offset);  
 	int num_polys = typeless_ent->status.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
 		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
 			Sys_Print("\nError while reading lines from an opened PLG file," 
-					  "it should be a 16 bit value in the form of PLG/X format: CSSD | RRRR| GGGG | BBBB");
+					  "it should be a 32 bit value in the form of PLG/X format: AA | RR| GG | BB");
 			return false;
 		}
 
-		sscanf_s(parsed_string, "%s %d %d %d %d", 
+		sscanf_s(parsed_string, "%s %u %d %d %d", 
 				 tmp_poly_surface_desc,
 				 sizeof(tmp_poly_surface_desc),
 				 &poly_surface_desc,
@@ -145,17 +143,18 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
 		}
 
-		if (poly_surface_desc & PLX_COLOR_MODE_8BIT_FLAG) {
-			poly_array[i].color = poly_surface_desc & 0x00ff;
-			poly_array[i].color |= POLY_ATTR_8BITCOLOR;
-		} else {
-			poly_array[i].color |= POLY_ATTR_RGB24;
-			int red = (poly_surface_desc & 0x0f00) >> 8;
-			int green = (poly_surface_desc & 0x00f0) >> 4;
-			int blue = (poly_surface_desc & 0x000f);
+		//if (poly_surface_desc & PLX_COLOR_MODE_8BIT_FLAG) {
+		//	poly_array[i].color = poly_surface_desc & 0x00ff;
+		//	//poly_array[i].color |= POLY_ATTR_8BITCOLOR;
+		//} else {
+			//poly_array[i].color |= POLY_ATTR_RGB24;
+		u32 alpha = (poly_surface_desc & 0xff000000) >> 24u;
+		u32 red = (poly_surface_desc   & 0xff0000) >> 16u;
+		u32 green = (poly_surface_desc & 0xff00) >> 8u;
+		u32 blue = (poly_surface_desc  & 0xff) >> 0u;
 
-			poly_array[i].color = RGB_32(255, red * 16, green * 16, blue * 16);
-		}
+		poly_array[i].color = RGB_32(alpha, red, green, blue);
+		//}
 
 	//	int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
 

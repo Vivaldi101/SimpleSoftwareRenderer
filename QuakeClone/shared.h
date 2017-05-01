@@ -8,10 +8,10 @@
 
 
 // typedefs for all ints
-typedef int8_t		i8;
-typedef int16_t		i16;
-typedef int32_t		i32;
-typedef int64_t		i64;
+typedef int8_t		s8;
+typedef int16_t		s16;
+typedef int32_t		s32;
+typedef int64_t		s64;
 
 typedef uint8_t		u8;
 typedef uint16_t	u16;
@@ -95,21 +95,23 @@ static inline u16 RGB_888To565(int r, int g, int b) {
     (((Address - ((((size_t)Alignment)-1) & Address))))
 
 
-// FIXME: tune these
+// FIXME: fine tune these
 // max values
 #define	MAX_NUM_ENTITIES	256
 #define	MAX_NUM_POLYS		1 << 10
 #define	MAX_NUM_POLY_VERTS	1 << 12
+#define	MAX_NUM_LIGHTS		8
 
-#undef INT32_MAX
+#undef SINT32_MAX
 #undef UINT32_MAX
-#define INT32_MAX 0x7FFFFFFF
+#define SINT32_MAX 0x7FFFFFFF
 #define UINT32_IMAX 0xFFFFFFFF
 
 // util tools
 #define ArrayCount(arr) ((sizeof(arr)) / (sizeof(*(arr))))
-#define Swap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
+#define IntSwap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
 #define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
+//#define Vec3Swap(a, b) Vec3 temp = a, a = b, b = temp
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
 #define OffsetOf(i, s) ((int)&(((s *)0)->i))
 #define OffsetOfSize(i, s) sizeof((s *)0)->i
@@ -148,6 +150,8 @@ MATHLIB
 #define Vec3Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2])
 #define Vec4Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2], (a)[3] = (b)[3])
 
+#define	SnapVec3(v)					((v)[0] = (int)(v)[0], (v)[1] = (int)(v)[1], (v)[2] = (int)(v)[2])
+
 #define Mat3x3SetIdentity(m)		(Vec3Init((m)[0],1,0,0), Vec3Init((m)[1],0,1,0), Vec3Init((m)[2],0,0,1))
 #define Mat4x4SetIdentity(m)		(Vec4Init((m)[0],1,0,0,0), Vec4Init((m)[1],0,1,0,0), Vec4Init((m)[2],0,0,1,0), Vec4Init((m)[3],0,0,0,1))
 
@@ -182,6 +186,7 @@ union Vec3 {
 	r32			&operator[](int i)			{ return data[i]; }
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
+
 
 inline Vec3 MakeVec3(r32 x, r32 y, r32 z) {
 	Vec3 v;
@@ -219,6 +224,17 @@ inline Vec3 operator +(Vec3 a, Vec3 b) {
 	v[0] = a[0] + b[0];
 	v[1] = a[1] + b[1];
 	v[2] = a[2] + b[2];
+
+	return v;
+}
+
+inline Vec4 operator +(Vec4 a, Vec4 b) {
+	Vec4 v = {};
+
+	v[0] = a[0] + b[0];
+	v[1] = a[1] + b[1];
+	v[2] = a[2] + b[2];
+	v[3] = a[3] + b[3];
 
 	return v;
 }
@@ -269,6 +285,28 @@ inline Vec3 operator *(Vec3 a, r32 s) {
 	v[0] = a[0] * s;
 	v[1] = a[1] * s;
 	v[2] = a[2] * s;
+
+	return v;
+}
+
+inline Vec4 operator *(Vec4 a, r32 s) {
+	Vec4 v = {};
+
+	v[0] = a[0] * s;
+	v[1] = a[1] * s;
+	v[2] = a[2] * s;
+	v[3] = a[3] * s;
+
+	return v;
+}
+
+inline Vec4 operator *(r32 s, Vec4 a) {
+	Vec4 v = {};
+
+	v[0] = a[0] * s;
+	v[1] = a[1] * s;
+	v[2] = a[2] * s;
+	v[3] = a[3] * s;
 
 	return v;
 }
@@ -328,9 +366,9 @@ static inline Vec3 MakeVec3(Vec3 p0, Vec3 p1) {
 	return v;
 }
 
-static inline i32 truncateI64(i64 value) {
+static inline s32 truncateI64(s64 value) {
 	Assert(value <= 0x7FFFFFFF);
-	i32 result = (i32)value;
+	s32 result = (s32)value;
 	return result;
 }
 
@@ -340,8 +378,8 @@ static inline u32 truncateU64(u64 value) {
 	return result;
 }
 
-static inline i32 roundReal32ToI32(r32 value) {
-	i32 result = (i32)(value + 0.5f);
+static inline s32 roundReal32ToS32(r32 value) {
+	s32 result = (s32)(value + 0.5f);
 	return result;
 }
 
@@ -408,10 +446,8 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #define PushStruct(stack, type) ((type *)_Push_(stack, sizeof(type)))  
 #define PopStruct(stack, type) (_Pop_(stack, sizeof(type)))  
 
-//#define PushPointers(stack, count, type) ((type *)_Push_(stack, (count) * sizeof(type)))
 #define PushArray(stack, count, type) ((type *)_Push_(stack, (count) * sizeof(type)))
 #define PopArray(stack, count, type) (_Pop_(stack, (count) * sizeof(type)))  
-
 
 
 // windows specific

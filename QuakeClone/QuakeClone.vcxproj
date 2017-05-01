@@ -122,6 +122,7 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="entity.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="lights.h" />
     <ClInclude Include="plg_loader.h" />
     <ClInclude Include="r_types.h" />
     <ClInclude Include="r_cmds.h" />
@@ -137,6 +138,7 @@
     <ClCompile Include="entity.cc" />
     <ClCompile Include="files.cc" />
     <ClCompile Include="input.cc" />
+    <ClCompile Include="lights.cc" />
     <ClCompile Include="math.cc" />
     <ClCompile Include="misc.cc" />
     <ClCompile Include="plg_loader.cc" />

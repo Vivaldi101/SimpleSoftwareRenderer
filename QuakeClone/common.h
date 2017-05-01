@@ -4,7 +4,7 @@
 #include "r_types.h"
 #include "input.h"
 
-#define MAX_UPS 60
+#define MAX_UPS 120
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 #define PLATFORM_FULLSCREEN
 
@@ -47,7 +47,7 @@ static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
 
 struct Entity {
 	union {
-		// FIXME: is this a good way to capture vertex arrays?
+		// FIXME: is this a good way to store vertex arrays?
 		// FIXME: hardcoded arrays for now, must match the vertex and poly numbers in the plg file
 		struct {
 			Poly 	polys[12];
@@ -59,11 +59,6 @@ struct Entity {
 			Vec3	local_vertex_array[8];		
 			Vec3	trans_vertex_array[8];		
 		} player;
-		struct {
-			Poly 	polys[19];
-			Vec3	local_vertex_array[21];		
-			Vec3	trans_vertex_array[21];		
-		} slider;
 		struct {
 			Poly 	polys[18];
 			Vec3	local_vertex_array[16];		
@@ -82,8 +77,8 @@ struct Entity {
 		r32		avg_radius;
 		r32		max_radius;
 
-		//r32	world_matrix[4][4];	// currently unused
-		Vec3	dir;
+		r32		world_matrix[4][4];	// currently unused
+		Vec3	axis[3];			// rotation vectors
 		Vec3	world_pos;
 		Vec3	orientation;
 		Vec3	velocity;

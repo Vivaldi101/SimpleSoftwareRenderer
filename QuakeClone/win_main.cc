@@ -51,13 +51,13 @@ void Sys_ToggleFullscreen(HWND window) {
 }
 
 //
-// event queue
+// event queue (ring buffer)
 //
-#define	MAX_SYS_QUED_EVENTS		256
+#define	MAX_SYS_QUED_EVENTS		(1 << 8)
 #define	MASK_SYS_QUED_EVENTS	(MAX_SYS_QUED_EVENTS - 1)
 
 static SysEvent global_sys_event_queue[MAX_SYS_QUED_EVENTS];
-static u32 global_sys_event_head, global_sys_event_tail;
+static u8 global_sys_event_head, global_sys_event_tail;
 
 void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int data_len, void *data) {
 	SysEvent *ev = &global_sys_event_queue[global_sys_event_head & MASK_SYS_QUED_EVENTS];
@@ -69,9 +69,7 @@ void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int dat
 
 	global_sys_event_head++;
 
-	if (time == 0) {
-		time = Sys_GetMilliseconds();
-	}
+	time = (time == 0) ? Sys_GetMilliseconds() : time;
 
 	ev->time = time;
 	ev->type = ev_type;
@@ -82,7 +80,7 @@ void Sys_QueEvent(int time, SysEventType ev_type, int value, int value2, int dat
 }
 
 SysEvent Sys_GetEvent() {
-	SysEvent	se;
+	SysEvent se;
 
 	if (global_sys_event_head > global_sys_event_tail) {
 		global_sys_event_tail++;

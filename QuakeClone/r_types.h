@@ -3,28 +3,45 @@
 
 #include "shared.h"
 
-struct PolyVert {
-	Vec3	v;	
-};
+//struct Vert {
+//	Vec3	model_space_pos;     // xyz
+//	Vec3	unit_normal;
+//	u32		color;               // rgba, packed
+//	r32		u, v;                // texture coordinates
+//};
+//
+//struct PipelineVert {
+//	Vec3	view_space_pos;      // xyz
+//	Vec3	view_space_normal;   // xyz
+//	u8		is_lit;              // a boolean
+//	u8		clip_flags;          // six bit flags
+//	u16		pad;
+//
+//	// ready for hardware:
+//	Vec4	screen_space_pos;    // xyzw
+//	u32		color;               // rgba, packed
+//	u32		specular;            // rgba, packed
+//	r32		u, v;                // texture coordinates
+//}; // 60 bytes
 
 struct Poly {
 	Vec3 *		vertex_array;	
 	u16			vert_indices[3];
 	int			num_verts;
 	int			state;
-	u32			color;
+	u32			color;	// rgba, packed
 };
 
-// self contained
-struct LinkedPoly {
-	Vec3			orig_vertex_array[3];	// original
-	Vec3			trans_vertex_array[3];	// transformed
-
-	int				state;
-	int				attr;
-	u32				color;
-
-	LinkedPoly *	next;
-	LinkedPoly *	prev;
-};
+//// self contained
+//struct LinkedPoly {
+//	Vec3			orig_vertex_array[3];	// original
+//	Vec3			trans_vertex_array[3];	// transformed
+//
+//	int				state;
+//	int				attr;
+//	u32				color;
+//
+//	LinkedPoly *	next;
+//	LinkedPoly *	prev;
+//};
 #endif	// Header guard

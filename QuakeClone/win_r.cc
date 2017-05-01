@@ -1,12 +1,10 @@
 #include "renderer.h"
 #include "win_r.h"
 
-// FIXME: testing stuff
-#if 1
 // sample a 24-bit RGB value to one of the colours on the existing 8-bit palette
 static int Convert24To8(const byte palette[256*3], const int rgb[3]) {
 	int best_index = -1;
-	int best_dist = INT32_MAX;
+	int best_dist = SINT32_MAX;
 
 	for (int i = 0; i < 256; ++i) {
 		int dist = 0;
@@ -50,7 +48,6 @@ static void GenerateColormap(const byte palette[256*3], byte out_colormap[256*64
 		}
 	}
 }
-#endif
 
 
 static HGDIOBJ	global_previously_selected_GDI_obj;
@@ -87,43 +84,6 @@ b32 InitDIB(VidSystem *vid_sys) {
 	win_dib_info->bmiHeader.biClrUsed       = /*256*/ 0;
 	win_dib_info->bmiHeader.biClrImportant  = /*256*/ 0;
 
-	// FIXME: this is only here for testing!!!!!!!!
-	if (BYTES_PER_PIXEL == 1) {
-		// FIXME: file io elsewhere
-		FILE *fp;
-		fopen_s(&fp, "palette.lmp", "r");
-		fseek(fp, 0, SEEK_END);
-		int size = ftell(fp);
-		Assert(size == 256 * 3);
-		fseek(fp, 0, SEEK_SET);
-
-		if (!fp) {
-			Sys_Print("\nCouldn't open palette.lmp file\n");
-			Sys_Quit();
-		}
-
-		byte palette[256*3];
-		byte *ptr = palette;
-		fread_s(palette, size, 1, size, fp);
-
-		//Assert(vid_sys->colormap);
-		GenerateColormap(palette, vid_sys->colormap);
-
-	#if 1
-		for (int i = 0; i < 256; ++i) {
-			dib.colors[i].rgbRed   = ptr[0];
-			dib.colors[i].rgbGreen = ptr[1];
-			dib.colors[i].rgbBlue  = ptr[2];
-
-			ptr += 3;
-		}
-	#endif
-
-		if (fp) {
-			Sys_Print("\nClosing pal file\n");
-			fclose(fp);
-		}
-	}
 	vid_sys->win_handles.dib_section = CreateDIBSection(vid_sys->win_handles.hdc,
 														win_dib_info,
 											 			DIB_RGB_COLORS,

@@ -46,6 +46,9 @@
     <ClInclude Include="input.h">
       <Filter>headers</Filter>
     </ClInclude>
+    <ClInclude Include="lights.h">
+      <Filter>headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common.cc">
@@ -100,6 +103,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="misc.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="lights.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

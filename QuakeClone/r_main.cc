@@ -96,20 +96,20 @@ void R_TransformModelToWorld(Vec3 *local_poly_verts, Vec3 *trans_poly_verts, int
 	}
 }
 
-FrustumClippingState R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
+ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = vs->frustum[i];
 		r32 dist = Vec3Dot(pt, pl.unit_normal) - pl.dist;
 
 		if (dist < 0.0f) {
 			//Sys_Print("Culling!!\n");
-			return FCS_CULL_OUT;
+			return CULL_OUT;
 			
 		} 
 	}
 
 	//Sys_Print("NO culling!!\n");
-	return FCS_CULL_IN;
+	return CULL_IN;
 }
 
 void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
@@ -168,10 +168,6 @@ void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int nu
 		Vec3 view = MakeVec3(v0, p);
 
 		r32 dot = Vec3Dot(view, n);
-		if (polys[i].color != 0xff) {
-			int x = 42;
-		}
-
 		if (dot <= 0.0f) {
 			polys[i].state |= POLY_STATE_BACKFACE;
 		}

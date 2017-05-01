@@ -1,6 +1,7 @@
 #include "common.h"
 #include "r_cmds.h"
 #include "plg_loader.h"
+#include "lights.h"
 
 /*
 ==============================================================
@@ -139,7 +140,7 @@ static void ResetEntities(Poly *polys, int num_polys) {
 	// clear mesh states
 	for (int j = 0; j < num_polys; ++j) {
 		polys[j].state &= (~POLY_STATE_BACKFACE);
-		polys[j].state &= (~FCS_CULL_OUT);
+		polys[j].state &= (~CULL_OUT);
 	}
 }
 
@@ -171,7 +172,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	rot_mat_y[1][2] = 0.0f;
 
 	// FIXME: scaling of the world
-	r32 speed = 800.0f;
+	r32 speed = 500.0f;
 
 	for (int i = 0; i < num_frames; ++i) {
 		for (int j = 0; j < num_entities; ++j) {
@@ -179,10 +180,8 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 				Vec3 *verts = player->local_vertex_array;
 				Vec3 acc = {};
 				if (in->keys['W'].down) {
-					//acc[2] = 1.0f;
 					acc = Vec3Norm(current_view->world_orientation.dir);
 					acc = acc * 1.0f;
-					//Sys_Print("\nW down\n");
 				}
 				if (in->keys['A'].down) {
 					yaw -= 3.0f;
@@ -201,10 +200,8 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					}
 				}
 				if (in->keys['S'].down) {
-					//acc[2] = -1.0f;
 					acc = Vec3Norm(current_view->world_orientation.dir);
 					acc = acc * (-1.0f);
-					//Sys_Print("\nS down\n");
 				}
 				if (in->keys['D'].down) {
 					yaw += 3.0f;
@@ -232,7 +229,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					rot_mat_y[2][0] = -rot_mat_y[0][2];
 					rot_mat_y[2][2] = rot_mat_y[0][0];
 
-					// reset player yaw angle
+					// reset player yaw angle and position
 					if (yaw != 0.0f) {
 						for (int i = 0; i < ents[0].status.num_verts; ++i) {
 							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
@@ -246,11 +243,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 				acc = acc * speed;
 				acc = acc + (current_view->velocity * -0.95f);
 				current_view->world_orientation.origin = (acc * 0.5f * Square(dt)) + (current_view->velocity * dt) + current_view->world_orientation.origin;
-				//if (in->keys['W'].down || in->keys['S'].down) {
 				current_view->velocity = acc * dt + current_view->velocity;
-				//} else {
-					//current_view->velocity = current_view->velocity * 0.9f;
-				//} 
 			} 
 		}
 	}
@@ -262,17 +255,13 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 
 	Sys_GenerateEvents();
 	IN_GetInput(&pf->input_state);
+	// FIXME: move elsewhere
 	if (pf->input_state.keys[ESC_KEY].released) {
 		Sys_Quit();
 	} else if (pf->input_state.keys[SPACE_KEY].released) {
 		rs->front_end.is_wireframe = !rs->front_end.is_wireframe;
-	}
-	if (pf->input_state.keys['W'].down || 
-		pf->input_state.keys['A'].down || 
-		pf->input_state.keys['S'].down || 
-		pf->input_state.keys['D'].down ||
-		pf->input_state.keys[ENTER_KEY].released) {
-			rs->front_end.is_view_changed = true;
+	} else if (pf->input_state.keys['L'].released) {
+		rs->front_end.is_ambient = (AmbientState)(!rs->front_end.is_ambient);
 	}
 
 	Com_RunEventLoop(pf->game_state, &pf->input_state);
@@ -320,9 +309,9 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		Sys_Sleep(0);
 	}
 
-	Com_SimFrame(MSEC_PER_SIM / 1000.0f,
+	Com_SimFrame((MSEC_PER_SIM / 1000.0f),
 				global_game_time_residual,
-				num_game_frames_to_run,
+				(num_game_frames_to_run > 5) ? 5 : num_game_frames_to_run,
 				pf->game_state->num_entities,
 				entities, &pf->input_state,
 				&rs->front_end.current_view);
@@ -353,6 +342,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	int num_entities = pf->game_state->num_entities;
 	Vec3 *local_verts = 0, *trans_verts = 0;
 	Poly *polys = 0;
+	// FIXME: rethink on this style of vert transforms
 	for (int i = 0; i < num_entities; ++i) {
 		if (auto sub_type = GetAnonType(&entities[i], player, EntityType_)) {
 			local_verts = sub_type->local_vertex_array;
@@ -363,11 +353,14 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 				rs->front_end.current_view.world_orientation.origin + (rs->front_end.current_view.world_orientation.dir * 60.0f);
 			entities[i].status.world_pos[1] -= 20.0f;
 
+			// FIXME: combine these two
 			R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos); 
 			R_TransformWorldToView(&rs->front_end.current_view, trans_verts, ArrayCount(sub_type->trans_vertex_array));
 			R_AddPolys(&rs->back_end, trans_verts, sub_type->polys, ArrayCount(sub_type->polys));
 		} else {
-			int num_local_verts = 0, num_trans_verts = 0, num_polys = 0;
+			int num_local_verts = 0; 
+			int num_trans_verts = 0; 
+			int num_polys = 0;
 			if (auto sub_type = GetAnonType(&entities[i], tower, EntityType_)) {
 				local_verts = sub_type->local_vertex_array;
 				trans_verts = sub_type->trans_vertex_array;
@@ -391,7 +384,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 			R_RotatePoints(rot_mat_x, local_verts, num_local_verts); 
 			R_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos); 
 			entities[i].status.state = R_CullPointAndRadius(&rs->front_end.current_view, entities[i].status.world_pos);			
-			if (!(entities[i].status.state & FCS_CULL_OUT)) {
+			if (!(entities[i].status.state & CULL_OUT)) {
 				R_TransformWorldToView(&rs->front_end.current_view, trans_verts, num_trans_verts);
 				R_AddPolys(&rs->back_end, trans_verts, polys, num_polys);
 			}
@@ -401,6 +394,9 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 					rs->back_end.polys,
 					rs->back_end.poly_verts,
 					rs->back_end.num_polys);
+	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
+
+	// FIXME: combine these two
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 
@@ -410,19 +406,22 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 					  rs->back_end.num_polys,
 					  rs->front_end.is_wireframe);
 
-	R_EndFrame(rs->back_end.vid_sys, &rs->back_end.cmds);
-
-	// FIXME: move these into ending routine
-	ResetEntities(rs->back_end.polys, rs->back_end.num_polys);
-	rs->back_end.num_polys = 0;
-	rs->back_end.num_verts = 0;
-	rs->front_end.is_view_changed = false;
-
 	{
 		static int last_time = Sys_GetMilliseconds();
 		int	now_time = Sys_GetMilliseconds();
 		int	frame_msec = now_time - last_time;
 		last_time = now_time;
+
+		// FIXME: v-sync when switching to hw-accelerated rendering
+		//if (frame_msec > 0.016f) {
+		R_EndFrame(rs->back_end.vid_sys, &rs->back_end.cmds);
+
+		// FIXME: move these into ending routine
+		ResetEntities(rs->back_end.polys, rs->back_end.num_polys);
+		rs->back_end.num_polys = 0;
+		rs->back_end.num_verts = 0;
+		//}
+
 		char buffer[64];
 		sprintf_s(buffer, "Frame msec %d\n", frame_msec);
 		OutputDebugStringA(buffer);
@@ -439,13 +438,35 @@ void Com_Quit() {
 }
 
 //
-// event queue
+// event queue (ring buffer)
 //
-#define	MAX_COM_QUED_EVENTS		1024
+#define	MAX_COM_QUED_EVENTS		(1 << 8)
 #define	MASK_COM_QUED_EVENTS	(MAX_COM_QUED_EVENTS - 1)
 
 static SysEvent global_com_event_queue[MAX_COM_QUED_EVENTS];
-static u32 global_com_event_head, global_com_even_tail;
+static u8 global_com_event_head, global_com_even_tail;
+
+#if 0
+void Com_GetEvent(int time, SysEventType ev_type, int value, int value2, int data_len, void *data) {
+	SysEvent *ev = &global_sys_event_queue[global_sys_event_head & MASK_SYS_QUED_EVENTS];
+
+	if (global_sys_event_head - global_sys_event_tail >= MAX_SYS_QUED_EVENTS) {
+		EventOverflow;
+		global_sys_event_tail++;
+	}
+
+	global_sys_event_head++;
+
+	time = (time == 0) ? Sys_GetMilliseconds() : time;
+
+	ev->time = time;
+	ev->type = ev_type;
+	ev->value = value;
+	ev->value2 = value2;
+	ev->data_size = data_len;
+	ev->data = data;
+}
+#endif
 
 SysEvent Com_GetEvent() {
 	if (global_com_event_head > global_com_even_tail) {
