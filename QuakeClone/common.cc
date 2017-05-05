@@ -75,19 +75,19 @@ Platform Com_Init() {
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	InitStackMemory(&pf.main_memory_stack.perm_data, MAX_PERM_MEMORY);
 	InitStackMemory(&pf.main_memory_stack.temp_data, MAX_TEMP_MEMORY);
-	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
 
-	pf.game_state->num_entities = 1 << 4;
+	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
+	pf.game_state->num_entities = (1 << 4);
+
+	pf.input_state = PushStruct(&pf.main_memory_stack.perm_data, Input);
 
 	return pf;
 }
 
 void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 	// FIXME: testing entity stuff!!
-	// FIXME: move file api elsewhere
-	// FIXME: maybe replace the CRT file i/o with win32 api
+	// FIXME: asset streaming
 
-	// FIXME: open the files the file module
 	FILE *fp;
 	fopen_s(&fp, "cube1.plg", "r");
 	Sys_Print("\nTrying to open cube1.plg file\n");
@@ -96,17 +96,18 @@ void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 		Sys_Print("\nCould not open cube1.plg file\n");
 		Sys_Quit();
 	}
+
 	// FIXME: testing!!
 	// FIXME: 0 hardcoded for player for now
-	Entity *player = &gs->entities[0];
-	player->type_enum = EntityType_player;
-	PLG_LoadMesh(player, &fp);
+	Entity common_ent = {};
+	PLG_LoadMesh(&common_ent, &fp);
+	memcpy(&gs->entities[0], &common_ent, sizeof(Entity));
+	gs->entities[0].type_enum = EntityType_player;
 
 	for (int i = 1; i < (gs->num_entities >> 1); ++i) {
 		Vec3 world_pos = {-100.0f + (i * 50.0f), -20.0f, 500.0f};
-		Entity *ent = &gs->entities[i];
-		PLG_LoadMesh(ent, &fp);
-		ent->status.world_pos = world_pos;
+		memcpy(&gs->entities[i], &common_ent, sizeof(Entity));
+		gs->entities[i].status.world_pos = world_pos;
 	}
 
 	if (fp) {
@@ -122,11 +123,12 @@ void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 		Sys_Quit();
 	}
 
+	memset(&common_ent, 0, sizeof(Entity));
+	PLG_LoadMesh(&common_ent, &fp);
 	for (int i = (gs->num_entities >> 1); i < gs->num_entities; ++i) {
 		Vec3 world_pos = {-100.0f + (i * 50.0f), -20.0f, 200.0f};
-		Entity *ent = &gs->entities[i];
-		PLG_LoadMesh(ent, &fp);
-		ent->status.world_pos = world_pos;
+		memcpy(&gs->entities[i], &common_ent, sizeof(Entity));
+		gs->entities[i].status.world_pos = world_pos;
 	}
 
 	if (fp) {
@@ -136,18 +138,22 @@ void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
 	}
 }
 
-static void ResetEntities(Poly *polys, int num_polys) {
+static void ResetEntities(RendererBackend *rb) {
+	int num_polys = rb->num_polys;
 	// clear mesh states
 	for (int j = 0; j < num_polys; ++j) {
-		polys[j].state &= (~POLY_STATE_BACKFACE);
-		polys[j].state &= (~CULL_OUT);
+		rb->polys[j].state &= (~POLY_STATE_BACKFACE);
+		rb->polys[j].state &= (~CULL_OUT);
 	}
+	// reset poly arrays
+	rb->num_polys = 0;
+	rb->num_verts = 0;
 }
 
 static void ProcessEvent(SysEvent se) {
 }
 
-static void Com_RunEventLoop(GameState *gs, Input *in) {
+static void Com_RunEventLoop() {
 	SysEvent se;
 
 	for (;;) {
@@ -241,7 +247,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 
 				acc = Vec3Norm(acc);
 				acc = acc * speed;
-				acc = acc + (current_view->velocity * -0.95f);
+				acc = acc + (current_view->velocity * -0.95f);	// hack!!!
 				current_view->world_orientation.origin = (acc * 0.5f * Square(dt)) + (current_view->velocity * dt) + current_view->world_orientation.origin;
 				current_view->velocity = acc * dt + current_view->velocity;
 			} 
@@ -254,17 +260,18 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	Entity *entities = pf->game_state->entities;
 
 	Sys_GenerateEvents();
-	IN_GetInput(&pf->input_state);
+	IN_GetInput(pf->input_state);
 	// FIXME: move elsewhere
-	if (pf->input_state.keys[ESC_KEY].released) {
+	if (pf->input_state->keys[ESC_KEY].released) {
 		Sys_Quit();
-	} else if (pf->input_state.keys[SPACE_KEY].released) {
+	} else if (pf->input_state->keys[SPACE_KEY].released) {
 		rs->front_end.is_wireframe = !rs->front_end.is_wireframe;
-	} else if (pf->input_state.keys['L'].released) {
+	} else if (pf->input_state->keys['L'].released) {
 		rs->front_end.is_ambient = (AmbientState)(!rs->front_end.is_ambient);
 	}
 
-	Com_RunEventLoop(pf->game_state, &pf->input_state);
+	// FIXME: no event processing is being done atm 
+	Com_RunEventLoop();
 
 	static b32 first_run = true;
 
@@ -313,7 +320,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 				global_game_time_residual,
 				(num_game_frames_to_run > 5) ? 5 : num_game_frames_to_run,
 				pf->game_state->num_entities,
-				entities, &pf->input_state,
+				entities, pf->input_state,
 				&rs->front_end.current_view);
 
 	// FIXME: add matrix returning routines
@@ -396,7 +403,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 					rs->back_end.num_polys);
 	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
 
-	// FIXME: combine these two
+	// FIXME: combine view and screen transforms
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 
@@ -417,9 +424,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		R_EndFrame(rs->back_end.vid_sys, &rs->back_end.cmds);
 
 		// FIXME: move these into ending routine
-		ResetEntities(rs->back_end.polys, rs->back_end.num_polys);
-		rs->back_end.num_polys = 0;
-		rs->back_end.num_verts = 0;
+		ResetEntities(&rs->back_end);
 		//}
 
 		char buffer[64];

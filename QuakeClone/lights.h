@@ -7,13 +7,10 @@ enum AmbientState {
 };
 
 enum LightTypeFlags {
-	POINT_LIGHT = 0x01 ,
+	POINT_LIGHT = 0x01,
 	SPOTLIGHT1_LIGHT = 0x02,	// simple
-	SPOTLIGHT2_LIGHT = 0x04		// complex
-};
-
-enum LightStatusFlags {
-	CAMERA_LIGHT
+	SPOTLIGHT2_LIGHT = 0x04,	// complex
+	CAMERA_LIGHT = 0x08
 };
 
 struct Light {
@@ -31,12 +28,11 @@ struct Light {
 
 	r32	radius;
 	u32	is_active;
-	u32	light_flags;
-	u32 status_flags;
+	u32	flags;
 };
 
 struct RendererBackend;
 struct ViewSystem;
 extern void R_CalculateLighting(const RendererBackend *rb, const Light *lights, AmbientState as = AMBIENT_ON, Vec3 camera_pos = MakeVec3(0.0f, 0.0f, 0.0f));
-extern void R_AddPointLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specular, Vec3 pos, r32 radius, r32 kc, r32 kl, r32 kq, LightStatusFlags sf);
+extern void R_AddLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specular, Vec3 pos, r32 radius, r32 kc, r32 kl, r32 kq, LightTypeFlags sf);
 #endif	// header guard

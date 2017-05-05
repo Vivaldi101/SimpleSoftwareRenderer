@@ -9,6 +9,11 @@ enum RenderCommandEnum {
 	RCMD_END_OF_CMDS
 };
 
+struct RenderBasis {
+	Vec3	axis[3];			
+	Vec3	origin;
+};
+
 struct RenderCommands {
 	byte *	buffer_base;
 	size_t	max_buffer_size;
@@ -23,7 +28,7 @@ struct DrawPolyListCmd {
 	int		num_polys;
 	u32		pitch;		
 	int		bpp;		
-	int		width;          
+	int		width;          // FIXME: pass a 2d dim
 	int		height;
 	b32		is_wireframe;
 };
@@ -32,7 +37,7 @@ struct SwapBuffersCmd {
 	int		cmd_id;
 	HDC		hdc;
 	HDC		hdc_dib_section;	
-	int		width;          
+	int		width;          // FIXME: pass a 2d dim
 	int		height;
 };
 

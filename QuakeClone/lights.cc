@@ -39,7 +39,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			ambient.c.g = base.c.g * (lights[j].ambient.c.g * as);		
 			ambient.c.b = base.c.b * (lights[j].ambient.c.b * as);		
 
-			if (lights[j].light_flags & POINT_LIGHT) {
+			if (lights[j].flags & POINT_LIGHT) {
 				Vec3 u = MakeVec3(v0, v1);
 				Vec3 v = MakeVec3(v0, v2);
 				Vec3 n = Vec3Cross(u, v);
@@ -50,7 +50,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 				Vec3 view = MakeVec3(v0, camera_pos); 
 				view = Vec3Norm(view);
 
-				Vec3 l = (lights[j].status_flags & CAMERA_LIGHT) ? MakeVec3(v0, camera_pos) : MakeVec3(v0, lights[j].pos); 
+				Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0, camera_pos) : MakeVec3(v0, lights[j].pos); 
 				r32 llen = Vec3Len(l);
 				l = Vec3Norm(l);
 
@@ -64,7 +64,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 				// specular component
 				Vec3 h = l + view;
-				dot = MAX(pow(Vec3Dot(n, h), 4), 0.0f);
+				dot = MAX(pow(Vec3Dot(n, h), 3), 0.0f);
 				specular.c.a = base.c.a * lights[j].specular.c.a;
 				specular.c.r = base.c.r * lights[j].specular.c.r;
 				specular.c.g = base.c.g * lights[j].specular.c.g;
@@ -93,7 +93,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 }
 
 // FIXME: no specular atm
-void R_AddPointLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specular, Vec3 pos, r32 radius, r32 kc, r32 kl, r32 kq, LightStatusFlags sf) {
+void R_AddLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specular, Vec3 pos, r32 radius, r32 kc, r32 kl, r32 kq, LightTypeFlags sf) {
 	Assert(rb->num_lights + 1 <= MAX_NUM_LIGHTS);
 	int light = rb->num_lights;
 	rb->lights[light].ambient = ambient;
@@ -105,7 +105,6 @@ void R_AddPointLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specu
 	rb->lights[light].kq = kq;
 	rb->lights[light].is_active = true;
 	rb->lights[light].radius = radius;
-	rb->lights[light].light_flags |= POINT_LIGHT;
-	rb->lights[light].status_flags |= sf;
+	rb->lights[light].flags |= sf;
 	++rb->num_lights;
 }

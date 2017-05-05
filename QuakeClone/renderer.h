@@ -50,7 +50,8 @@ enum {
 
 struct VidSystem {
 	byte *			buffer;		
-	byte *			colormap;		
+	//byte *			colormap;		
+
 	int				pitch;		
 	int				width;          
 	int				height;

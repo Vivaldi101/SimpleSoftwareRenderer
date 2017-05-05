@@ -102,8 +102,8 @@ struct StackAllocator {
 
 struct Platform {
 	StackAllocator 		main_memory_stack;
-	Input				input_state;
-	GameState	*		game_state;
+	Input *				input_state;
+	GameState *			game_state;
 };
 
 enum SysEventType {

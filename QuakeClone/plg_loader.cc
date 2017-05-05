@@ -143,18 +143,12 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 			//ent->poly_array[i].attr |= POLY_ATTR_2SIDED;
 		}
 
-		//if (poly_surface_desc & PLX_COLOR_MODE_8BIT_FLAG) {
-		//	poly_array[i].color = poly_surface_desc & 0x00ff;
-		//	//poly_array[i].color |= POLY_ATTR_8BITCOLOR;
-		//} else {
-			//poly_array[i].color |= POLY_ATTR_RGB24;
 		u32 alpha = (poly_surface_desc & 0xff000000) >> 24u;
 		u32 red = (poly_surface_desc   & 0xff0000) >> 16u;
 		u32 green = (poly_surface_desc & 0xff00) >> 8u;
 		u32 blue = (poly_surface_desc  & 0xff) >> 0u;
 
 		poly_array[i].color = RGB_32(alpha, red, green, blue);
-		//}
 
 	//	int shade_mode = poly_surface_desc & PLX_SHADE_MODE_MASK;
 

@@ -10,13 +10,13 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	// init backend
 	rs->back_end.vid_sys = PushStruct(&pf->main_memory_stack.perm_data, VidSystem);
 	// for 8bpp
-	rs->back_end.vid_sys->colormap = PushArray(&pf->main_memory_stack.perm_data, 256 * 64, byte);
+	//rs->back_end.vid_sys->colormap = PushArray(&pf->main_memory_stack.perm_data, 256 * 64, byte);
 
 	Assert(MAX_NUM_POLYS < 0xffff);
 	rs->back_end.polys = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
 	rs->back_end.poly_verts = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLY_VERTS, Vec3);
 	rs->back_end.lights = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_LIGHTS, Light);
-	R_AddPointLight(&rs->back_end, MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0055f, 0.0f, CAMERA_LIGHT);
+	R_AddLight(&rs->back_end, MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0055f, 0.0f, (LightTypeFlags)(CAMERA_LIGHT|POINT_LIGHT));
 
 	// FIXME: this into a separate function
 	const int render_buffer_size = MEGABYTES(4);
