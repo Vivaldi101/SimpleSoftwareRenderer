@@ -87,9 +87,6 @@
     <ClCompile Include="r_main.cc">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="r_scene.cc">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="win_r.cc">
       <Filter>src</Filter>
     </ClCompile>
@@ -106,6 +103,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="lights.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="fonts.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

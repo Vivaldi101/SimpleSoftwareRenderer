@@ -3,6 +3,19 @@
 
 #include "shared.h"
 
+struct Poly {
+	Vec3 *		vertex_array;	
+	u16			vert_indices[3];
+	int			num_verts;
+	int			state;
+	u32			color;	// rgba, packed
+};
+
+struct Bitmap {
+	Dim2d	d2;
+	u32		color;		// rgba, packed
+};
+
 //struct Vert {
 //	Vec3	model_space_pos;     // xyz
 //	Vec3	unit_normal;
@@ -24,13 +37,6 @@
 //	r32		u, v;                // texture coordinates
 //}; // 60 bytes
 
-struct Poly {
-	Vec3 *		vertex_array;	
-	u16			vert_indices[3];
-	int			num_verts;
-	int			state;
-	u32			color;	// rgba, packed
-};
 
 //// self contained
 //struct LinkedPoly {

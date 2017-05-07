@@ -4,7 +4,7 @@
 
 
 #define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
-b32 InitWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance) {
+b32 InitWindow(RenderTarget *rt, int width, int height, void *wndproc, void *hinstance) {
 	WNDCLASS wc;
 	memset(&wc, 0, sizeof(wc));
 
@@ -13,7 +13,6 @@ b32 InitWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *h
 	int	ex_style = WS_EX_TOPMOST;
 	int	style_bits = 0;
 
-	// Register the frame class 
     wc.lpfnWndProc   = (WNDPROC)wndproc;
     wc.hInstance     = (HINSTANCE)hinstance;
     wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
@@ -36,7 +35,7 @@ b32 InitWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *h
 	x = 0;
 	y = 0;
 
-	vid_sys->win_handles.window = CreateWindowEx(ex_style,
+	rt->win_handles.window = CreateWindowEx(ex_style,
 												WINDOW_CLASS_NAME,
 										  		"Test",
 										  		style_bits,
@@ -45,17 +44,17 @@ b32 InitWindow(VidSystem *vid_sys, int width, int height, void *wndproc, void *h
 										  		0,
 										  		(HINSTANCE)hinstance,
 										  		0);
-	vid_sys->width = width;
-	vid_sys->height = height;
+	rt->width = width;
+	rt->height = height;
 
-	if (!vid_sys->win_handles.window) {
+	if (!rt->win_handles.window) {
 		return false;
 	}
 	
-	ShowWindow(vid_sys->win_handles.window, SW_SHOWNORMAL);
-	UpdateWindow(vid_sys->win_handles.window);
-	SetForegroundWindow(vid_sys->win_handles.window);
-	SetFocus(vid_sys->win_handles.window);
+	ShowWindow(rt->win_handles.window, SW_SHOWNORMAL);
+	UpdateWindow(rt->win_handles.window);
+	SetForegroundWindow(rt->win_handles.window);
+	SetFocus(rt->win_handles.window);
 
 	Sys_Print("Main window created!\n");
 

@@ -20,7 +20,7 @@ typedef uint64_t	u64;
 
 typedef unsigned char byte;
 
-// 32 bit bool for word alignment
+// 32 bit bool for dword alignment
 typedef u32 b32;
 
 // typedefs for single and double floating points
@@ -30,13 +30,13 @@ typedef double	r64;
 
 // angle indexes
 enum {
-	PITCH = 0,		// up / down
-	YAW,			// left / right
-	ROLL			// fall over
+	PITCH,		// up / down
+	YAW,		// left / right
+	ROLL		// fall over
 };
 
 enum {
-	PLANE_X	= 0,
+	PLANE_X,
 	PLANE_Y,
 	PLANE_Z,
 	PLANE_NON_AXIAL	
@@ -44,7 +44,7 @@ enum {
 
 
 enum {
-	UVN_U = 0, 
+	UVN_U, 
 	UVN_V,
 	UVN_N
 };
@@ -98,9 +98,10 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 // FIXME: fine tune these
 // max values
 #define	MAX_NUM_ENTITIES	256
-#define	MAX_NUM_POLYS		1 << 10
-#define	MAX_NUM_POLY_VERTS	1 << 12
+#define	MAX_NUM_POLYS		(1 << 10)
+#define	MAX_NUM_POLY_VERTS	(1 << 12)
 #define	MAX_NUM_LIGHTS		8
+#define	MAX_RENDER_BUFFER	MEGABYTES(4)
 
 #undef SINT32_MAX
 #undef UINT32_MAX
@@ -289,6 +290,16 @@ inline Vec3 operator *(Vec3 a, r32 s) {
 	return v;
 }
 
+inline Vec3 operator *(r32 s, Vec3 a) {
+	Vec3 v = {};
+
+	v[0] = a[0] * s;
+	v[1] = a[1] * s;
+	v[2] = a[2] * s;
+
+	return v;
+}
+
 inline Vec4 operator *(Vec4 a, r32 s) {
 	Vec4 v = {};
 
@@ -408,6 +419,11 @@ struct Plane {
 	//byte	pad[2];			// for 4 byte alignment
 };
 
+struct Dim2d {
+	int		width;          
+	int		height;
+};
+
 /*
 ==============================================================
 
@@ -453,7 +469,7 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 // windows specific
 #ifdef _WIN32
 #include <Windows.h>
-#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Sys_Quit(); } while(0)
+#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Com_Quit(); } while(0)
 #define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
 #define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
 //#define memset ZeroMemory

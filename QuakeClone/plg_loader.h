@@ -3,7 +3,6 @@
 
 #include "shared.h"
 #include "renderer.h"
-#include "win_local.h"
 
-extern b32 PLG_LoadMesh(Entity *ent, FILE **fp, r32 scale = 1.0f);
+extern b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len, r32 scale = 1.0f);
 #endif	// header guard

@@ -1,10 +1,8 @@
 #ifndef WIN_RENDERER_H
 #define WIN_RENDERER_H
 #include "shared.h"
-#include "win_local.h"
 
-b32		InitDIB(struct VidSystem *vid_sys);
-void	DIB_Shutdown();
-//void	DIB_SetPalette(const byte *palette);
+extern b32		InitDIB(struct RenderTarget *rt);
+extern void	DIB_Shutdown();
 
 #endif	// Header guard

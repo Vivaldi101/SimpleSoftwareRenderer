@@ -28,54 +28,66 @@
 
 
 #define MAX_PLG_LINE_LEN 256
-#define IsEmptyChar(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\n' || (c) == '\t') 
+#define IsEmptyChar(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\t') 
+#define IsHashTag(c) ((c) == '#') 
+#define IsNewLine(c) ((c) == '\n') 
 
-static const char *PLG_ParseLine(char *buffer, int max_len, FILE *fp) {
-	int i;
-	size_t len;
+static ptrdiff_t PLG_ReadLine(char *buffer, const void *load_data, u32 load_data_len, ptrdiff_t load_data_index) {
+	Assert(load_data);
+	char *base = (char *)load_data;
+	char *src = base + load_data_index;
 
-	for (;;) {
-		if (!fgets(buffer, max_len, fp)) {
-			return 0;
+	while (IsHashTag(*src)) {
+		while ((ptrdiff_t)(src - base) <  (ptrdiff_t)load_data_len && !IsNewLine(*src++)) ;
+	} 
+	do {
+		if (IsNewLine(*src)) {
+			break;
 		}
-
-		for (len = strlen(buffer), i = 0; 
-			(IsEmptyChar(buffer[i])); ++i) 
-			;
-
-		if (i >= len || buffer[i] == '#') {
-			continue;
+		if (!IsEmptyChar(*src)) {
+			*buffer++ = *src;
+		} else {
+			*buffer++ = ' ';
 		}
+	} while ((src++ - base) <  (ptrdiff_t)load_data_len);
 
-		return buffer + i;
-	}
+	Assert((ptrdiff_t)(src - base) <  (ptrdiff_t)load_data_len);
+	return ((ptrdiff_t)(src - base)) + 1;
 }
 
-// NOTE: this parser routine is just for prototyping, aka ignoring all overflows atm
-b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
+// FIXME: check for sscanf_s over/underflows
+b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
-	const char *parsed_string;
-	// FIXME: add proper checkings!!!
-	// check the entity types
+	//const char *parsed_string = 0;
 	int local_verts_offset = 0;
 	int polys_offset = 0;
+	ptrdiff_t load_data_index = 0;
+
+	// FIXME: add proper checkings!!!
+	// check the entity types
 
 	//typeless_ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
 
 	// get the object description
-	if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
+	if (!(load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index))) {
 		Sys_Print("\nError while reading lines from an opened PLG file, it should be a name of the mesh to be loaded,"
 				  "number of verts and number polys");
 		return false;
 	}
 
 	if (typeless_ent->type_enum == EntityType_player) {
-		sscanf_s(parsed_string, "%s %d %d", typeless_ent->status.type_name, sizeof(typeless_ent->status.type_name), &typeless_ent->status.num_verts, &typeless_ent->status.num_polys);
+		Assert(sizeof(typeless_ent->status.num_verts) == sizeof(s16));
+		Assert(sizeof(typeless_ent->status.num_polys) == sizeof(s16));
+		sscanf_s(buffer, "%s %hd %hd", typeless_ent->status.type_name, sizeof(typeless_ent->status.type_name), &typeless_ent->status.num_verts, &typeless_ent->status.num_polys);
+		memset(buffer, 0, sizeof(buffer));
 		local_verts_offset = OffsetOf(player.local_vertex_array, Entity);
 
 		polys_offset = OffsetOf(player.polys, Entity);
 	} else {
-		sscanf_s(parsed_string, "%s %d %d", typeless_ent->status.type_name, sizeof(typeless_ent->status.type_name), &typeless_ent->status.num_verts, &typeless_ent->status.num_polys);
+		Assert(sizeof(typeless_ent->status.num_verts) == sizeof(s16));
+		Assert(sizeof(typeless_ent->status.num_polys) == sizeof(s16));
+		sscanf_s(buffer, "%s %hd %hd", typeless_ent->status.type_name, sizeof(typeless_ent->status.type_name), &typeless_ent->status.num_verts, &typeless_ent->status.num_polys);
+		memset(buffer, 0, sizeof(buffer));
 
 		if (StrCmp(typeless_ent->status.type_name, global_entity_names[EntityType_cube]) == 0) {
 			typeless_ent->type_enum = EntityType_cube;
@@ -86,19 +98,21 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 			InvalidCodePath("Unhandled entitity type!");
 		}
 	}
+#if 1
 	Vec3 *local_vertex_array = (Vec3 *)((byte *)typeless_ent + local_verts_offset);  
 	int num_verts = typeless_ent->status.num_verts;
 
 	for (int i = 0; i < num_verts; ++i) {
-		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
+		if (!(load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index))) {
 			Sys_Print("\nError while reading lines from an opened PLG file, it should be a vertex in the x y z order");
 			return false;
 		}
 
-		sscanf_s(parsed_string, "%f %f %f",
+		sscanf_s(buffer, "%f %f %f",
 				 &local_vertex_array[i][0],
 				 &local_vertex_array[i][1],
 				 &local_vertex_array[i][2]);
+		memset(buffer, 0, sizeof(buffer));
 
 		// NOTE: convert from ccw into cw vertex winding order for our left-handed system
 		r32 v0 = local_vertex_array[i][0];
@@ -119,22 +133,25 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 	Poly *poly_array = (Poly *)((byte *)typeless_ent + polys_offset);  
 	int num_polys = typeless_ent->status.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
-		if (!(parsed_string = PLG_ParseLine(buffer, MAX_PLG_LINE_LEN - 1, *fp))) {
+		if (!(load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index))) {
 			Sys_Print("\nError while reading lines from an opened PLG file," 
 					  "it should be a 32 bit value in the form of PLG/X format: AA | RR| GG | BB");
 			return false;
 		}
 
-		sscanf_s(parsed_string, "%s %u %d %d %d", 
+		Assert(sizeof(*poly_array[i].vert_indices) == sizeof(u16));
+		sscanf_s(buffer, "%s %u %hu %hu %hu", 
 				 tmp_poly_surface_desc,
 				 sizeof(tmp_poly_surface_desc),
 				 &poly_surface_desc,
 				 &poly_array[i].vert_indices[0],
 				 &poly_array[i].vert_indices[1],
 				 &poly_array[i].vert_indices[2]);
+		memset(buffer, 0, sizeof(buffer));
 	
 		if (tmp_poly_surface_desc[0] == '0' && tmp_poly_surface_desc[1] == 'x') {
 			sscanf_s(tmp_poly_surface_desc, "%x", &poly_surface_desc);
+			memset(buffer, 0, sizeof(buffer));
 		} else {
 			poly_surface_desc = atoi(tmp_poly_surface_desc);
 		}
@@ -174,7 +191,7 @@ b32 PLG_LoadMesh(Entity *typeless_ent, FILE **fp, r32 scale) {
 	}
 
 	Sys_Print("\nMesh data loading complete\n");
-	fseek(*fp, 0, SEEK_SET);
+#endif
 	return true;
 }
 

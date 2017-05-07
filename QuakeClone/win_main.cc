@@ -119,15 +119,16 @@ void Sys_GenerateEvents() {
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
 
 	Sys_CreateConsole(hinstance);
-	Sys_ShowConsole(1, true);
+	Sys_FetchConsole(CON_SHOW, false);
 
 	// initial time resolution
 	timeBeginPeriod(1);
 	Sys_GetMilliseconds();
 
 	Platform pf = Com_Init();
+	//TTF_Init(&pf.file_ptrs);
 	RenderingSystem *rs = R_Init(&pf, hinstance, MainWndProc);
-	Com_LoadEntities(pf.game_state, &rs->back_end);
+	Com_LoadEntities(&pf);
 
 	for (;;) {
 		// run 1 frame of update and render  

@@ -6,7 +6,7 @@
 
 #define MAX_UPS 120
 #define MSEC_PER_SIM (1000 / MAX_UPS)
-#define PLATFORM_FULLSCREEN
+//#define PLATFORM_FULLSCREEN
 
 #undef MAX_PERM_MEMORY
 #undef MAX_TEMP_MEMORY
@@ -21,13 +21,28 @@
 #define WINDOW_HEIGHT	600
 #endif	// PLATFORM_FULLSCREEN
 
+// DebugFileIO
+#ifdef PLATFORM_DEBUG
+struct FileInfo {
+	void *	data;
+	u32		size;
+};
+#define Debug_FreeFile(name) void name(FileInfo *fi)
+typedef Debug_FreeFile(_DebugFreeFile_);
+
+#define Debug_ReadFile(name) FileInfo name(const char *file_name)
+typedef Debug_ReadFile(_DebugReadFile_);
+
+#define Debug_WriteFile(name) b32 name(const char *file_name, u32 memory_size, void *memory)
+typedef Debug_WriteFile(_DebugWriteFile_);
+#endif	// PLATFORM_DEBUG
 
 struct Input {
 	Key keys[MAX_NUM_KEYS];
 };
 
 // FIXME: move into entities.h 
-#define SetupEntity(table, e, fn) (table)[EntityTypeEnum::##e].fn = (fn##e)
+//#define SetupEntity(table, e, fn) (table)[EntityTypeEnum::##e].fn = (fn##e)
 enum EntityTypeEnum {
 	EntityType_invalid,
 	EntityType_player,
@@ -48,7 +63,7 @@ static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
 struct Entity {
 	union {
 		// FIXME: is this a good way to store vertex arrays?
-		// FIXME: hardcoded arrays for now, must match the vertex and poly numbers in the plg file
+		// FIXME: hardcoded arrays for now, must match the vertex and poly numbers in the asset file
 		struct {
 			Poly 	polys[12];
 			Vec3	local_vertex_array[8];		
@@ -59,20 +74,15 @@ struct Entity {
 			Vec3	local_vertex_array[8];		
 			Vec3	trans_vertex_array[8];		
 		} player;
-		struct {
-			Poly 	polys[18];
-			Vec3	local_vertex_array[16];		
-			Vec3	trans_vertex_array[16];		
-		} tower;
 	};
 
 	EntityTypeEnum type_enum;
 	struct {
 		int		guid;
-		char	type_name[64];
+		char	type_name[32];
 
-		int		state;
-		int		attr;
+		u16		state;
+		u16		attr;
 
 		r32		avg_radius;
 		r32		max_radius;
@@ -83,8 +93,8 @@ struct Entity {
 		Vec3	orientation;
 		Vec3	velocity;
 
-		int		num_verts;
-		int		num_polys;
+		s16		num_verts;
+		s16		num_polys;
 	} status;	
 };
 
@@ -100,10 +110,17 @@ struct StackAllocator {
 	MemoryStack  	temp_data; 
 };
 
+struct FileIO {
+	_DebugFreeFile_ *	free_file;
+	_DebugReadFile_ *	read_file;
+	_DebugWriteFile_ *	write_file;
+};
+
 struct Platform {
 	StackAllocator 		main_memory_stack;
 	Input *				input_state;
 	GameState *			game_state;
+	FileIO				file_ptrs;
 };
 
 enum SysEventType {
@@ -123,7 +140,7 @@ struct SysEvent {
 };
 
 // Console
-extern void Sys_ShowConsole(int level, b32 quit_on_close);
+extern void Sys_FetchConsole(enum ConVisibility vis_level, b32 quit_on_close);
 extern void Sys_Print(const char *msg);
 
 // Timing
@@ -132,7 +149,7 @@ static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
 extern Platform Com_Init();
-extern void Com_LoadEntities(GameState *gs, struct RendererBackend *rb);
+extern void Com_LoadEntities(Platform *pf);
 extern void Com_RunFrame(Platform *pf, struct RenderingSystem *rs);
 extern void Com_Quit();
 
@@ -146,5 +163,9 @@ extern void IN_GetInput(Input *in);
 extern void IN_ClearKeys(Input *in);
 
 // Strings
-int StrCmp(const char* a, const char* b);
+extern int StrCmp(const char* a, const char* b);
+
+// Fonts
+
+extern void TTF_Init(FileIO *fio);
 #endif	// Header guard

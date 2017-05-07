@@ -8,31 +8,30 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	RenderingSystem *rs = PushStruct(&pf->main_memory_stack.perm_data, RenderingSystem);
 
 	// init backend
-	rs->back_end.vid_sys = PushStruct(&pf->main_memory_stack.perm_data, VidSystem);
-	// for 8bpp
-	//rs->back_end.vid_sys->colormap = PushArray(&pf->main_memory_stack.perm_data, 256 * 64, byte);
+	rs->back_end.target = PushStruct(&pf->main_memory_stack.perm_data, RenderTarget);
+	// for 8bpp testing
+	//rs->back_end.rt->colormap = PushArray(&pf->main_memory_stack.perm_data, 256 * 64, byte);
 
 	Assert(MAX_NUM_POLYS < 0xffff);
 	rs->back_end.polys = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
 	rs->back_end.poly_verts = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLY_VERTS, Vec3);
 	rs->back_end.lights = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_LIGHTS, Light);
-	R_AddLight(&rs->back_end, MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0055f, 0.0f, (LightTypeFlags)(CAMERA_LIGHT|POINT_LIGHT));
+	R_AddLight(&rs->back_end, MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0055f, 0.0f, (LightTypeFlags)(CAMERA_LIGHT|SPOT_LIGHT));
 
 	// FIXME: this into a separate function
-	const int render_buffer_size = MEGABYTES(4);
-	rs->back_end.cmds.buffer_base = PushSize(&pf->main_memory_stack.perm_data, render_buffer_size, byte);
-	rs->back_end.cmds.max_buffer_size = render_buffer_size;
+	rs->back_end.cmds.buffer_base = PushSize(&pf->main_memory_stack.perm_data, MAX_RENDER_BUFFER, byte);
+	rs->back_end.cmds.max_buffer_size = MAX_RENDER_BUFFER;
 	rs->back_end.cmds.used_buffer_size = 0;
 	rs->back_end.entities = pf->game_state->entities;
 
-	if (!InitWindow(rs->back_end.vid_sys, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
+	if (!InitWindow(rs->back_end.target, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");
-		Sys_Quit();
+		Com_Quit();
 	}	
 
-	if (!InitDIB(rs->back_end.vid_sys)) {
+	if (!InitDIB(rs->back_end.target)) {
 		Sys_Print("Error while initializing the DIB\n");
-		Sys_Quit();
+		Com_Quit();
 	}
 
 	Sys_Print("Renderer backend init done\n");
@@ -42,7 +41,7 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	Vec3Init(rs->front_end.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
 
 	Vec3Init(rs->front_end.current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
-	rs->front_end.current_view.aspect_ratio = (r32)rs->back_end.vid_sys->width / (r32)rs->back_end.vid_sys->height;
+	rs->front_end.current_view.aspect_ratio = (r32)rs->back_end.target->width / (r32)rs->back_end.target->height;
 
 	// FIXME: handle non-homogeneous viewplanes
 	rs->front_end.current_view.viewplane_width = 2;	// normalized viewplane
@@ -53,8 +52,8 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	rs->front_end.current_view.z_near = 50.0f;
 	rs->front_end.current_view.z_far = 500.0f;
 
-	rs->front_end.current_view.viewport_width = rs->back_end.vid_sys->width;		
-	rs->front_end.current_view.viewport_height = rs->back_end.vid_sys->height;
+	rs->front_end.current_view.viewport_width = rs->back_end.target->width;		
+	rs->front_end.current_view.viewport_height = rs->back_end.target->height;
 
 	Sys_Print("Renderer frontend init done\n");
 

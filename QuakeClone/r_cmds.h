@@ -5,6 +5,7 @@
 enum RenderCommandEnum {
 	RCMD_CLEAR,
 	RCMD_SWAP_BUFFERS,
+	RCMD_BITMAP,
 	RCMD_MESH,
 	RCMD_END_OF_CMDS
 };
@@ -18,6 +19,13 @@ struct RenderCommands {
 	byte *	buffer_base;
 	size_t	max_buffer_size;
 	size_t	used_buffer_size;
+};
+
+struct DrawBitmapCmd {
+	int		cmd_id;
+	byte *	buffer;		
+	u32		color;		
+	Dim2d	d2;
 };
 
 struct DrawPolyListCmd {

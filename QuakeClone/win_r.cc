@@ -56,27 +56,27 @@ struct DibData {
 	RGBQUAD				colors[256];	
 };
 
-b32 InitDIB(VidSystem *vid_sys) {
+b32 InitDIB(RenderTarget *rt) {
 
 	DibData dib;
 	BITMAPINFO *win_dib_info = (BITMAPINFO *)&dib;
 
 	memset(&dib, 0, sizeof(dib));
 
-	if (!vid_sys->win_handles.hdc) {
-		if (!(vid_sys->win_handles.hdc = GetDC(vid_sys->win_handles.window))) {
+	if (!rt->win_handles.hdc) {
+		if (!(rt->win_handles.hdc = GetDC(rt->win_handles.window))) {
 			Sys_Print("\nCouldn't get dc for window\n");
 			return false;
 		}
 	}
 
-	vid_sys->bpp = BYTES_PER_PIXEL;
+	rt->bpp = BYTES_PER_PIXEL;
 
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
-	win_dib_info->bmiHeader.biWidth         = vid_sys->width;		
-	win_dib_info->bmiHeader.biHeight        = vid_sys->height; 
+	win_dib_info->bmiHeader.biWidth         = rt->width;		
+	win_dib_info->bmiHeader.biHeight        = rt->height; 
 	win_dib_info->bmiHeader.biPlanes        = 1;
-	win_dib_info->bmiHeader.biBitCount      = (WORD)(vid_sys->bpp * 8);
+	win_dib_info->bmiHeader.biBitCount      = (WORD)(rt->bpp * 8);
 	win_dib_info->bmiHeader.biCompression   = BI_RGB;
 	win_dib_info->bmiHeader.biSizeImage     = 0;
 	win_dib_info->bmiHeader.biXPelsPerMeter = 0;
@@ -84,27 +84,27 @@ b32 InitDIB(VidSystem *vid_sys) {
 	win_dib_info->bmiHeader.biClrUsed       = /*256*/ 0;
 	win_dib_info->bmiHeader.biClrImportant  = /*256*/ 0;
 
-	vid_sys->win_handles.dib_section = CreateDIBSection(vid_sys->win_handles.hdc,
+	rt->win_handles.dib_section = CreateDIBSection(rt->win_handles.hdc,
 														win_dib_info,
 											 			DIB_RGB_COLORS,
-														(void **)&vid_sys->buffer,
+														(void **)&rt->buffer,
 											 			0,
 											 			0);
 
-	if (!vid_sys->win_handles.dib_section) {
+	if (!rt->win_handles.dib_section) {
 		Sys_Print("\nCouldn't create the dib section\n");
 		return false;
 	}
 
-	vid_sys->pitch = vid_sys->width * (dib.header.biBitCount / 8);
+	rt->pitch = rt->width * (dib.header.biBitCount / 8);
 
-	memset(vid_sys->buffer, 0, vid_sys->pitch * vid_sys->height);
+	memset(rt->buffer, 0, rt->pitch * rt->height);
 
-	if (!(vid_sys->win_handles.hdc_dib_section = CreateCompatibleDC(vid_sys->win_handles.hdc))) {
+	if (!(rt->win_handles.hdc_dib_section = CreateCompatibleDC(rt->win_handles.hdc))) {
 		Sys_Print("\nDIB_Init() - CreateCompatibleDC failed\n");
 		return false;
 	}
-	if (!(global_previously_selected_GDI_obj = SelectObject(vid_sys->win_handles.hdc_dib_section, vid_sys->win_handles.dib_section))) {
+	if (!(global_previously_selected_GDI_obj = SelectObject(rt->win_handles.hdc_dib_section, rt->win_handles.dib_section))) {
 		Sys_Print("\nDIB_Init() - SelectObject failed\n");
 		return false;
 	}

@@ -1,17 +1,57 @@
-﻿Build started 23/03/2017 17:56:54.
-     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
+﻿Build started 07/05/2017 16:14:19.
+     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (rebuild target(s)).
      1>InitializeBuildStatus:
          Creating "Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         All outputs are up-to-date.
+         F:\Programs\VS10\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /MP /Od /Oy- /D PLATFORM_DEBUG /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt common.cc entity.cc input.cc lights.cc math.cc misc.cc plg_loader.cc r_cmds.cc r_init.cc r_main.cc r_scene.cc r_backend.cc win_console.cc win_shared.cc win_main.cc win_main_window.cc win_r.cc win_wndproc.cc
+     1>cl : Command line warning D9030: '/Gm' is incompatible with multiprocessing; ignoring /MP switch
+         win_wndproc.cc
+         win_r.cc
+         win_main_window.cc
+         win_main.cc
+         win_shared.cc
+         win_console.cc
+     1>f:\code\quakeclone\quakeclone\win_console.cc(46): warning C4101: 'cmd_string' : unreferenced local variable
+         r_backend.cc
+         r_scene.cc
+         r_main.cc
+         r_init.cc
+         r_cmds.cc
+         plg_loader.cc
+         misc.cc
+         math.cc
+         lights.cc
+         input.cc
+         entity.cc
+         common.cc
+         Generating Code...
        Link:
-         All outputs are up-to-date.
+         F:\Programs\VS10\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\Debug\QuakeClone.lib" /MACHINE:X86 Debug\common.obj
+         Debug\entity.obj
+         Debug\input.obj
+         Debug\lights.obj
+         Debug\math.obj
+         Debug\misc.obj
+         Debug\plg_loader.obj
+         Debug\r_cmds.obj
+         Debug\r_init.obj
+         Debug\r_main.obj
+         Debug\r_scene.obj
+         Debug\r_backend.obj
+         Debug\win_console.obj
+         Debug\win_shared.obj
+         Debug\win_main.obj
+         Debug\win_main_window.obj
+         Debug\win_r.obj
+         Debug\win_wndproc.obj
          QuakeClone.vcxproj -> F:\code\QuakeClone\Debug\QuakeClone.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\code\QuakeClone\Debug\QuakeClone.exe;#1" /manifest Debug\QuakeClone.exe.intermediate.manifest
        FinalizeBuildStatus:
          Deleting file "Debug\QuakeClone.unsuccessfulbuild".
          Touching "Debug\QuakeClone.lastbuildstate".
-     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
+     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone.vcxproj" (rebuild target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.03
+Time Elapsed 00:00:04.71

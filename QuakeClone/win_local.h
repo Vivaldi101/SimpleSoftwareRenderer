@@ -3,33 +3,26 @@
 
 #include "shared.h"
 
-// console system
+// Console
+enum ConVisibility {
+	CON_HIDE,
+	CON_SHOW,
+	CON_MINIMIZE
+};
 extern void	Sys_CreateConsole(HINSTANCE hinstance);
 extern void	Sys_DestroyConsole();
 extern void Sys_Print(const char *msg);
 extern void Sys_Sleep(DWORD ms);
 extern void Con_AppendText(const char *msg);
 
-// com system
+// System
 extern void Sys_Init();
 extern void Sys_Quit();
 
-// input system
-//extern void In_Activate(b32 active);
-//extern void In_MouseEvent(int mstate);
-
-//extern void	In_Init();
-//extern void	In_Shutdown();
-//
-//extern void	In_DeactivateMouse();
-//
-//extern void	In_Activate(b32 active);
-//extern void	In_Frame();
-
-extern b32 InitWindow(struct VidSystem *vid_sys, int width, int height, void *wndproc, void *hinstance);
+extern b32 InitWindow(struct RenderTarget *rt, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
-// events
+// Events
 extern void Sys_QueEvent(int time, enum SysEventType ev_type, int value, int value2, int data_len, void *data);
 
 LRESULT WINAPI MainWndProc(HWND window, UINT umsg, WPARAM wparam, LPARAM lparam);

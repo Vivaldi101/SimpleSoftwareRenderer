@@ -8,43 +8,45 @@
 #define EDIT_ID			100
 #define INPUT_ID		101
 
+
 struct WinConsole {
-	HWND		hwnd;
-	HWND		hwnd_buffer;
+	HWND			hwnd;
+	HWND			hwnd_buffer;
 
-	HWND		hwnd_buttonclear;
-	HWND		hwnd_buttoncopy;
-	HWND		hwnd_buttonquit;
+	HWND			hwnd_buttonclear;
+	HWND			hwnd_buttoncopy;
+	HWND			hwnd_buttonquit;
 
-	HWND		hwnd_errorbox;
-	HWND		hwnd_errortext;
+	HWND			hwnd_errorbox;
+	HWND			hwnd_errortext;
 
-	HBITMAP		hbm_logo;
-	HBITMAP		hbm_clearbitmap;
+	HBITMAP			hbm_logo;
+	HBITMAP			hbm_clearbitmap;
 
-	HBRUSH		hbr_edit_background;
-	HBRUSH		hbr_error_background;
+	HBRUSH			hbr_edit_background;
+	HBRUSH			hbr_error_background;
 
-	HFONT		hf_buffer_font;
-	HFONT		hf_button_font;
+	HFONT			hf_buffer_font;
+	HFONT			hf_button_font;
 
-	HWND		hwnd_inputline;
+	HWND			hwnd_inputline;
 
-	char		error_string[80];
+	char			error_string[80];
 
-	char		console_text[512], returned_text[512];
-	int			vis_level;
-	b32			quit_on_close;
-	int			window_width, window_height;
+	char			console_text[512], returned_text[512];
+	ConVisibility	vis_level;
+	b32				quit_on_close;
+	int				window_width, window_height;
 	
-	WNDPROC		sys_input_line_wndproc;
+	WNDPROC			sys_input_line_wndproc;
 
 };
+
 static WinConsole global_console;
 static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 #define TIMER_ID 1
 	char *cmd_string;
-	static b32 sime_polarity = false;
+	static b32 time_polarity = false;
 
 	switch (umsg) {
 		case WM_ACTIVATE: {
@@ -74,8 +76,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 			if (global_console.quit_on_close) {
 				Com_Quit();
 			} else {
-				Sys_ShowConsole(0, false);
-				Com_Quit();
+				Sys_FetchConsole(CON_HIDE, false);
 				//Cvar_Set( "viewlog", "0" );
 			}
 			return 0;
@@ -99,7 +100,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 	#endif
 				return (LRESULT)global_console.hbr_edit_background;
 			} else if ((HWND)lparam == global_console.hwnd_errorbox ) {
-				if (sime_polarity & 1) {
+				if (time_polarity & 1) {
 					SetBkColor((HDC)wparam, RGB( 0x80, 0x80, 0x80 ) );
 					SetTextColor((HDC)wparam, RGB( 0xff, 0x0, 0x00 ) );
 				} else {
@@ -134,7 +135,7 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 			//global_console.hbm_clearbitmap = LoadBitmap(global_win_vars.hinstance, MAKEINTRESOURCE( IDB_BITMAP2 ) );
 			global_console.hbr_edit_background = CreateSolidBrush(RGB( 0x00, 0x00, 0xB0));
 			global_console.hbr_error_background = CreateSolidBrush(RGB( 0xFF, 0x00, 0x00));
-			SetTimer(hwnd, TIMER_ID, 1000, NULL);
+			SetTimer(hwnd, TIMER_ID, 1000, 0);
 		} break;
 	#endif
 	#if 1
@@ -188,9 +189,9 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 	#endif
 		case WM_TIMER: {
 			if (wparam == TIMER_ID) {
-				sime_polarity = (b32)(!sime_polarity);
+				time_polarity = (b32)(!time_polarity);
 				if (global_console.hwnd_errorbox) {
-					InvalidateRect(global_console.hwnd_errorbox, NULL, FALSE);
+					InvalidateRect(global_console.hwnd_errorbox, 0, FALSE);
 				}
 			}
 		} break;
@@ -233,12 +234,10 @@ void Con_AppendText(const char *msg) {
 	}
 
 	*b = 0;
+	Assert((b - buffer) >= 0);
 	u32 buf_len = (u32)(b - buffer);
 	total_chars += buf_len;
 
-	//
-	// replace selection instead of appending if we're overflowing
-	//
 	if (total_chars > 0x7fff) {
 		SendMessage( global_console.hwnd_buffer, EM_SETSEL, 0, -1 );
 		total_chars = buf_len;
@@ -260,12 +259,12 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 
 	wc.lpfnWndProc   = ConWndProc;
 	wc.hInstance     = hinstance;
-	wc.hCursor       = LoadCursor (NULL, IDC_ARROW);
+	wc.hCursor       = LoadCursor (0, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpszClassName = console_class_name;
 
 	if (!RegisterClass(&wc)) {
-		Sys_Quit();
+		Com_Quit();
 	}
 	rect.left = 0;
 	rect.right = 540;
@@ -287,13 +286,13 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 									   DEDSTYLE,
 									   1350, 550, /*( swidth - 600 ) / 2, ( sheight - 450 ) / 2 ,*/
 									   rect.right - rect.left + 1, rect.bottom - rect.top + 1,
-									   NULL,
-									   NULL,
+									   0,
+									   0,
 									   hinstance,
-									   NULL);
+									   0);
 
 	if (!global_console.hwnd) {
-		Sys_Quit();
+		Com_Quit();
 	}
 
 	// Generate fonts
@@ -318,55 +317,46 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 	ReleaseDC(global_console.hwnd, hdc);
 	
 	// Create the input line
-	global_console.hwnd_inputline = CreateWindow("edit", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | 
+	global_console.hwnd_inputline = CreateWindow("edit", 0, WS_CHILD | WS_VISIBLE | WS_BORDER | 
 												 ES_LEFT | ES_AUTOHSCROLL,
 												 6, 400, 528, 20,
 												 global_console.hwnd, 
 												 (HMENU)INPUT_ID,	// child input line window ID
-												 hinstance, NULL);
+												 hinstance, 0);
 
 	// Create the scrollbuffer
-	global_console.hwnd_buffer = CreateWindow("edit", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | 
+	global_console.hwnd_buffer = CreateWindow("edit", 0, WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | 
 											  ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY,
 											  6, 40, 526, 354,
 											  global_console.hwnd, 
 											  (HMENU)EDIT_ID,			// child scrollbar window ID
-											  hinstance, NULL );
-
-
-
-	//ShowWindow(global_console.hwnd, SW_SHOWDEFAULT);
-	//UpdateWindow(global_console.hwnd);
-	//SetForegroundWindow(global_console.hwnd);
-	//SetFocus(global_console.hwnd_inputline);
-
-	//global_console.vis_level = 1;
+											  hinstance, 0 );
 }
 
-void Sys_ShowConsole(int vis_level, b32 quit_on_close) {
-	global_console.quit_on_close = quit_on_close;
-
-	if (vis_level == global_console.vis_level) {
-		return;
-	}
-
-	global_console.vis_level = vis_level;
-
+// FIXME: bind the console into hotkey
+// FIXME: vis_level into an enum
+void Sys_FetchConsole(ConVisibility vis_level, b32 quit_on_close) {
 	if (!global_console.hwnd) {
 		return;
 	}
 
+	global_console.quit_on_close = quit_on_close;
+	if (vis_level == global_console.vis_level) {
+		return;
+	}
+	global_console.vis_level = vis_level;
+
 	switch (vis_level) {
-		case 0: {
+		case CON_HIDE: {
 			ShowWindow(global_console.hwnd, SW_HIDE);
 		} break;
-		case 1: {
+		case CON_SHOW: {
 			ShowWindow(global_console.hwnd, SW_SHOWNORMAL);
 			SendMessage(global_console.hwnd_buffer, EM_LINESCROLL, 0, 0xffff );
 			Sys_Print("\nConsole created\n");
 		} break;
-		case 2:
-			ShowWindow(global_console.hwnd, SW_MINIMIZE); {
+		case CON_MINIMIZE: {
+			ShowWindow(global_console.hwnd, SW_MINIMIZE);
 			Sys_Print("Console minimized");
 		} break;
 		default: {
@@ -374,6 +364,7 @@ void Sys_ShowConsole(int vis_level, b32 quit_on_close) {
 		} break;
 	}
 }
+
 void Sys_DestroyConsole() {
 	if (global_console.hwnd) {
 		ShowWindow(global_console.hwnd, SW_HIDE);

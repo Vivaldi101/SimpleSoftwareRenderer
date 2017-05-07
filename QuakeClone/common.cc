@@ -3,6 +3,8 @@
 #include "plg_loader.h"
 #include "lights.h"
 
+#include "files.cc"
+
 /*
 ==============================================================
 
@@ -51,7 +53,7 @@ static void InitStackMemory(MemoryStack *ms, size_t num_bytes) {
 
 	if (!ms->base_ptr) {
 		Sys_Print("Failed to init the stack allocator\n");
-		Sys_Quit();
+		Com_Quit();
 	}
 }
 
@@ -71,6 +73,9 @@ Platform Com_Init() {
 	Platform pf = {};
 
 	Sys_Init();
+	pf.file_ptrs.free_file = DebugFreeFile;
+	pf.file_ptrs.read_file = DebugReadFile;
+	pf.file_ptrs.write_file = DebugWriteFile;
 
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	InitStackMemory(&pf.main_memory_stack.perm_data, MAX_PERM_MEMORY);
@@ -84,58 +89,30 @@ Platform Com_Init() {
 	return pf;
 }
 
-void Com_LoadEntities(GameState *gs, RendererBackend *rb) {
+void Com_LoadEntities(Platform *pf) {
 	// FIXME: testing entity stuff!!
 	// FIXME: asset streaming
+	FileInfo cube_assets = {};
+	Entity common_ent = {};
+	int num_entities = pf->game_state->num_entities;
 
-	FILE *fp;
-	fopen_s(&fp, "cube1.plg", "r");
-	Sys_Print("\nTrying to open cube1.plg file\n");
-
-	if (!fp) {
-		Sys_Print("\nCould not open cube1.plg file\n");
-		Sys_Quit();
-	}
+	cube_assets = pf->file_ptrs.read_file("cube1.plg");
 
 	// FIXME: testing!!
 	// FIXME: 0 hardcoded for player for now
-	Entity common_ent = {};
-	PLG_LoadMesh(&common_ent, &fp);
-	memcpy(&gs->entities[0], &common_ent, sizeof(Entity));
-	gs->entities[0].type_enum = EntityType_player;
+	common_ent.type_enum = EntityType_player;
+	PLG_LoadMesh(&common_ent, cube_assets.data, cube_assets.size);
+	memcpy(&pf->game_state->entities[0], &common_ent, sizeof(Entity));
+	pf->game_state->entities[0].type_enum = EntityType_player;
 
-	for (int i = 1; i < (gs->num_entities >> 1); ++i) {
+	for (int i = 1; i < (num_entities); ++i) {
 		Vec3 world_pos = {-100.0f + (i * 50.0f), -20.0f, 500.0f};
-		memcpy(&gs->entities[i], &common_ent, sizeof(Entity));
-		gs->entities[i].status.world_pos = world_pos;
+		memcpy(&pf->game_state->entities[i], &common_ent, sizeof(Entity));
+		pf->game_state->entities[i].status.world_pos = world_pos;
+		pf->game_state->entities[i].type_enum = EntityType_cube;
 	}
 
-	if (fp) {
-		Sys_Print("\nClosing cube1.plg file\n");
-		fclose(fp);
-		fp = 0;
-	}
-
-	fopen_s(&fp, "cube2.plg", "r");
-	Sys_Print("\nTrying to open cube2.plg file\n");
-	if (!fp) {
-		Sys_Print("\nCould not open cube2.plg file\n");
-		Sys_Quit();
-	}
-
-	memset(&common_ent, 0, sizeof(Entity));
-	PLG_LoadMesh(&common_ent, &fp);
-	for (int i = (gs->num_entities >> 1); i < gs->num_entities; ++i) {
-		Vec3 world_pos = {-100.0f + (i * 50.0f), -20.0f, 200.0f};
-		memcpy(&gs->entities[i], &common_ent, sizeof(Entity));
-		gs->entities[i].status.world_pos = world_pos;
-	}
-
-	if (fp) {
-		Sys_Print("\nClosing cube2.plg file\n");
-		fclose(fp);
-		fp = 0;
-	}
+	pf->file_ptrs.free_file(&cube_assets);
 }
 
 static void ResetEntities(RendererBackend *rb) {
@@ -263,7 +240,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	IN_GetInput(pf->input_state);
 	// FIXME: move elsewhere
 	if (pf->input_state->keys[ESC_KEY].released) {
-		Sys_Quit();
+		Com_Quit();
 	} else if (pf->input_state->keys[SPACE_KEY].released) {
 		rs->front_end.is_wireframe = !rs->front_end.is_wireframe;
 	} else if (pf->input_state->keys['L'].released) {
@@ -344,7 +321,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	//if (rs->front_end.is_view_changed || first_run) {
 	R_RenderView(&rs->front_end.current_view);
 	//}
-	R_BeginFrame(rs->back_end.vid_sys, &rs->back_end.cmds);
+	R_BeginFrame(rs->back_end.target, &rs->back_end.cmds);
 
 	int num_entities = pf->game_state->num_entities;
 	Vec3 *local_verts = 0, *trans_verts = 0;
@@ -368,15 +345,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 			int num_local_verts = 0; 
 			int num_trans_verts = 0; 
 			int num_polys = 0;
-			if (auto sub_type = GetAnonType(&entities[i], tower, EntityType_)) {
-				local_verts = sub_type->local_vertex_array;
-				trans_verts = sub_type->trans_vertex_array;
-				polys = sub_type->polys;
-
-				num_local_verts = ArrayCount(sub_type->local_vertex_array);
-				num_trans_verts = ArrayCount(sub_type->trans_vertex_array);
-				num_polys = ArrayCount(sub_type->polys);
-			} else if (auto sub_type = GetAnonType(&entities[i], cube, EntityType_)) {
+			if (auto sub_type = GetAnonType(&entities[i], cube, EntityType_)) {
 				local_verts = sub_type->local_vertex_array;
 				trans_verts = sub_type->trans_vertex_array;
 				polys = sub_type->polys;
@@ -390,7 +359,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 			R_RotatePoints(rot_mat_z, local_verts, num_local_verts); 
 			R_RotatePoints(rot_mat_x, local_verts, num_local_verts); 
 			R_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos); 
-			entities[i].status.state = R_CullPointAndRadius(&rs->front_end.current_view, entities[i].status.world_pos);			
+			entities[i].status.state = (u16)R_CullPointAndRadius(&rs->front_end.current_view, entities[i].status.world_pos);			
 			if (!(entities[i].status.state & CULL_OUT)) {
 				R_TransformWorldToView(&rs->front_end.current_view, trans_verts, num_trans_verts);
 				R_AddPolys(&rs->back_end, trans_verts, polys, num_polys);
@@ -407,11 +376,12 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 
-	R_AddDrawPolysCmd(rs->back_end.vid_sys, &rs->back_end.cmds,
-					  rs->back_end.polys,
-					  rs->back_end.poly_verts,
-					  rs->back_end.num_polys,
-					  rs->front_end.is_wireframe);
+	R_PushPolysCmd(rs->back_end.target, 
+				  &rs->back_end.cmds,
+				  rs->back_end.polys,
+				  rs->back_end.poly_verts,
+				  rs->back_end.num_polys,
+				  rs->front_end.is_wireframe);
 
 	{
 		static int last_time = Sys_GetMilliseconds();
@@ -421,7 +391,7 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 
 		// FIXME: v-sync when switching to hw-accelerated rendering
 		//if (frame_msec > 0.016f) {
-		R_EndFrame(rs->back_end.vid_sys, &rs->back_end.cmds);
+		R_EndFrame(rs->back_end.target, &rs->back_end.cmds);
 
 		// FIXME: move these into ending routine
 		ResetEntities(&rs->back_end);
@@ -512,6 +482,13 @@ int StrCmp(const char* a, const char* b) {
 
 	return 0;
 }
+
+void StrCopyLen(char *dst, const char* src, size_t len) {
+	Assert(dst && src);
+	while ((*dst++ = *src++) && --len > 0) 
+		;
+}
+
 
 
 

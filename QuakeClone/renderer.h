@@ -31,7 +31,7 @@
 #define POLY_ATTR_SHADE_MODE_PHONG		0x0100
 
 enum ClipFlags {
-	CULL_IN = 0,	// completely unclipped
+	CULL_IN,		// completely unclipped
 	CULL_CLIP,		// clipped by one or more planes
 	CULL_OUT		// completely outside the clipping planes
 };
@@ -47,18 +47,15 @@ enum {
 	NUM_FRUSTUM_PLANES
 };
 
-
-struct VidSystem {
+struct RenderTarget {
 	byte *			buffer;		
-	//byte *			colormap;		
-
 	int				pitch;		
 	int				width;          
 	int				height;
 	int				bpp;
 
 	WinHandles 		win_handles;
-	b32				full_screen;
+	//b32				full_screen;
 };
 
 struct ViewSystem {
@@ -91,18 +88,18 @@ struct RendererFrontend {
 };
 
 struct RendererBackend {
-	RenderCommands 			cmds;
-	VidSystem *				vid_sys;
+	RenderCommands		cmds;
+	RenderTarget *		target;
 
-	Entity *				entities;
+	Entity *			entities;
 
-	Light *					lights;
-	int						num_lights;
+	Light *				lights;
+	int					num_lights;
 
-	Poly *					polys;			
-	Vec3 *					poly_verts;		// FIXME: change type to proper vert type 			
-	int						num_polys;
-	int						num_verts;
+	Poly *				polys;			
+	Vec3 *				poly_verts;		// FIXME: change type to proper vert type 			
+	int					num_polys;
+	int					num_verts;
 };
 
 struct RenderingSystem {
@@ -111,12 +108,14 @@ struct RenderingSystem {
 };
 
 //
-//	renderer frontend
+//	Renderer frontend
 //
 extern RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc); 
-extern void R_BeginFrame(VidSystem *vs, RenderCommands *rc);
-extern void R_EndFrame(VidSystem *vs, RenderCommands *rc);
-extern void R_AddDrawPolysCmd(VidSystem *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
+
+extern void R_BeginFrame(RenderTarget *vs, RenderCommands *rc);
+extern void R_EndFrame(RenderTarget *vs, RenderCommands *rc);
+extern void R_PushBitmapCmd(RenderTarget *vs, RenderCommands *rc, Dim2d d2, Vec4 color);
+extern void R_PushPolysCmd(RenderTarget *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
 
 extern void R_RenderView(ViewSystem *vs);
 
@@ -135,13 +134,12 @@ extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array,
 
 
 //
-//	renderer backend
+//	Renderer backend
 //
 extern void RB_ExecuteRenderCommands(const void *data);
-// FIXME: for testing purposes only
-extern void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
-				r32 rmax_x, r32 rmax_y,
-				byte color);
+//extern void R_DrawRect(RenderTarget *vs, r32 rmin_x, r32 rmin_y, 
+//					   r32 rmax_x, r32 rmax_y,
+//					   byte color);
 
 
 #endif	// Header guard

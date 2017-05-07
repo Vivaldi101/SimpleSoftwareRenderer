@@ -10,7 +10,7 @@ void R_SetupProjection(ViewSystem *vs) {
 	// FIXME: handle variable sized view planes
 	r32 d = (vs->viewplane_width / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
 
-	// direct3d style [0, 1] z-buffer mapping
+	// D3D style [0, 1] z-buffer mapping
 	r32 a = vs->z_far / (vs->z_far - vs->z_near);
 	r32 b = -vs->z_near * a;
 
@@ -223,4 +223,27 @@ void R_RenderView(ViewSystem *vs) {
 	R_RotateForViewer(vs);
 	R_SetupProjection(vs);
 	R_SetupFrustum(vs);					
+}
+
+void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_polys) {
+	Poly *poly;
+	int num_verts = 3;	// triangle
+	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
+
+	for (int i = 0; i < num_polys; ++i) {
+		poly = &rb->polys[rb->num_polys];
+		poly->num_verts = num_verts;
+		poly->state = poly_array[i].state;
+		poly->color = poly_array[i].color;
+		poly->vertex_array = &rb->poly_verts[rb->num_verts];
+
+		//memcpy(poly->vertex_array, &verts[*poly_array[i].vert_indices], num_verts * sizeof(*verts));
+		for (int j = 0; j < num_verts; ++j) {
+			poly->vertex_array[j] = verts[poly_array[i].vert_indices[j]];
+		}
+
+		++rb->num_polys; 
+		rb->num_verts += num_verts;
+		//verts += num_verts;
+	}
 }

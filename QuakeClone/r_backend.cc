@@ -1,7 +1,7 @@
 #include "r_cmds.h"
 #include "renderer.h"
 
-// cohen-sutherland clipping constants
+// Cohen-Sutherland clipping constants
 #define INSIDE	 0	
 #define LEFT	 1	
 #define RIGHT	 2	
@@ -124,9 +124,6 @@ static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int 
 		byte *line = (byte*)buffer;
 		line = (line + (pitch * y0)) + x0 * bpp;
 
-		if (color != 0xff) {
-			int x = 42;
-		}
 		for (int i = 0; i < num_pixels; ++i) {
 			for (int j = 0; j < bpp; ++j) {
 				line[j] = (color >> (j * 8)) & 0xff;
