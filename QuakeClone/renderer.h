@@ -37,12 +37,12 @@ enum ClipFlags {
 };
 
 enum { 
-	FRUSTUM_PLANE_LEFT = 0, 
+	FRUSTUM_PLANE_LEFT, 
 	FRUSTUM_PLANE_RIGHT,
 	FRUSTUM_PLANE_TOP,
 	FRUSTUM_PLANE_BOTTOM,
-	//FRUSTUM_PLANE_FAR,
 	//FRUSTUM_PLANE_NEAR,
+	//FRUSTUM_PLANE_FAR,
 
 	NUM_FRUSTUM_PLANES
 };
@@ -112,10 +112,10 @@ struct RenderingSystem {
 //
 extern RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc); 
 
-extern void R_BeginFrame(RenderTarget *vs, RenderCommands *rc);
-extern void R_EndFrame(RenderTarget *vs, RenderCommands *rc);
-extern void R_PushBitmapCmd(RenderTarget *vs, RenderCommands *rc, Dim2d d2, Vec4 color);
-extern void R_PushPolysCmd(RenderTarget *vs, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
+extern void R_BeginFrame(RenderTarget *rt, RenderCommands *rc);
+extern void R_EndFrame(RenderTarget *rt, RenderCommands *rc);
+extern void R_PushBitmapCmd(RenderTarget *rt, RenderCommands *rc, Dim2d d2, Vec4 color);
+extern void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
 
 extern void R_RenderView(ViewSystem *vs);
 
@@ -136,8 +136,8 @@ extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array,
 //
 //	Renderer backend
 //
-extern void RB_ExecuteRenderCommands(const void *data);
-//extern void R_DrawRect(RenderTarget *vs, r32 rmin_x, r32 rmin_y, 
+extern void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data);
+//extern void R_DrawRect(RenderTarget *rt, r32 rmin_x, r32 rmin_y, 
 //					   r32 rmax_x, r32 rmax_y,
 //					   byte color);
 

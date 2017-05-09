@@ -43,7 +43,7 @@ void R_SetupProjection(ViewSystem *vs) {
 
 // Gribb & Hartmann method
 void R_SetupFrustum(ViewSystem *vs) {
-	Plane frustum[4];
+	Plane frustum[NUM_FRUSTUM_PLANES];
 	r32	combo_matrix[4][4];
 	Mat4x4Mul(combo_matrix, vs->view_matrix, vs->projection_matrix);
 
@@ -68,6 +68,13 @@ void R_SetupFrustum(ViewSystem *vs) {
 	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = combo_matrix[2][1] + combo_matrix[2][3];
 	frustum[FRUSTUM_PLANE_BOTTOM].dist = combo_matrix[3][1] - combo_matrix[3][3];
 
+#if 0
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal[0] = combo_matrix[0][2] + combo_matrix[0][3];
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal[1] = combo_matrix[1][2] + combo_matrix[1][3];
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal[2] = combo_matrix[2][2] + combo_matrix[2][3];
+	frustum[FRUSTUM_PLANE_NEAR].dist = combo_matrix[3][2] - combo_matrix[3][3];
+	int y = 42;
+#endif
 	// FIXME: add near and far planes
 
 	// normalize
@@ -76,6 +83,7 @@ void R_SetupFrustum(ViewSystem *vs) {
 		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, vs->world_orientation.origin);
 	}
 
+	int x = 42;
 	memcpy(&vs->frustum, &frustum, sizeof(frustum));
 }
 
@@ -104,7 +112,6 @@ ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 		if (dist < 0.0f) {
 			//Sys_Print("Culling!!\n");
 			return CULL_OUT;
-			
 		} 
 	}
 

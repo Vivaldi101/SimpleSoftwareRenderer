@@ -82,7 +82,7 @@ Platform Com_Init() {
 	InitStackMemory(&pf.main_memory_stack.temp_data, MAX_TEMP_MEMORY);
 
 	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
-	pf.game_state->num_entities = (1 << 4);
+	pf.game_state->num_entities = (64);
 
 	pf.input_state = PushStruct(&pf.main_memory_stack.perm_data, Input);
 

@@ -170,8 +170,25 @@ union Vec2 {
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
 
+union Vec2i {
+	struct {	s32 x, y;		} v;
+	s32 data[2];
+
+	s32			&operator[](int i)			{ return data[i]; }
+	const s32	&operator[](int i) const	{ return data[i]; }
+};
+
 inline Vec2 MakeVec2(r32 x, r32 y) {
 	Vec2 v;
+
+	v[0] = x;
+	v[1] = y;
+
+	return v;
+}
+
+inline Vec2i MakeVec2i(s32 x, s32 y) {
+	Vec2i v;
 
 	v[0] = x;
 	v[1] = y;

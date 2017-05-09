@@ -154,7 +154,7 @@ static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color
 	r32 dxy_right = (r32)(x1 - x0) / (r32)(y1 - y0);
 
 	r32 xs = x0;
-	r32 xe = x0;
+	r32 xe = x0 + 1.0f;
 	xs = xs + ((cy0 - y0) * dxy_left);
 	xe = xe + ((cy0 - y0) * dxy_right);
 	for (int y = cy0; y <= cy2; ++y) {
@@ -178,7 +178,7 @@ static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r
 	r32 dxy_right = (r32)(x2 - x1) / (r32)(y2 - y1);
 
 	r32 xs = x0;
-	r32 xe = x1;
+	r32 xe = x1 + 1.0f;
 	xs = xs + ((cy0 - y0) * dxy_left);
 	xe = xe + ((cy0 - y0) * dxy_right);
 	for (int y = cy0; y <= cy2; ++y) {
@@ -188,7 +188,7 @@ static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r
 	}
 }
 
-void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, int width, int height, int num_polys) {
+static void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -199,30 +199,30 @@ void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int 
 		Vec3 v2 = polys[i].vertex_array[2];
 
 		R_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)v0.v.x,
-				   (int)v0.v.y,
-				   (int)v1.v.x,
-				   (int)v1.v.y,
+				   (int)(v0.v.x + 0.5f),
+				   (int)(v0.v.y + 0.5f),
+				   (int)(v1.v.x + 0.5f),
+				   (int)(v1.v.y + 0.5f),
 				   width, height);
 
 		R_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)v1.v.x,
-				   (int)v1.v.y,
-				   (int)v2.v.x,
-				   (int)v2.v.y,
+				   (int)(v1.v.x + 0.5f),
+				   (int)(v1.v.y + 0.5f),
+				   (int)(v2.v.x + 0.5f),
+				   (int)(v2.v.y + 0.5f),
 				   width, height);
 
 		R_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)v2.v.x,
-				   (int)v2.v.y,
-				   (int)v0.v.x,
-				   (int)v0.v.y,
+				   (int)(v2.v.x + 0.5f),
+				   (int)(v2.v.y + 0.5f),
+				   (int)(v0.v.x + 0.5f),
+				   (int)(v0.v.y + 0.5f),
 				   width, height);
 	}
 }
 
 #if 1
-void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, u32 pitch, int bpp, int width, int height, int num_polys) {
+void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -303,47 +303,47 @@ static void RB_ClearMemset(void *buffer, size_t size) {
 	memset(buffer, 0, size);
 }
 
-static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2 min_xy, Vec2 max_xy) {
-	BitBlt(hdc, (int)min_xy[0], (int)min_xy[1], (int)max_xy[0], (int)max_xy[1], hdc_dib, 0, 0, SRCCOPY);
+static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
+	BitBlt(hdc, min_xy[0], min_xy[1], max_xy[0], max_xy[1], hdc_dib, 0, 0, SRCCOPY);
 }
 
-static const void *RB_DrawMesh(const void *data) {
+static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	DrawPolyListCmd *cmd = (DrawPolyListCmd *)data;
 
 	if (cmd->is_wireframe) {
-		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->width, cmd->height, cmd->num_polys);
+		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	} else {
-		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, cmd->buffer, cmd->pitch, cmd->bpp, cmd->width, cmd->height, cmd->num_polys);
+		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	}
 
 	return (const void *)(cmd + 1);
 }
 
-static const void *RB_SwapBuffers(const void *data) {
+static const void *RB_SwapBuffers(RenderTarget *rt, const void *data) {
 	SwapBuffersCmd *cmd = (SwapBuffersCmd *)data;
-	RB_Blit(cmd->hdc, cmd->hdc_dib_section, MakeVec2(0.0f, 0.0f), MakeVec2((r32)cmd->width, (r32)cmd->height));
+	RB_Blit(cmd->hdc, cmd->hdc_dib_section, MakeVec2i(0, 0), MakeVec2i(rt->width, rt->height));
 
 	return (const void *)(cmd + 1);
 }
 
-static const void *RB_ClearBuffer(const void *data) {
+static const void *RB_ClearBuffer(RenderTarget *rt, const void *data) {
 	ClearBufferCmd *cmd = (ClearBufferCmd *)data;
-	RB_ClearMemset(cmd->buffer, cmd->size);
+	RB_ClearMemset(rt->buffer, cmd->size);
 
 	return (const void *)(cmd + 1);
 }
 
-void RB_ExecuteRenderCommands(const void *data) {
+void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data) {
 	for (;;) {
 		switch (*(const int *)data) {
 			case RCMD_CLEAR:
-				data = RB_ClearBuffer(data);
+				data = RB_ClearBuffer(rt, data);
 				break;
 			case RCMD_SWAP_BUFFERS:
-				data = RB_SwapBuffers(data);
+				data = RB_SwapBuffers(rt, data);
 				break;
 			case RCMD_MESH:
-				data = RB_DrawMesh(data);
+				data = RB_DrawMesh(rt, data);
 				break;
 			case RCMD_END_OF_CMDS:
 				return;

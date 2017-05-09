@@ -49,8 +49,8 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 
 	rs->front_end.current_view.fov_y = 90.0f;
 
-	rs->front_end.current_view.z_near = 50.0f;
-	rs->front_end.current_view.z_far = 500.0f;
+	rs->front_end.current_view.z_near = 10.0f;
+	rs->front_end.current_view.z_far = 1000.0f;
 
 	rs->front_end.current_view.viewport_width = rs->back_end.target->width;		
 	rs->front_end.current_view.viewport_height = rs->back_end.target->height;
