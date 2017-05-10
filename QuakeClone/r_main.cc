@@ -68,19 +68,22 @@ void R_SetupFrustum(ViewSystem *vs) {
 	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = combo_matrix[2][1] + combo_matrix[2][3];
 	frustum[FRUSTUM_PLANE_BOTTOM].dist = combo_matrix[3][1] - combo_matrix[3][3];
 
-#if 0
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal[0] = combo_matrix[0][2] + combo_matrix[0][3];
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal[1] = combo_matrix[1][2] + combo_matrix[1][3];
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal[2] = combo_matrix[2][2] + combo_matrix[2][3];
-	frustum[FRUSTUM_PLANE_NEAR].dist = combo_matrix[3][2] - combo_matrix[3][3];
+#if 1
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal[0] = combo_matrix[0][2];
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal[1] = combo_matrix[1][2];
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal[2] = combo_matrix[2][2];
+	frustum[FRUSTUM_PLANE_NEAR].dist = combo_matrix[3][2];
 	int y = 42;
 #endif
-	// FIXME: add near and far planes
 
 	// normalize
-	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
+	for (int i = 0; i < NUM_FRUSTUM_PLANES - 1; ++i) {
 		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
 		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, vs->world_orientation.origin);
+	}
+	for (int i = NUM_FRUSTUM_PLANES - 1; i < NUM_FRUSTUM_PLANES; ++i) {
+		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
+		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
 	}
 
 	int x = 42;

@@ -295,7 +295,7 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 		Com_Quit();
 	}
 
-	// Generate fonts
+	// generate fonts
 	hdc = GetDC(global_console.hwnd);
 	nheight = -MulDiv(8, GetDeviceCaps(hdc, LOGPIXELSY), 72);
 
@@ -316,7 +316,7 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 
 	ReleaseDC(global_console.hwnd, hdc);
 	
-	// Create the input line
+	// create the input line
 	global_console.hwnd_inputline = CreateWindow("edit", 0, WS_CHILD | WS_VISIBLE | WS_BORDER | 
 												 ES_LEFT | ES_AUTOHSCROLL,
 												 6, 400, 528, 20,
@@ -324,7 +324,7 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 												 (HMENU)INPUT_ID,	// child input line window ID
 												 hinstance, 0);
 
-	// Create the scrollbuffer
+	// create the scrollbuffer
 	global_console.hwnd_buffer = CreateWindow("edit", 0, WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | 
 											  ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY,
 											  6, 40, 526, 354,
@@ -334,7 +334,6 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 }
 
 // FIXME: bind the console into hotkey
-// FIXME: vis_level into an enum
 void Sys_FetchConsole(ConVisibility vis_level, b32 quit_on_close) {
 	if (!global_console.hwnd) {
 		return;

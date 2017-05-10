@@ -47,8 +47,6 @@ enum EntityTypeEnum {
 	EntityType_invalid,
 	EntityType_player,
 	EntityType_cube,
-	EntityType_tower,
-	EntityType_slider,
 	MAX_NUM_ENTITY_TYPES
 };
 
@@ -56,8 +54,6 @@ static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
 	"invalid",
 	"player",
 	"cube",
-	"tower",
-	"slider"
 };
 
 struct Entity {
@@ -145,7 +141,7 @@ extern void Sys_Print(const char *msg);
 
 // Timing
 extern int Sys_GetMilliseconds();
-static inline int Com_ModifyFrameMsec(int frame_msec);
+//static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
 extern Platform Com_Init();

@@ -82,7 +82,7 @@ Platform Com_Init() {
 	InitStackMemory(&pf.main_memory_stack.temp_data, MAX_TEMP_MEMORY);
 
 	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
-	pf.game_state->num_entities = (64);
+	pf.game_state->num_entities = (32);
 
 	pf.input_state = PushStruct(&pf.main_memory_stack.perm_data, Input);
 
@@ -92,16 +92,14 @@ Platform Com_Init() {
 void Com_LoadEntities(Platform *pf) {
 	// FIXME: testing entity stuff!!
 	// FIXME: asset streaming
-	FileInfo cube_assets = {};
 	Entity common_ent = {};
+	common_ent.type_enum = EntityType_player;
+	FileInfo cube_assets = pf->file_ptrs.read_file("cube1.plg");
 	int num_entities = pf->game_state->num_entities;
-
-	cube_assets = pf->file_ptrs.read_file("cube1.plg");
 
 	// FIXME: testing!!
 	// FIXME: 0 hardcoded for player for now
-	common_ent.type_enum = EntityType_player;
-	PLG_LoadMesh(&common_ent, cube_assets.data, cube_assets.size);
+	Assert(PLG_LoadMesh(&common_ent, cube_assets.data, cube_assets.size));
 	memcpy(&pf->game_state->entities[0], &common_ent, sizeof(Entity));
 	pf->game_state->entities[0].type_enum = EntityType_player;
 
@@ -130,6 +128,15 @@ static void ResetEntities(RendererBackend *rb) {
 static void ProcessEvent(SysEvent se) {
 }
 
+static int Com_ModifyFrameMsec(int frame_msec) {
+	int clamped_msec = (int)(MSEC_PER_SIM + MSEC_PER_SIM);
+	if (frame_msec > clamped_msec) {
+		frame_msec = clamped_msec;
+	}
+
+	return frame_msec;
+}
+
 static void Com_RunEventLoop() {
 	SysEvent se;
 
@@ -145,7 +152,6 @@ static void Com_RunEventLoop() {
 	}
 }
 
-// FIXME: pass only camera information rather than the renderer frontend
 static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entities, Entity *ents, Input *in, ViewSystem *current_view) {
 	// test stuff
 	static r32 rot_mat_y[3][3];
@@ -393,7 +399,6 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		//if (frame_msec > 0.016f) {
 		R_EndFrame(rs->back_end.target, &rs->back_end.cmds);
 
-		// FIXME: move these into ending routine
 		ResetEntities(&rs->back_end);
 		//}
 
@@ -452,14 +457,6 @@ SysEvent Com_GetEvent() {
 	return Sys_GetEvent();
 }
 
-static int Com_ModifyFrameMsec(int frame_msec) {
-	int clamped_msec = (int)(MSEC_PER_SIM + MSEC_PER_SIM);
-	if (frame_msec > clamped_msec) {
-		frame_msec = clamped_msec;
-	}
-
-	return frame_msec;
-}
 
 
 /*

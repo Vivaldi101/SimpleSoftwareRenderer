@@ -41,7 +41,7 @@ enum {
 	FRUSTUM_PLANE_RIGHT,
 	FRUSTUM_PLANE_TOP,
 	FRUSTUM_PLANE_BOTTOM,
-	//FRUSTUM_PLANE_NEAR,
+	FRUSTUM_PLANE_NEAR,
 	//FRUSTUM_PLANE_FAR,
 
 	NUM_FRUSTUM_PLANES
@@ -74,7 +74,7 @@ struct ViewSystem {
 	r32				fov_x, fov_y;
 	r32				view_dist;	
 
-	Plane			frustum[NUM_FRUSTUM_PLANES];			// order of left, right, top, bottom, FIXME: add near and far z
+	Plane			frustum[NUM_FRUSTUM_PLANES];			// order of left, right, top, bottom, FIXME: far z
 	r32				z_far, z_near;
 
 	r32				aspect_ratio;
@@ -114,7 +114,7 @@ extern RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc);
 
 extern void R_BeginFrame(RenderTarget *rt, RenderCommands *rc);
 extern void R_EndFrame(RenderTarget *rt, RenderCommands *rc);
-extern void R_PushBitmapCmd(RenderTarget *rt, RenderCommands *rc, Dim2d d2, Vec4 color);
+extern void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Dim2d d2, Vec4 color, Vec2 origin);
 extern void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
 
 extern void R_RenderView(ViewSystem *vs);
@@ -128,7 +128,7 @@ extern void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_vert
 extern void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
 
 extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts);
-ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 0.0f);
+ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 1.0f);
 extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys);
 extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_polys);
 
@@ -137,9 +137,9 @@ extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array,
 //	Renderer backend
 //
 extern void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data);
-//extern void R_DrawRect(RenderTarget *rt, r32 rmin_x, r32 rmin_y, 
-//					   r32 rmax_x, r32 rmax_y,
-//					   byte color);
+extern void R_DrawRect(RenderTarget *rt, r32 rmin_x, r32 rmin_y, 
+					   r32 rmax_x, r32 rmax_y,
+					   byte color);
 
 
 #endif	// Header guard

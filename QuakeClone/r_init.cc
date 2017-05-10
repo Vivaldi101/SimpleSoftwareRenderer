@@ -9,8 +9,6 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 
 	// init backend
 	rs->back_end.target = PushStruct(&pf->main_memory_stack.perm_data, RenderTarget);
-	// for 8bpp testing
-	//rs->back_end.rt->colormap = PushArray(&pf->main_memory_stack.perm_data, 256 * 64, byte);
 
 	Assert(MAX_NUM_POLYS < 0xffff);
 	rs->back_end.polys = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
@@ -49,7 +47,7 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 
 	rs->front_end.current_view.fov_y = 90.0f;
 
-	rs->front_end.current_view.z_near = 10.0f;
+	rs->front_end.current_view.z_near = 30.0f;
 	rs->front_end.current_view.z_far = 1000.0f;
 
 	rs->front_end.current_view.viewport_width = rs->back_end.target->width;		

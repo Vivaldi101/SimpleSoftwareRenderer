@@ -7,7 +7,7 @@
 #define RIGHT	 2	
 #define BOTTOM	 4	
 #define TOP		 8  
-static int R_GetLineClipCode(int x, int y, int width, int height) {
+static int RB_GetLineClipCode(int x, int y, int width, int height) {
 	int code = INSIDE;												
 
 	if (x < 0) {													
@@ -25,9 +25,9 @@ static int R_GetLineClipCode(int x, int y, int width, int height) {
 }
 
 // FIXME: pack the points into structures
-static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int y0, int x1, int y1, int width, int height) {
-	int outcode0 = R_GetLineClipCode(x0, y0, width, height);
-	int outcode1 = R_GetLineClipCode(x1, y1, width, height);
+static void RB_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int y0, int x1, int y1, int width, int height) {
+	int outcode0 = RB_GetLineClipCode(x0, y0, width, height);
+	int outcode1 = RB_GetLineClipCode(x1, y1, width, height);
 	b32 accept = false;
 
 	for (;;) {
@@ -65,11 +65,11 @@ static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int 
 			if (chosen_code == outcode0) {
 				x0 = (int)x;
 				y0 = (int)y;
-				outcode0 = R_GetLineClipCode(x0, y0, width, height);
+				outcode0 = RB_GetLineClipCode(x0, y0, width, height);
 			} else {
 				x1 = (int)x;
 				y1 = (int)y;
-				outcode1 = R_GetLineClipCode(x1, y1, width, height);
+				outcode1 = RB_GetLineClipCode(x1, y1, width, height);
 			}
 		}
 	}
@@ -142,7 +142,7 @@ static void R_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int 
 
 #if 1
 // FIXME: pack the points into structures
-static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
+static void RB_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
 	r32 t = x1;
 	x1 = (x1 < x2) ? x2 : x1;
 	x2 = (t < x2) ? t : x2;
@@ -158,7 +158,7 @@ static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color
 	xs = xs + ((cy0 - y0) * dxy_left);
 	xe = xe + ((cy0 - y0) * dxy_right);
 	for (int y = cy0; y <= cy2; ++y) {
-		R_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
+		RB_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
 		xs += dxy_left;
 		xe += dxy_right;
 	}
@@ -166,7 +166,7 @@ static void R_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color
 #endif
 
 // FIXME: pack the points into structures
-static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
+static void RB_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
 	r32 t = x1;
 	x1 = (x1 < x0) ? x0 : x1;
 	x0 = (t < x0) ? t : x0;
@@ -182,13 +182,13 @@ static void R_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r
 	xs = xs + ((cy0 - y0) * dxy_left);
 	xe = xe + ((cy0 - y0) * dxy_right);
 	for (int y = cy0; y <= cy2; ++y) {
-		R_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
+		RB_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
 		xs += dxy_left;
 		xe += dxy_right;
 	}
 }
 
-static void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -198,21 +198,21 @@ static void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitc
 		Vec3 v1 = polys[i].vertex_array[1];
 		Vec3 v2 = polys[i].vertex_array[2];
 
-		R_DrawLine(buffer, pitch, bpp, polys[i].color,
+		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
 				   (int)(v0.v.x + 0.5f),
 				   (int)(v0.v.y + 0.5f),
 				   (int)(v1.v.x + 0.5f),
 				   (int)(v1.v.y + 0.5f),
 				   width, height);
 
-		R_DrawLine(buffer, pitch, bpp, polys[i].color,
+		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
 				   (int)(v1.v.x + 0.5f),
 				   (int)(v1.v.y + 0.5f),
 				   (int)(v2.v.x + 0.5f),
 				   (int)(v2.v.y + 0.5f),
 				   width, height);
 
-		R_DrawLine(buffer, pitch, bpp, polys[i].color,
+		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
 				   (int)(v2.v.x + 0.5f),
 				   (int)(v2.v.y + 0.5f),
 				   (int)(v0.v.x + 0.5f),
@@ -222,7 +222,7 @@ static void R_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitc
 }
 
 #if 1
-void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -267,16 +267,14 @@ void R_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp,
 		// split the triangle into 2 parts
 		r32 m = (y2 - y0) / (x2 - x0);
 		r32 x = (y1 - y0) / m + x0;
-		R_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x, y1, x1, y1, width, height);
-		R_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
+		RB_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x, y1, x1, y1, width, height);
+		RB_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
 	}
 }
 #endif
 
 #if 0
-void R_DrawRect(VidSystem *vs, r32 rmin_x, r32 rmin_y, 
-				r32 rmax_x, r32 rmax_y,
-				byte color) {
+void RB_DrawRect(byte *buffer, int pitch, int bpp, int width, int height) {
 	s32 min_x = roundReal32ToS32(rmin_x);
 	s32 min_y = roundReal32ToS32(rmin_y);
 
@@ -311,10 +309,25 @@ static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	DrawPolyListCmd *cmd = (DrawPolyListCmd *)data;
 
 	if (cmd->is_wireframe) {
-		R_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+		RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	} else {
-		R_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+		RB_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	}
+
+	return (const void *)(cmd + 1);
+}
+
+static void RB_DrawFont() {
+}
+
+static const void *RB_DrawRect(RenderTarget *rt, const void *data) {
+	DrawRectCmd *cmd = (DrawRectCmd *)data;
+
+	if (cmd->type == RECT_FONT) {
+		// render fonts
+		RB_DrawFont();
+	}
+
 
 	return (const void *)(cmd + 1);
 }
@@ -341,6 +354,9 @@ void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data) {
 				break;
 			case RCMD_SWAP_BUFFERS:
 				data = RB_SwapBuffers(rt, data);
+				break;
+			case RCMD_RECT:
+				data = RB_DrawRect(rt, data);
 				break;
 			case RCMD_MESH:
 				data = RB_DrawMesh(rt, data);

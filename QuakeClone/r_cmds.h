@@ -5,14 +5,23 @@
 enum RenderCommandEnum {
 	RCMD_CLEAR,
 	RCMD_SWAP_BUFFERS,
-	RCMD_BITMAP,
+	RCMD_RECT,
 	RCMD_MESH,
 	RCMD_END_OF_CMDS
 };
 
-struct RenderBasis {
+enum RectTypeEnum {
+	RECT_FONT
+};
+
+struct RenderBasis3d {
 	Vec3	axis[3];			
 	Vec3	origin;
+};
+
+struct RenderBasis2d {
+	Vec2	axis[2];			
+	Vec2	origin;
 };
 
 struct RenderCommands {
@@ -21,11 +30,13 @@ struct RenderCommands {
 	size_t	used_buffer_size;
 };
 
-struct DrawBitmapCmd {
-	int		cmd_id;
-	byte *	data;		
-	u32		color;		
-	Dim2d	d2;
+struct DrawRectCmd {
+	int				cmd_id;
+	RenderBasis2d	basis;
+	byte *			data;		
+	u32				color;		
+	Dim2d			d2;
+	RectTypeEnum	type;
 };
 
 struct DrawPolyListCmd {

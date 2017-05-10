@@ -58,7 +58,6 @@ static ptrdiff_t PLG_ReadLine(char *buffer, const void *load_data, u32 load_data
 // FIXME: check for sscanf_s over/underflows
 b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
-	//const char *parsed_string = 0;
 	int local_verts_offset = 0;
 	int polys_offset = 0;
 	ptrdiff_t load_data_index = 0;
@@ -69,7 +68,7 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 	//typeless_ent->status.state = POLY_STATE_ACTIVE | POLY_STATE_VISIBLE;
 
 	// get the object description
-	if (!(load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index))) {
+	if ((load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index)) == 1) {
 		Sys_Print("\nError while reading lines from an opened PLG file, it should be a name of the mesh to be loaded,"
 				  "number of verts and number polys");
 		return false;
@@ -103,7 +102,7 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 	int num_verts = typeless_ent->status.num_verts;
 
 	for (int i = 0; i < num_verts; ++i) {
-		if (!(load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index))) {
+		if ((load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index)) == 1) {
 			Sys_Print("\nError while reading lines from an opened PLG file, it should be a vertex in the x y z order");
 			return false;
 		}
@@ -122,9 +121,6 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 		local_vertex_array[i][2] = v0;
 	}
 
-
-	// FIXME: compute the avg and max radius for mesh object here
-
 	int poly_num_verts = 0;
 
 	u32 poly_surface_desc = 0;
@@ -133,7 +129,7 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 	Poly *poly_array = (Poly *)((byte *)typeless_ent + polys_offset);  
 	int num_polys = typeless_ent->status.num_polys;
 	for (int i = 0; i < num_polys; ++i) {
-		if (!(load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index))) {
+		if ((load_data_index = PLG_ReadLine(buffer, load_data, load_data_len, load_data_index)) == 1) {
 			Sys_Print("\nError while reading lines from an opened PLG file," 
 					  "it should be a 32 bit value in the form of PLG/X format: AA | RR| GG | BB");
 			return false;
