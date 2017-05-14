@@ -17,7 +17,7 @@ Debug_ReadFile(DebugReadFile) {
 	if (fh != INVALID_HANDLE_VALUE) {
 		LARGE_INTEGER file_size;
 		if (GetFileSizeEx(fh, &file_size)) {
-			u32 file_size_32 = truncateI64(file_size.QuadPart);
+			u32 file_size_32 = TruncateI64(file_size.QuadPart);
 			fi.data = VirtualAlloc(0, file_size_32, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 			if (fi.data) {
 				DWORD bytes_read = 0;

@@ -1,5 +1,6 @@
 #include "common.h"
 #include "r_cmds.h"
+#include "renderer.h"
 #include "plg_loader.h"
 #include "lights.h"
 
@@ -65,24 +66,36 @@ COMMON
 ==============================================================
 */
 
+inline static int MapAsciiToTTF(char c) {
+	int result = c - 65;
+	Assert(result >= 0 && result <= 25);
+
+	return result;
+}
+
 static r32 global_game_time_residual;
 static int global_game_frame;
 
 static r32 yaw = 0.0f;
 Platform Com_Init() {
-	Platform pf = {};
-
 	Sys_Init();
+	Platform pf = {};
+	InitStackMemory(&pf.main_memory_stack.perm_data, MAX_PERM_MEMORY);
+	InitStackMemory(&pf.main_memory_stack.temp_data, MAX_TEMP_MEMORY);
+
 	pf.file_ptrs.free_file = DebugFreeFile;
 	pf.file_ptrs.read_file = DebugReadFile;
 	pf.file_ptrs.write_file = DebugWriteFile;
 
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
-	InitStackMemory(&pf.main_memory_stack.perm_data, MAX_PERM_MEMORY);
-	InitStackMemory(&pf.main_memory_stack.temp_data, MAX_TEMP_MEMORY);
-
 	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
 	pf.game_state->num_entities = (32);
+	FileInfo ttf_file = pf.file_ptrs.read_file("C:/Windows/Fonts/arial.ttf");
+
+	for (int i = 'A'; i <= 'Z'; ++i) {
+		pf.game_state->test_font[MapAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.perm_data, &ttf_file, i);
+	}
+	pf.file_ptrs.free_file(&ttf_file);
 
 	pf.input_state = PushStruct(&pf.main_memory_stack.perm_data, Input);
 
@@ -113,14 +126,13 @@ void Com_LoadEntities(Platform *pf) {
 	pf->file_ptrs.free_file(&cube_assets);
 }
 
-static void ResetEntities(RendererBackend *rb) {
+static void ClearRenderState(RendererBackend *rb) {
 	int num_polys = rb->num_polys;
-	// clear mesh states
 	for (int j = 0; j < num_polys; ++j) {
 		rb->polys[j].state &= (~POLY_STATE_BACKFACE);
+		rb->polys[j].state &= (~POLY_STATE_LIT);
 		rb->polys[j].state &= (~CULL_OUT);
 	}
-	// reset poly arrays
 	rb->num_polys = 0;
 	rb->num_verts = 0;
 }
@@ -155,13 +167,15 @@ static void Com_RunEventLoop() {
 static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entities, Entity *ents, Input *in, ViewSystem *current_view) {
 	// test stuff
 	static r32 rot_mat_y[3][3];
+	static r32 sim_dt = 0.0f;
+	sim_dt += dt;
 	// FIXME: add matrix returning routines
 	rot_mat_y[1][0] = 0.0f;
 	rot_mat_y[1][1] = 1.0f;
 	rot_mat_y[1][2] = 0.0f;
 
 	// FIXME: scaling of the world
-	r32 speed = 500.0f;
+	r32 speed = 600.0f;
 
 	for (int i = 0; i < num_frames; ++i) {
 		for (int j = 0; j < num_entities; ++j) {
@@ -173,7 +187,6 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					acc = acc * 1.0f;
 				}
 				if (in->keys['A'].down) {
-					yaw -= 3.0f;
 					// FIXME: add matrix returning routines
 					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
 					rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
@@ -181,11 +194,13 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					rot_mat_y[2][0] = -rot_mat_y[0][2];
 					rot_mat_y[2][2] = rot_mat_y[0][0];
 
-					current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-					current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-
-					for (int i = 0; i < ents[0].status.num_verts; ++i) {
-						Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+					if (sim_dt > (1.0f / 60.0f)) {
+						yaw -= 3.0f;
+						current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+						current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+						for (int i = 0; i < ents[0].status.num_verts; ++i) {
+							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+						}
 					}
 				}
 				if (in->keys['S'].down) {
@@ -193,7 +208,6 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					acc = acc * (-1.0f);
 				}
 				if (in->keys['D'].down) {
-					yaw += 3.0f;
 					// FIXME: add matrix returning routines
 					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
 					rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
@@ -201,11 +215,13 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					rot_mat_y[2][0] = -rot_mat_y[0][2];
 					rot_mat_y[2][2] = rot_mat_y[0][0];
 
-					current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-					current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-
-					for (int i = 0; i < ents[0].status.num_verts; ++i) {
-						Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+					if (sim_dt > (1.0f / 60.0f)) {
+						yaw += 3.0f;
+						current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
+						current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
+						for (int i = 0; i < ents[0].status.num_verts; ++i) {
+							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+						}
 					}
 				}
 				if (in->keys[ENTER_KEY].released) {
@@ -236,10 +252,13 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 			} 
 		}
 	}
+	if (sim_dt > (1.0f / 60.0f)) {
+		sim_dt -= (1.0f / 60.0f);
+	}
 }
 
 #if 1
-void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
+void Com_RunFrame(Platform *pf, Renderer *rs) {
 	Entity *entities = pf->game_state->entities;
 
 	Sys_GenerateEvents();
@@ -253,7 +272,6 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 		rs->front_end.is_ambient = (AmbientState)(!rs->front_end.is_ambient);
 	}
 
-	// FIXME: no event processing is being done atm 
 	Com_RunEventLoop();
 
 	static b32 first_run = true;
@@ -327,10 +345,11 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	//if (rs->front_end.is_view_changed || first_run) {
 	R_RenderView(&rs->front_end.current_view);
 	//}
-	R_BeginFrame(rs->back_end.target, &rs->back_end.cmds);
+	R_BeginFrame(&rs->back_end.target, &rs->back_end.cmds);
 
 	int num_entities = pf->game_state->num_entities;
-	Vec3 *local_verts = 0, *trans_verts = 0;
+	Vec3 *local_verts = 0; 
+	Vec3 *trans_verts = 0;
 	Poly *polys = 0;
 	// FIXME: rethink on this style of vert transforms
 	for (int i = 0; i < num_entities; ++i) {
@@ -382,12 +401,19 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 
-	R_PushPolysCmd(rs->back_end.target, 
+	R_PushPolysCmd(&rs->back_end.target, 
 				  &rs->back_end.cmds,
 				  rs->back_end.polys,
 				  rs->back_end.poly_verts,
 				  rs->back_end.num_polys,
 				  rs->front_end.is_wireframe);
+
+	// font testing
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "WASD TO MOVE", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 20.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "SPACE TO TOGGLE WIREFRAME MODE", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 40.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "ENTER TO CENTER THE PLAYER", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 60.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "L TO TOGGLE AMBIENT LIGHTING", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 80.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "ESC TO EXIT", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 100.0f));
 
 	{
 		static int last_time = Sys_GetMilliseconds();
@@ -397,9 +423,9 @@ void Com_RunFrame(Platform *pf, RenderingSystem *rs) {
 
 		// FIXME: v-sync when switching to hw-accelerated rendering
 		//if (frame_msec > 0.016f) {
-		R_EndFrame(rs->back_end.target, &rs->back_end.cmds);
+		R_EndFrame(&rs->back_end.target, &rs->back_end.cmds);
 
-		ResetEntities(&rs->back_end);
+		ClearRenderState(&rs->back_end);
 		//}
 
 		char buffer[64];
@@ -486,6 +512,23 @@ void StrCopyLen(char *dst, const char* src, size_t len) {
 		;
 }
 
+Bitmap MakeBitmap(MemoryStack *ms, int width, int height) {
+	Bitmap result = {};
+	result.dim[0] = width;
+	result.dim[1] = height;
+	result.data = PushArray(ms, BYTES_PER_PIXEL * width * height, byte);
+
+	return result;
+}
+
+u32 PackRGBA(Vec4 color) {
+	u32 result = (RoundReal32ToU32(color.c.a * 255.0f) << 24 |
+				  RoundReal32ToU32(color.c.r * 255.0f) << 16 |
+				  RoundReal32ToU32(color.c.g * 255.0f) << 8  |
+				  RoundReal32ToU32(color.c.b * 255.0f));
+
+	return result;
+}
 
 
 

@@ -13,9 +13,10 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 	int num_lights = rb->num_lights;
 	for (int i = 0; i < num_polys; ++i) {
 		u32 color = 0;
-		if (!(rb->polys[i].state & POLY_STATE_ACTIVE)) {
+		if ((rb->polys[i].state & POLY_STATE_BACKFACE) || (rb->polys[i].state & POLY_STATE_LIT) || !(rb->polys[i].state & POLY_STATE_ACTIVE)) {
 			continue;
 		}
+		rb->polys[i].state = POLY_STATE_LIT;
 
 		base.c.a = (r32)(((rb->polys[i].color & 0xff000000) >> 24 ) / 255.0f);
 		base.c.r = (r32)(((rb->polys[i].color & 0xff0000) >> 16 ) / 255.0f);
@@ -42,14 +43,14 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 			Vec3 u = MakeVec3(v0, v1);
 			Vec3 v = MakeVec3(v0, v2);
-			Vec3 n = Vec3Cross(u, v);
+			Vec3 n = Cross3(u, v);
 
 			Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0, Vec3Norm(camera_pos)) : MakeVec3(v0, lights[j].pos); 
 			r32 llen = Vec3Len(l);
 			l = Vec3Norm(l);
 
 			r32 atten = (lights[j].flags & POINT_LIGHT || lights[j].flags & SPOT_LIGHT) ? (1.0f / (lights[j].kc + (lights[j].kl * ABS(llen)) + (lights[j].kq * Square(ABS(llen))))) : 1;
-			r32 spot = (lights[j].flags & SPOT_LIGHT) ? (MAX(pow(Vec3Dot(Vec3Norm(camera_dir), -l), 32), 0.0f)) : 1.0f;
+			r32 spot = (lights[j].flags & SPOT_LIGHT) ? (MAX(pow(Dot3(Vec3Norm(camera_dir), -l), 32), 0.0f)) : 1.0f;
 
 			r32 nlen = Vec3Len(n);
 			n = Vec3Norm(n);
@@ -59,7 +60,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 
 			// diffuse component
-			r32 dot = MAX(Vec3Dot(n, l), 0.0f);
+			r32 dot = MAX(Dot3(n, l), 0.0f);
 			diffuse.c.a = base.c.a * lights[j].diffuse.c.a;
 			diffuse.c.r = base.c.r * lights[j].diffuse.c.r;
 			diffuse.c.g = base.c.g * lights[j].diffuse.c.g;
@@ -68,7 +69,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 			// specular component
 			Vec3 h = l + view;
-			dot = MAX(pow(Vec3Dot(n, h), 3), 0.0f);
+			dot = MAX(pow(Dot3(n, h), 3), 0.0f);
 			specular.c.a = base.c.a * lights[j].specular.c.a;
 			specular.c.r = base.c.r * lights[j].specular.c.r;
 			specular.c.g = base.c.g * lights[j].specular.c.g;
@@ -82,10 +83,10 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			total.c.g = MIN(total.c.g, 1.0f);
 			total.c.b = MIN(total.c.b, 1.0f);
 
-			color += (roundReal32ToU32(total.c.a * 255.0f) << 24 |
-					 roundReal32ToU32(total.c.r * 255.0f) << 16 |
-					 roundReal32ToU32(total.c.g * 255.0f) << 8  |
-					 roundReal32ToU32(total.c.b * 255.0f));
+			color += (RoundReal32ToU32(total.c.a * 255.0f) << 24 |
+					 RoundReal32ToU32(total.c.r * 255.0f) << 16 |
+					 RoundReal32ToU32(total.c.g * 255.0f) << 8  |
+					 RoundReal32ToU32(total.c.b * 255.0f));
 			 
 		}
 

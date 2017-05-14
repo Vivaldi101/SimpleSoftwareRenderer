@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include "win_r.h"
 
+#if 0
 // sample a 24-bit RGB value to one of the colours on the existing 8-bit palette
 static int Convert24To8(const byte palette[256*3], const int rgb[3]) {
 	int best_index = -1;
@@ -48,6 +49,7 @@ static void GenerateColormap(const byte palette[256*3], byte out_colormap[256*64
 		}
 	}
 }
+#endif
 
 
 static HGDIOBJ	global_previously_selected_GDI_obj;

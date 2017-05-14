@@ -3,6 +3,11 @@
 
 #include "shared.h"
 
+struct Bitmap {
+	Vec2i	dim;
+	byte *	data;		
+};
+
 struct Poly {
 	Vec3 *		vertex_array;	
 	u16			vert_indices[3];
@@ -11,10 +16,6 @@ struct Poly {
 	u32			color;	// rgba, packed
 };
 
-struct Bitmap {
-	Dim2d	d2;
-	u32		color;		// rgba, packed
-};
 
 //struct Vert {
 //	Vec3	model_space_pos;     // xyz

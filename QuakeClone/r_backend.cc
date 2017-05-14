@@ -1,6 +1,14 @@
 #include "r_cmds.h"
 #include "renderer.h"
 
+// FIXME: make into a macro
+inline static int MapAsciiToTTF(char c) {
+	int result = c - 65;
+	Assert(result >= 0 && result <= 25);
+
+	return result;
+}
+
 // Cohen-Sutherland clipping constants
 #define INSIDE	 0	
 #define LEFT	 1	
@@ -273,30 +281,6 @@ static void RB_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, 
 }
 #endif
 
-#if 0
-void RB_DrawRect(byte *buffer, int pitch, int bpp, int width, int height) {
-	s32 min_x = roundReal32ToS32(rmin_x);
-	s32 min_y = roundReal32ToS32(rmin_y);
-
-	s32 max_x = roundReal32ToS32(rmax_x);
-	s32 max_y = roundReal32ToS32(rmax_y);
-
-	u32 pitch	= vs->pitch;
-	int bpp		= vs->bpp;
-
-	byte *start = vs->buffer;
-	byte *ptr = start + (pitch * min_y) + (min_x * bpp);	
-
-	for (int i = min_y; i < max_y; ++i){
-		byte *pixel	= ptr;
-		for (int j = min_x; j < max_x; ++j) {
-			*pixel++ = color;
-		}
-		ptr += pitch;
-	}
-}
-#endif
-
 static void RB_ClearMemset(void *buffer, size_t size) {
 	memset(buffer, 0, size);
 }
@@ -306,7 +290,7 @@ static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
 }
 
 static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
-	DrawPolyListCmd *cmd = (DrawPolyListCmd *)data;
+	DrawPolyCmd *cmd = (DrawPolyCmd *)data;
 
 	if (cmd->is_wireframe) {
 		RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
@@ -317,17 +301,89 @@ static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	return (const void *)(cmd + 1);
 }
 
-static void RB_DrawFont() {
+#if 0
+static void RB_DrawFilledRect(RenderTarget *rt, Bitmap *bm, Vec2 origin, Vec2 x, Vec2 y) {
+	Vec2 points[4] = {origin, origin + x, origin + y, origin + x + y};
+	s32 min_x = SINT32_MAX, min_y = SINT32_MAX, max_x = SINT32_MIN, max_y = SINT32_MIN;
+	int pitch = rt->pitch;
+	byte *src = bm->data, *dst = 0;
+	u32 *src_pixel = (u32 *)src;
+
+	for (int i = 0; i < 4; ++i) {
+		s32 floor_x = (s32)floor(points[i][0]);
+		s32 floor_y = (s32)floor(points[i][1]);
+		s32 ceil_x = (s32)ceil(points[i][0]);
+		s32 ceil_y = (s32)ceil(points[i][1]);
+
+		min_x = (min_x > floor_x) ? floor_x : min_x;
+		min_y = (min_y > floor_y) ? floor_y : min_y;
+
+		max_x = (max_x < ceil_x) ? ceil_x : max_x;
+		max_y = (max_y < ceil_y) ? ceil_y : max_y;
+	}
+	Assert(min_x >= 0 && min_y >= 0 && max_x <= rt->width && max_y <= rt->height);
+	dst = rt->buffer + (pitch * min_y) + (min_x * rt->bpp);	
+
+	for (int i = min_y; i < max_y; ++i){
+		u32 *dst_pixel = (u32 *)dst;
+		for (int j = min_x; j < max_x; ++j) {
+			Vec2 p = {(r32)j, (r32)i};
+			r32 edge0 = Dot2(-Perp(x), p - origin);
+			r32 edge1 = Dot2(Perp(y), p - (origin + y));
+			r32 edge2 = Dot2(Perp(x), p - (origin + x + y));
+			r32 edge3 = Dot2(-Perp(y), p - (origin + x));
+
+			if (edge0 <= 0.0f && edge1 <= 0.0f && edge2 <= 0.0f && edge3 <= 0.0f) {
+				*dst_pixel = 255 << 8;
+			} else {
+				//*dst_pixel = 255 << 0;
+			}
+			++dst_pixel;
+		}
+		dst += pitch;
+	}
+}
+#endif
+
+static void RB_DrawChar(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
+	int w = bm->dim[0];
+	int h = bm->dim[1];
+	Assert(w < rt->width && h < rt->height);
+	Assert(origin[0] >= 0 && origin[1] >= 0 && (origin[0] + w) < rt->width && (origin[1] + h) < rt->height);
+
+	int pitch = rt->pitch;
+	byte *src = bm->data;
+	byte *dst = rt->buffer + (pitch * (int)(origin[1] + 0.5f)) + ((int)(origin[0] + 0.5f) * rt->bpp);	
+	u32 *src_pixel = (u32 *)src;
+
+	for (int i = 0; i < h; ++i){
+		u32 *dst_pixel = (u32 *)dst;
+		for (int j = 0; j < w; ++j) {
+			*dst_pixel++ = (*src_pixel & 0x0000ff00);
+			++src_pixel;
+		}
+		dst += pitch;
+	}
 }
 
 static const void *RB_DrawRect(RenderTarget *rt, const void *data) {
 	DrawRectCmd *cmd = (DrawRectCmd *)data;
+	//RB_DrawFilledRect(rt, &cmd->bitmap, cmd->basis.origin, cmd->basis.axis[0], cmd->basis.axis[1]);
 
-	if (cmd->type == RECT_FONT) {
-		// render fonts
-		RB_DrawFont();
+	return (const void *)(cmd + 1);
+}
+
+static const void *RB_DrawText(RenderTarget *rt, const void *data) {
+	DrawTextCmd *cmd = (DrawTextCmd *)data;
+	Vec2 o = cmd->basis.origin;
+	for (char i = *cmd->text; i; i = *++cmd->text) {
+		if (i != ' ') {
+			RB_DrawChar(rt, &cmd->bitmap[MapAsciiToTTF(i)], o);
+			o[0] += cmd->bitmap[MapAsciiToTTF(i)].dim[0];
+		} else {
+			o[0] += 10.0f;
+		}
 	}
-
 
 	return (const void *)(cmd + 1);
 }
@@ -357,6 +413,9 @@ void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data) {
 				break;
 			case RCMD_RECT:
 				data = RB_DrawRect(rt, data);
+				break;
+			case RCMD_TEXT:
+				data = RB_DrawText(rt, data);
 				break;
 			case RCMD_MESH:
 				data = RB_DrawMesh(rt, data);

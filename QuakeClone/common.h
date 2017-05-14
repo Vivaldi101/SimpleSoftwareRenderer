@@ -97,6 +97,8 @@ struct Entity {
 struct GameState {
 	Entity 		entities[MAX_NUM_ENTITIES];
 	int			num_entities;
+
+	Bitmap		test_font[MAX_NUM_GLYPHS];
 };
 
 struct StackAllocator {
@@ -146,7 +148,7 @@ extern int Sys_GetMilliseconds();
 // Common
 extern Platform Com_Init();
 extern void Com_LoadEntities(Platform *pf);
-extern void Com_RunFrame(Platform *pf, struct RenderingSystem *rs);
+extern void Com_RunFrame(Platform *pf, struct Renderer *rs);
 extern void Com_Quit();
 
 // Events
@@ -162,6 +164,9 @@ extern void IN_ClearKeys(Input *in);
 extern int StrCmp(const char* a, const char* b);
 
 // Fonts
+extern Bitmap TTF_Init(MemoryStack *ms, const FileInfo *ttf_file, int code_point);
 
-extern void TTF_Init(FileIO *fio);
+// Misc
+extern Bitmap MakeBitmap(MemoryStack *ms, int width, int height);
+extern u32 PackRGBA(Vec4 color);
 #endif	// Header guard

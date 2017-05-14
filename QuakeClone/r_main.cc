@@ -5,25 +5,29 @@
 void R_SetupProjection(ViewSystem *vs) {
 	r32 aspect_ratio = vs->aspect_ratio;
 	r32 fov_y = vs->fov_y;
+	r32 z_near = vs->z_near, z_far = vs->z_far;
+	r32 w = (r32)vs->viewplane_width, h = (r32)vs->viewplane_height;
+	r32 left = -(w / 2.0f), right = (w / 2.0f); 
+	r32 bottom = -(h / 2.0f), top = (h / 2.0f); 
 
 	// NOTE: currently this handles only view planes 2x2 dimension
 	// FIXME: handle variable sized view planes
-	r32 d = (vs->viewplane_width / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
+	r32 d = (w / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
 
 	// D3D style [0, 1] z-buffer mapping
-	r32 a = vs->z_far / (vs->z_far - vs->z_near);
-	r32 b = -vs->z_near * a;
+	r32 a = z_far / (z_far - z_near);
+	r32 b = -z_near * a;
 
 	r32 m00 = 1.0f / aspect_ratio;
 	r32 projection_matrix[16];
 
-	projection_matrix[0] = m00 * d;
+	projection_matrix[0] = (2.0f * m00 * d) / (right - left);
 	projection_matrix[4] = 0.0f;
 	projection_matrix[8] = 0.0f;
 	projection_matrix[12] = 0.0f;
 
 	projection_matrix[1] = 0.0f;
-	projection_matrix[5] = d;
+	projection_matrix[5] = (2.0f * d) / (top - bottom);
 	projection_matrix[9] = 0.0f;
 	projection_matrix[13] = 0.0f;
 
@@ -79,11 +83,11 @@ void R_SetupFrustum(ViewSystem *vs) {
 	// normalize
 	for (int i = 0; i < NUM_FRUSTUM_PLANES - 1; ++i) {
 		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
-		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, vs->world_orientation.origin);
+		frustum[i].dist = Dot3(frustum[i].unit_normal, vs->world_orientation.origin);
 	}
 	for (int i = NUM_FRUSTUM_PLANES - 1; i < NUM_FRUSTUM_PLANES; ++i) {
 		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
-		frustum[i].dist = Vec3Dot(frustum[i].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
+		frustum[i].dist = Dot3(frustum[i].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
 	}
 
 	int x = 42;
@@ -103,14 +107,14 @@ void R_TransformWorldToView(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 
 void R_TransformModelToWorld(Vec3 *local_poly_verts, Vec3 *trans_poly_verts, int num_verts, Vec3 world_pos) {
 	for (int i = 0; i < num_verts; ++i) {
-		Vector3Add(local_poly_verts[i], world_pos, trans_poly_verts[i]);
+		trans_poly_verts[i] = local_poly_verts[i] + world_pos;
 	}
 }
 
 ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = vs->frustum[i];
-		r32 dist = Vec3Dot(pt, pl.unit_normal) - pl.dist;
+		r32 dist = Dot3(pt, pl.unit_normal) - pl.dist;
 
 		if (dist < 0.0f) {
 			//Sys_Print("Culling!!\n");
@@ -126,6 +130,7 @@ void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
 	r32 in[4];
 	r32 out[4];
+	r32 mp_ratio = vs->meter_to_pixel_ratio;
 
 	for (int i = 0; i < num_verts; ++i) {
 		in[0] = poly_verts[i][0];
@@ -134,26 +139,31 @@ void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 		in[3] = 1.0f;
 
 		Mat1x4Mul(out, in, m);  
-		poly_verts[i][0] = out[0] / out[3];
-		poly_verts[i][1] = out[1] / out[3];
-		poly_verts[i][2] = out[2] / out[3];
+		poly_verts[i][0] = out[0] / out[3] * mp_ratio;
+		poly_verts[i][1] = out[1] / out[3] * mp_ratio;
+		poly_verts[i][2] = out[2] / out[3] * mp_ratio;
 	}
 }
 
 void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
-	r32 screen_width_factor = (0.5f * vs->viewport_width) - 0.5f;
-	r32 screen_height_factor = (0.5f * vs->viewport_height) - 0.5f;
+	r32 in[3];
+	//r32 out[9];
+	//r32 (*m)[3] = vs->screen_matrix;
+	r32 screen_width_factor = (0.5f * (vs->viewport_width - 1.0f));
+	r32 screen_height_factor = (0.5f * (vs->viewport_height - 1.0f));
 	for (int i = 0; i < num_verts; ++i) {
-		poly_verts[i][0] = screen_width_factor + (poly_verts[i][0] * screen_width_factor);
-		poly_verts[i][1] = screen_height_factor + (poly_verts[i][1] * screen_height_factor);
+		//poly_verts[i][2] = 1.0f;
+		//Mat1x3Mul(&poly_verts[i], &poly_verts[i], m);
+		poly_verts[i][0] = (screen_width_factor + (poly_verts[i][0] * screen_width_factor));
+		poly_verts[i][1] = (screen_height_factor + (poly_verts[i][1] * screen_height_factor));
 	}
 }
 
 void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
-		r32 x = Vec3Dot(rot_mat[0], points[i]);
-		r32 y = Vec3Dot(rot_mat[1], points[i]);
-		r32 z = Vec3Dot(rot_mat[2], points[i]);
+		r32 x = Dot3(rot_mat[0], points[i]);
+		r32 y = Dot3(rot_mat[1], points[i]);
+		r32 z = Dot3(rot_mat[2], points[i]);
 
 		points[i][0] = x;
 		points[i][1] = y;
@@ -174,10 +184,10 @@ void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int nu
 		Vec3 v2 = polys[i].vertex_array[2];
 		Vec3 u = MakeVec3(v0, v1);
 		Vec3 v = MakeVec3(v0, v2);
-		Vec3 n = Vec3Cross(u, v);
+		Vec3 n = Cross3(u, v);
 		Vec3 view = MakeVec3(v0, p);
 
-		r32 dot = Vec3Dot(view, n);
+		r32 dot = Dot3(view, n);
 		if (dot <= 0.0f) {
 			polys[i].state |= POLY_STATE_BACKFACE;
 		}
@@ -194,9 +204,9 @@ static void R_RotateForViewer(ViewSystem *vs) {
 	Vec3 n = vs->world_orientation.dir;
 	// placeholder for v
 	Vec3 v = {0.0f, 1.0f, 0.0f};	
-	Vec3 u = Vec3Cross(v, n);
+	Vec3 u = Cross3(v, n);
 	// recompute v
-	v = Vec3Cross(n, u);
+	v = Cross3(n, u);
 
 	u = Vec3Norm(u);
 	v = Vec3Norm(v);
@@ -209,17 +219,17 @@ static void R_RotateForViewer(ViewSystem *vs) {
 	view_matrix[0] = u[0];
 	view_matrix[4] = u[1];
 	view_matrix[8] = u[2];
-	view_matrix[12] = -(Vec3Dot(u, origin));
+	view_matrix[12] = -(Dot3(u, origin));
 
 	view_matrix[1] = v[0];
 	view_matrix[5] = v[1];
 	view_matrix[9] = v[2];
-	view_matrix[13] = -(Vec3Dot(v, origin));
+	view_matrix[13] = -(Dot3(v, origin));
 
 	view_matrix[2] = n[0];
 	view_matrix[6] = n[1];
 	view_matrix[10] = n[2];
-	view_matrix[14] = -(Vec3Dot(n, origin));
+	view_matrix[14] = -(Dot3(n, origin));
 
 	view_matrix[3] = 0.0f;
 	view_matrix[7] = 0.0f;

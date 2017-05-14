@@ -4,11 +4,12 @@
 #include "renderer.h"
 #include "r_cmds.h"
 
-RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) { 
-	RenderingSystem *rs = PushStruct(&pf->main_memory_stack.perm_data, RenderingSystem);
+Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) { 
+	Renderer *rs = PushStruct(&pf->main_memory_stack.perm_data, Renderer);
+	r32 width, height;
 
 	// init backend
-	rs->back_end.target = PushStruct(&pf->main_memory_stack.perm_data, RenderTarget);
+	//rs->back_end.target = PushStruct(&pf->main_memory_stack.perm_data, RenderTarget);
 
 	Assert(MAX_NUM_POLYS < 0xffff);
 	rs->back_end.polys = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
@@ -22,12 +23,12 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	rs->back_end.cmds.used_buffer_size = 0;
 	rs->back_end.entities = pf->game_state->entities;
 
-	if (!InitWindow(rs->back_end.target, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
+	if (!InitWindow(&rs->back_end.target, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");
 		Com_Quit();
 	}	
 
-	if (!InitDIB(rs->back_end.target)) {
+	if (!InitDIB(&rs->back_end.target)) {
 		Sys_Print("Error while initializing the DIB\n");
 		Com_Quit();
 	}
@@ -39,19 +40,30 @@ RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	Vec3Init(rs->front_end.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
 
 	Vec3Init(rs->front_end.current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
-	rs->front_end.current_view.aspect_ratio = (r32)rs->back_end.target->width / (r32)rs->back_end.target->height;
+	rs->front_end.current_view.aspect_ratio = (r32)rs->back_end.target.width / (r32)rs->back_end.target.height;
 
-	// FIXME: handle non-homogeneous viewplanes
-	rs->front_end.current_view.viewplane_width = 2;	// normalized viewplane
+	rs->front_end.current_view.viewplane_width = 2;	
 	rs->front_end.current_view.viewplane_height = 2;
 
 	rs->front_end.current_view.fov_y = 90.0f;
 
-	rs->front_end.current_view.z_near = 30.0f;
-	rs->front_end.current_view.z_far = 1000.0f;
+	rs->front_end.current_view.z_near = 1.0f;
+	rs->front_end.current_view.z_far = 100.0f;
 
-	rs->front_end.current_view.viewport_width = rs->back_end.target->width;		
-	rs->front_end.current_view.viewport_height = rs->back_end.target->height;
+	rs->front_end.current_view.viewport_width = rs->back_end.target.width;		
+	rs->front_end.current_view.viewport_height = rs->back_end.target.height;
+
+
+	rs->front_end.current_view.meter_to_pixel_ratio = 1.0f / 1.5f;
+	//width = (r32)rs->back_end.target->width - 1.0f;
+	//height = (r32)rs->back_end.target->height - 1.0f;
+
+	//r32 screen_matrix[9] = {
+	//	width * 0.5f,				0.0f,						0.0f,
+	//	0.0f,						height * 0.5f,				0.0f,
+	//	width * 0.5f,				height * 0.5f,		1.0f
+	//};
+	//memcpy(rs->front_end.current_view.screen_matrix, screen_matrix, sizeof(screen_matrix));
 
 	Sys_Print("Renderer frontend init done\n");
 

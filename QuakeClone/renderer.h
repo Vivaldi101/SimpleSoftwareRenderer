@@ -8,14 +8,15 @@
 #include "r_cmds.h"
 #include "lights.h"
 
-#define BYTES_PER_PIXEL 4
+#define BYTES_PER_PIXEL 4	// support 1 and 2 ?
 // FIXME: maybe move all the constants these into .cc file if only impl needs access
 
 // FIXME: put into enums
 #define POLY_STATE_ACTIVE	0x0001
 #define POLY_STATE_CLIPPED	0x0002
 #define POLY_STATE_BACKFACE	0x0004
-#define POLY_STATE_VISIBLE	0x0008
+#define POLY_STATE_LIT		0x0008
+//#define POLY_STATE_VISIBLE	0x0010
 
 // FIXME: put into enums
 #define POLY_ATTR_2SIDED		0x0001
@@ -55,13 +56,13 @@ struct RenderTarget {
 	int				bpp;
 
 	WinHandles 		win_handles;
-	//b32				full_screen;
+	//b32			full_screen;
 };
 
 struct ViewSystem {
 	r32				view_matrix[4][4];
 	r32				projection_matrix[4][4];
-	r32				screen_matrix[4][4];
+	r32				screen_matrix[3][3];
 
 	Orientation		world_orientation;
 	Vec3			target;
@@ -78,6 +79,7 @@ struct ViewSystem {
 	r32				z_far, z_near;
 
 	r32				aspect_ratio;
+	r32				meter_to_pixel_ratio;
 };
 
 struct RendererFrontend {
@@ -89,7 +91,7 @@ struct RendererFrontend {
 
 struct RendererBackend {
 	RenderCommands		cmds;
-	RenderTarget *		target;
+	RenderTarget 		target;		// FIXME: embed into the structure
 
 	Entity *			entities;
 
@@ -102,7 +104,7 @@ struct RendererBackend {
 	int					num_verts;
 };
 
-struct RenderingSystem {
+struct Renderer {
 	RendererFrontend	front_end;
 	RendererBackend		back_end;
 };
@@ -110,13 +112,7 @@ struct RenderingSystem {
 //
 //	Renderer frontend
 //
-extern RenderingSystem *R_Init(Platform *pf, void *hinstance, void *wndproc); 
-
-extern void R_BeginFrame(RenderTarget *rt, RenderCommands *rc);
-extern void R_EndFrame(RenderTarget *rt, RenderCommands *rc);
-extern void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Dim2d d2, Vec4 color, Vec2 origin);
-extern void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
-
+extern Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc); 
 extern void R_RenderView(ViewSystem *vs);
 
 extern void R_SetupFrustum(ViewSystem *vs);
@@ -137,9 +133,6 @@ extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array,
 //	Renderer backend
 //
 extern void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data);
-extern void R_DrawRect(RenderTarget *rt, r32 rmin_x, r32 rmin_y, 
-					   r32 rmax_x, r32 rmax_y,
-					   byte color);
 
 
 #endif	// Header guard

@@ -24,36 +24,54 @@ void R_IssueRenderCommands(RenderTarget *rt, RenderCommands *rc) {
 	rc->used_buffer_size = 0;
 }
 
-void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Dim2d d2, Vec4 color, Vec2 origin) {
+void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale, Vec4 color) {
 	DrawRectCmd *cmd = PushRenderCmd(rc, DrawRectCmd);
 	Assert(cmd);
 
-	u32 packed_color = (roundReal32ToU32(color.c.a * 255.0f) << 24 |
-						roundReal32ToU32(color.c.r * 255.0f) << 16 |
-						roundReal32ToU32(color.c.g * 255.0f) << 8  |
-				 		roundReal32ToU32(color.c.b * 255.0f));
-
 	cmd->cmd_id = RCMD_RECT;
-	cmd->d2.width = d2.width;
-	cmd->d2.height = d2.height;
-	cmd->color = packed_color;
-	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f);
-	cmd->basis.axis[1] = MakeVec2(0.0f, 1.0f);
+	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f) * scale;	// FIXME: 3d homogeneous matrix
+	cmd->basis.axis[1] = MakeVec2(0.0f, 1.0f) * scale;
 	cmd->basis.origin = origin;
+
+	//cmd->points[0][0] = 0.0f;
+	//cmd->points[0][1] = 0.0f;
+
+	//cmd->points[1][0] = 0.0f;
+	//cmd->points[1][1] = (r32)bm.d2.height;
+
+	//cmd->points[2][0] = (r32)bm.d2.width;
+	//cmd->points[2][1] = (r32)bm.d2.height;
+
+	//cmd->points[3][0] = (r32)bm.d2.width;
+	//cmd->points[3][1] = 0.0f;
+	
+	cmd->bitmap = bm;
+	cmd->dim = bm.dim;
+	cmd->color = PackRGBA(color);
+}
+
+void R_PushTextCmd(RenderTarget *rt, RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale, Vec4 color) {
+	DrawTextCmd *cmd = PushRenderCmd(rc, DrawTextCmd);
+	Assert(cmd);
+
+	cmd->cmd_id = RCMD_TEXT;
+	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f) * scale;	// FIXME: 3d homogeneous matrix
+	cmd->basis.axis[1] = MakeVec2(0.0f, 1.0f) * scale;
+	cmd->basis.origin = origin;
+	cmd->bitmap = bm;
+	cmd->dim = bm->dim;
+	cmd->text = text;
+	cmd->color = PackRGBA(color);
 }
 
 void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 is_wireframe) {
-	DrawPolyListCmd *cmd = PushRenderCmd(rc, DrawPolyListCmd);
+	DrawPolyCmd *cmd = PushRenderCmd(rc, DrawPolyCmd);
 	Assert(cmd);
 
 	cmd->cmd_id = RCMD_MESH;
 	cmd->polys = polys;
 	cmd->poly_verts = poly_verts;
 	cmd->num_polys = num_polys;
-	//cmd->pitch = rt->pitch;
-	//cmd->bpp = rt->bpp;
-	//cmd->width = rt->width;
-	//cmd->height = rt->height;
 	cmd->is_wireframe = is_wireframe;
 }
 

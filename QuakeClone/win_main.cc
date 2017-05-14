@@ -1,6 +1,6 @@
 #include "win_shared.h"
-#include "common.h"
 #include "win_local.h"
+#include "common.h"
 #include "plg_loader.h"
 
 static int	global_sys_argc;
@@ -126,8 +126,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Sys_GetMilliseconds();
 
 	Platform pf = Com_Init();
-	//TTF_Init(&pf.file_ptrs);
-	RenderingSystem *rs = R_Init(&pf, hinstance, MainWndProc);
+	Renderer *rs = R_Init(&pf, hinstance, MainWndProc);
 	Com_LoadEntities(&pf);
 
 	for (;;) {

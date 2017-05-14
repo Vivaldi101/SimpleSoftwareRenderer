@@ -3,24 +3,21 @@
 #include "common.h"
 
 enum RenderCommandEnum {
-	RCMD_CLEAR,
+	RCMD_CLEAR = 1,
 	RCMD_SWAP_BUFFERS,
 	RCMD_RECT,
+	RCMD_TEXT,
 	RCMD_MESH,
 	RCMD_END_OF_CMDS
 };
 
-enum RectTypeEnum {
-	RECT_FONT
-};
-
-struct RenderBasis3d {
-	Vec3	axis[3];			
+struct Basis3d {
+	Vec3	axis[3];	// FIXME: matrix types
 	Vec3	origin;
 };
 
-struct RenderBasis2d {
-	Vec2	axis[2];			
+struct Basis2d {
+	Vec2	axis[2];	// FIXME: matrix types	
 	Vec2	origin;
 };
 
@@ -32,14 +29,24 @@ struct RenderCommands {
 
 struct DrawRectCmd {
 	int				cmd_id;
-	RenderBasis2d	basis;
-	byte *			data;		
-	u32				color;		
-	Dim2d			d2;
-	RectTypeEnum	type;
+	Basis2d			basis;
+	Bitmap			bitmap;
+	//Vec2			points[4];	
+	Vec2i			dim;	
+	u32				color;		// rgba, packed
 };
 
-struct DrawPolyListCmd {
+struct DrawTextCmd {
+	int				cmd_id;
+	Basis2d			basis;
+	Bitmap *		bitmap;
+	Vec2i			dim;	
+	const char *	text;
+	int				gap;
+	u32				color;		// rgba, packed
+};
+
+struct DrawPolyCmd {
 	int		cmd_id;
 	Poly *	polys;
 	Vec3 *	poly_verts;
@@ -59,4 +66,9 @@ struct ClearBufferCmd {
 };
 
 extern void R_IssueRenderCommands(struct RenderTarget *rt, RenderCommands *rc);
+extern void R_BeginFrame(RenderTarget *rt, RenderCommands *rc);
+extern void R_EndFrame(RenderTarget *rt, RenderCommands *rc);
+extern void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale = 1.0f, Vec4 color = MakeVec4(1.0f,1.0f,1.0f,1.0f));
+extern void R_PushTextCmd(RenderTarget *rt, RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale = 1.0f, Vec4 color = MakeVec4(1.0f,1.0f,1.0f,1.0f));
+extern void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
 #endif	// Header guard

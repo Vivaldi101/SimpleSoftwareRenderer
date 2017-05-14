@@ -97,7 +97,6 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 			InvalidCodePath("Unhandled entitity type!");
 		}
 	}
-#if 1
 	Vec3 *local_vertex_array = (Vec3 *)((byte *)typeless_ent + local_verts_offset);  
 	int num_verts = typeless_ent->status.num_verts;
 
@@ -187,7 +186,6 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 	}
 
 	Sys_Print("\nMesh data loading complete\n");
-#endif
 	return true;
 }
 

@@ -1,6 +1,7 @@
+#include "shared.h"
 
-// print the palette
 #if 0
+// print the palette
 	int c = 0;
 	for (int i = 1; i <= 16; ++i) {
 		for (int j = 1; j <= 16; ++j) {
@@ -8,10 +9,8 @@
 			++c;
 		}
 	}
-#endif
 
 // print the colormap
-#if 0
 void R_DrawColormap(const VidSystem *rt) {
 	// FIXME: testing stuff
 	extern byte global_colormap[256*64];
@@ -25,3 +24,4 @@ void R_DrawColormap(const VidSystem *rt) {
 	BitBlt(rt->win_handles.hdc, 0, 0, 800, 600, rt->win_handles.hdc_dib_section, 0, 0, SRCCOPY);
 }
 #endif
+
