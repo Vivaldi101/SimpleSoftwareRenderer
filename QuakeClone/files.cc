@@ -7,6 +7,7 @@ Debug_FreeFile(DebugFreeFile) {
 		fi->size = 0;
 	} else {
 		Sys_Print("\nAttempting to free null file\n");
+		Assert(0);
 	}
 }
 
@@ -28,23 +29,27 @@ Debug_ReadFile(DebugReadFile) {
 				} else {
 					DebugFreeFile(&fi);
 					Sys_Print("\nCouldn't read the file\n");
+					Assert(0);
 				}
 			} else {
 				Sys_Print("\nCouldn't allocate memory for the file\n");
+				Assert(0);
 			}
 		} else {
 			Sys_Print("\nCouldn't get size of the file\n");
+			Assert(0);
 		}
 		CloseHandle(fh);
 	} else {
 		Sys_Print("\nInvalid file handle\n");
+		Assert(0);
 	}
 	return fi;
 }
 
 Debug_WriteFile(DebugWriteFile) {
 	b32 success = false;
-	HANDLE fh	= CreateFile(file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+	HANDLE fh = CreateFile(file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
 	if (fh != INVALID_HANDLE_VALUE) {
 		DWORD bytes_written;
 		if (WriteFile(fh, memory, memory_size, &bytes_written, 0)) {
@@ -52,10 +57,12 @@ Debug_WriteFile(DebugWriteFile) {
 			success = (memory_size == bytes_written);
 		} else {
 			Sys_Print("\nCouldn't write the file\n");
+			Assert(0);
 		}
 		CloseHandle(fh);
 	} else {
 		Sys_Print("\nInvalid file handle\n");
+		Assert(0);
 	}
 	return success;
 }

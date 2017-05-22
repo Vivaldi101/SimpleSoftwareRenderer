@@ -9,7 +9,6 @@ Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	r32 width, height;
 
 	// init backend
-	//rs->back_end.target = PushStruct(&pf->main_memory_stack.perm_data, RenderTarget);
 
 	Assert(MAX_NUM_POLYS < 0xffff);
 	rs->back_end.polys = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
@@ -54,7 +53,6 @@ Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	rs->front_end.current_view.viewport_height = rs->back_end.target.height;
 
 
-	rs->front_end.current_view.meter_to_pixel_ratio = 1.0f / 1.5f;
 	//width = (r32)rs->back_end.target->width - 1.0f;
 	//height = (r32)rs->back_end.target->height - 1.0f;
 

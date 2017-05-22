@@ -16,14 +16,13 @@ struct Poly {
 	u32			color;	// rgba, packed
 };
 
+struct Vert {
+	Vec3	model_space_pos;     
+	Vec3	unit_normal;
+	u32		color;               // rgba, packed
+	r32		u, v;                // texture coordinates
+};
 
-//struct Vert {
-//	Vec3	model_space_pos;     // xyz
-//	Vec3	unit_normal;
-//	u32		color;               // rgba, packed
-//	r32		u, v;                // texture coordinates
-//};
-//
 //struct PipelineVert {
 //	Vec3	view_space_pos;      // xyz
 //	Vec3	view_space_normal;   // xyz

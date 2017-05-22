@@ -1,13 +1,22 @@
 #include "r_cmds.h"
 #include "renderer.h"
 
-// FIXME: make into a macro
-inline static int MapAsciiToTTF(char c) {
-	int result = c - 65;
+#if 0
+#define MapAsciiToTTF(c) (c) - 65
+#else
+inline static int MapLowerAsciiToTTF(char c) {
+	int result = c - 97;
 	Assert(result >= 0 && result <= 25);
 
 	return result;
 }
+inline static int MapHigherAsciiToTTF(char c) {
+	int result = c - 65;
+	Assert(result >= 0 && result <= 25);
+
+	return result + 26;
+}
+#endif
 
 // Cohen-Sutherland clipping constants
 #define INSIDE	 0	
@@ -129,13 +138,16 @@ static void RB_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int
 			add			= dx;
 		}
 
+		// FIXME: stop passing bpp and pitch or make them cvars?
+		Assert(bpp == 4);
 		byte *line = (byte*)buffer;
 		line = (line + (pitch * y0)) + x0 * bpp;
 
 		for (int i = 0; i < num_pixels; ++i) {
-			for (int j = 0; j < bpp; ++j) {
-				line[j] = (color >> (j * 8)) & 0xff;
-			}
+			//for (int j = 0; j < bpp; ++j) {
+			u32 *pixel = (u32 *)line;
+			*pixel = color;
+			//}
 			numerator += add;
 			if (numerator >= denominator) {
 				numerator -= denominator;
@@ -359,7 +371,7 @@ static void RB_DrawChar(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	for (int i = 0; i < h; ++i){
 		u32 *dst_pixel = (u32 *)dst;
 		for (int j = 0; j < w; ++j) {
-			*dst_pixel++ = (*src_pixel & 0x0000ff00);
+			*dst_pixel++ = (*src_pixel & 0x00ff0000);
 			++src_pixel;
 		}
 		dst += pitch;
@@ -378,8 +390,9 @@ static const void *RB_DrawText(RenderTarget *rt, const void *data) {
 	Vec2 o = cmd->basis.origin;
 	for (char i = *cmd->text; i; i = *++cmd->text) {
 		if (i != ' ') {
-			RB_DrawChar(rt, &cmd->bitmap[MapAsciiToTTF(i)], o);
-			o[0] += cmd->bitmap[MapAsciiToTTF(i)].dim[0];
+			int k = (i >= 97) ? MapLowerAsciiToTTF(i) : MapHigherAsciiToTTF(i);
+			RB_DrawChar(rt, &cmd->bitmap[k], o);
+			o[0] += cmd->bitmap[k].dim[0];
 		} else {
 			o[0] += 10.0f;
 		}

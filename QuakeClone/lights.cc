@@ -3,8 +3,7 @@
 #include "lights.h"
 
 // some simple flat shading
-// no specular lighting component and 
-// also no directional light sources atm
+// no directional light sources atm
 void R_CalculateLighting(const RendererBackend *rb, const Light *lights, AmbientState as, Vec3 camera_dir, Vec3 camera_pos) {
 	Vec4 base = {};
 	Vec4 total = {};
@@ -18,10 +17,10 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 		}
 		rb->polys[i].state = POLY_STATE_LIT;
 
-		base.c.a = (r32)(((rb->polys[i].color & 0xff000000) >> 24 ) / 255.0f);
-		base.c.r = (r32)(((rb->polys[i].color & 0xff0000) >> 16 ) / 255.0f);
-		base.c.g = (r32)(((rb->polys[i].color & 0xff00) >> 8) / 255.0f);
-		base.c.b = (r32)((rb->polys[i].color & 0xff) / 255.0f);
+		base.c.a = (r32)(((rb->polys[i].color & 0xff000000) >> 24u) / 255.0f);
+		base.c.r = (r32)(((rb->polys[i].color & 0xff0000) >> 16u) / 255.0f);
+		base.c.g = (r32)(((rb->polys[i].color & 0xff00) >> 8u) / 255.0f);
+		base.c.b = (r32)((rb->polys[i].color & 0xff >> 0u) / 255.0f);
 
 		Vec3 v0 = rb->polys[i].vertex_array[0];
 		Vec3 v1 = rb->polys[i].vertex_array[1];
@@ -45,12 +44,13 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			Vec3 v = MakeVec3(v0, v2);
 			Vec3 n = Cross3(u, v);
 
-			Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0, Vec3Norm(camera_pos)) : MakeVec3(v0, lights[j].pos); 
+			Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0, (camera_pos)) : MakeVec3(v0, lights[j].pos); 
 			r32 llen = Vec3Len(l);
 			l = Vec3Norm(l);
 
 			r32 atten = (lights[j].flags & POINT_LIGHT || lights[j].flags & SPOT_LIGHT) ? (1.0f / (lights[j].kc + (lights[j].kl * ABS(llen)) + (lights[j].kq * Square(ABS(llen))))) : 1;
-			r32 spot = (lights[j].flags & SPOT_LIGHT) ? (MAX(pow(Dot3(Vec3Norm(camera_dir), -l), 32), 0.0f)) : 1.0f;
+			r32 factor = Dot3(Vec3Norm(camera_dir), (-l));
+			r32 spot = (lights[j].flags & SPOT_LIGHT) ? (pow(MAX(factor, 0.0f), 32)) : 1.0f;
 
 			r32 nlen = Vec3Len(n);
 			n = Vec3Norm(n);
@@ -69,7 +69,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 			// specular component
 			Vec3 h = l + view;
-			dot = MAX(pow(Dot3(n, h), 3), 0.0f);
+			dot = pow(MAX(Dot3(n, h), 0.0f), 3);
 			specular.c.a = base.c.a * lights[j].specular.c.a;
 			specular.c.r = base.c.r * lights[j].specular.c.r;
 			specular.c.g = base.c.g * lights[j].specular.c.g;

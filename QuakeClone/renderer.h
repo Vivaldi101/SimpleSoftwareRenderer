@@ -79,7 +79,7 @@ struct ViewSystem {
 	r32				z_far, z_near;
 
 	r32				aspect_ratio;
-	r32				meter_to_pixel_ratio;
+	//r32				meter_to_pixel_ratio;
 };
 
 struct RendererFrontend {

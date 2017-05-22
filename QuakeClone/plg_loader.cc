@@ -1,11 +1,5 @@
 #include "plg_loader.h"
 
-//	PLG/X format: CSSD | RRRR| GGGG | BBBB
-
-//	C	= 1 for 24-bit, 0 for 8-bit color
-//	SS	= Shading mode used
-//	D	= Double-sided bit, 1 for double sided
-
 //	bit masks to simplify testing
 #define PLX_RGB_MASK		0x8000		// mask extracts RGB/indexed color
 #define PLX_SHADE_MODE_MASK 0x6000		// mask extracts shading mode

@@ -66,16 +66,27 @@ COMMON
 ==============================================================
 */
 
-inline static int MapAsciiToTTF(char c) {
-	int result = c - 65;
+#if 0
+#define MapAsciiToTTF(c) (c) - 65
+#else
+inline static int MapLowerAsciiToTTF(char c) {
+	int result = c - 97;
 	Assert(result >= 0 && result <= 25);
 
 	return result;
 }
+inline static int MapHigherAsciiToTTF(char c) {
+	int result = c - 65;
+	Assert(result >= 0 && result <= 25);
+
+	return result + 26;
+}
+#endif
 
 static r32 global_game_time_residual;
 static int global_game_frame;
 
+// FIXME: test stuff
 static r32 yaw = 0.0f;
 Platform Com_Init() {
 	Sys_Init();
@@ -89,11 +100,14 @@ Platform Com_Init() {
 
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
-	pf.game_state->num_entities = (32);
-	FileInfo ttf_file = pf.file_ptrs.read_file("C:/Windows/Fonts/arial.ttf");
+	pf.game_state->num_entities = 32;
+	FileInfo ttf_file = pf.file_ptrs.read_file("C:/Windows/Fonts/cambriab.ttf");
 
+	for (int i = 'a'; i <= 'z'; ++i) {
+		pf.game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.temp_data, &ttf_file, i);
+	}
 	for (int i = 'A'; i <= 'Z'; ++i) {
-		pf.game_state->test_font[MapAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.perm_data, &ttf_file, i);
+		pf.game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.temp_data, &ttf_file, i);
 	}
 	pf.file_ptrs.free_file(&ttf_file);
 
@@ -397,7 +411,6 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 					rs->back_end.num_polys);
 	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
 
-	// FIXME: combine view and screen transforms
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 
@@ -409,11 +422,11 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 				  rs->front_end.is_wireframe);
 
 	// font testing
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "WASD TO MOVE", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 20.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "SPACE TO TOGGLE WIREFRAME MODE", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 40.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "ENTER TO CENTER THE PLAYER", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 60.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "L TO TOGGLE AMBIENT LIGHTING", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 80.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "ESC TO EXIT", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 100.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 20.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 40.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 60.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 80.0f));
+	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 100.0f));
 
 	{
 		static int last_time = Sys_GetMilliseconds();

@@ -126,8 +126,8 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Sys_GetMilliseconds();
 
 	Platform pf = Com_Init();
-	Renderer *rs = R_Init(&pf, hinstance, MainWndProc);
 	Com_LoadEntities(&pf);
+	Renderer *rs = R_Init(&pf, hinstance, MainWndProc);
 
 	for (;;) {
 		// run 1 frame of update and render  

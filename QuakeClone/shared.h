@@ -98,7 +98,7 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define	MAX_NUM_POLY_VERTS	(1 << 12)
 #define	MAX_NUM_LIGHTS		8
 #define	MAX_RENDER_BUFFER	MEGABYTES(4)
-#define	MAX_NUM_GLYPHS		26
+#define	MAX_NUM_GLYPHS		(26 * 2)
 
 #undef SINT32_MIN
 #undef UINT32_MIN
@@ -113,7 +113,6 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define IntSwap(a, b) do { if (a != b) {a ^= b; b ^= a; a ^= b;} } while(0)
 #define AnySwap(a, b, type) { do { type temp = a; a = b; b = temp; } while(0); }
 //#define Vec3Swap(a, b) Vec3 temp = a, a = b, b = temp
-#define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
 #define OffsetOf(i, s) ((int)&(((s *)0)->i))
 #define OffsetOfSize(i, s) sizeof((s *)0)->i
 #define PointerSizeOf(v) ((sizeof(v) + sizeof(void *) - 1) & ~(sizeof(void *) - 1))
@@ -121,7 +120,11 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
 #define GetAnonType(value, type, prefix) (((value)->type_enum == prefix##type) ? &(value)->type : 0)
 
-
+#ifdef PLATFORM_DEBUG
+#define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
+#else
+#define Assert(cond)
+#endif	// PLATFORM_DEBUG
 
 /*
 ==============================================================
@@ -147,8 +150,8 @@ MATHLIB
 #define Vec3ZeroOut(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0))
 #define Vec4ZeroOut(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0), (v)[3] = (1))
 
-#define Dot2(x, y)					((x)[0] * (y)[0] + (x)[1] * (y)[1])
-#define Dot3(x, y)					((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
+//#define Dot2(x, y)					((x)[0] * (y)[0] + (x)[1] * (y)[1])
+//#define Dot3(x, y)					((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
 #define Vec3Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2])
 #define Vec4Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2], (a)[3] = (b)[3])
 
@@ -179,14 +182,6 @@ union Vec2i {
 	const s32	&operator[](int i) const	{ return data[i]; }
 };
 
-static inline r32 Vec2Len(Vec2 v) {
-	r32	len;
-
-	len = Dot2(v, v);
-	len = sqrt(len);
-		
-	return len;
-}
 
 static inline Vec2 MakeVec2(r32 x, r32 y) {
 	Vec2 v;
@@ -287,6 +282,30 @@ static inline Vec2 operator *(r32 s, Vec2 a) {
 	return v;
 }
 
+static inline r32 Dot2(Vec2 v1, Vec2 v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1];
+
+	return dot;
+}
+
+static inline r32 Dot2(r32 *v1, r32 *v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1];
+
+	return dot;
+}
+
+static inline r32 Dot2(r32 *v1, Vec2 v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1];
+
+	return dot;
+}
+
+static inline r32 Dot2(Vec2 v1, r32 *v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1];
+
+	return dot;
+}
+
 static inline Vec2 Vec2Norm(Vec2 v) {
 	Vec2 n = {};
 	r32	len, ilen;
@@ -301,6 +320,15 @@ static inline Vec2 Vec2Norm(Vec2 v) {
 	}
 		
 	return n;
+}
+
+static inline r32 Vec2Len(Vec2 v) {
+	r32	len;
+
+	len = Dot2(v, v);
+	len = sqrt(len);
+		
+	return len;
 }
 
 static inline Vec2 Perp(Vec2 a) {
@@ -423,6 +451,29 @@ static inline Vec3 operator *(r32 s, Vec3 a) {
 	return v;
 }
 
+static inline r32 Dot3(Vec3 v1, Vec3 v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+
+	return dot;
+}
+
+static inline r32 Dot3(r32 *v1, r32 *v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+
+	return dot;
+}
+
+static inline r32 Dot3(r32 *v1, Vec3 v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+
+	return dot;
+}
+
+static inline r32 Dot3(Vec3 v1, r32 *v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+
+	return dot;
+}
 
 static inline Vec3 Cross3(Vec3 v1, Vec3 v2) {
 	Vec3 cross = {};

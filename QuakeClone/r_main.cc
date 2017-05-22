@@ -130,7 +130,6 @@ void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
 	r32 in[4];
 	r32 out[4];
-	r32 mp_ratio = vs->meter_to_pixel_ratio;
 
 	for (int i = 0; i < num_verts; ++i) {
 		in[0] = poly_verts[i][0];
@@ -139,9 +138,9 @@ void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
 		in[3] = 1.0f;
 
 		Mat1x4Mul(out, in, m);  
-		poly_verts[i][0] = out[0] / out[3] * mp_ratio;
-		poly_verts[i][1] = out[1] / out[3] * mp_ratio;
-		poly_verts[i][2] = out[2] / out[3] * mp_ratio;
+		poly_verts[i][0] = out[0] / out[3];
+		poly_verts[i][1] = out[1] / out[3];
+		poly_verts[i][2] = out[2] / out[3];
 	}
 }
 
