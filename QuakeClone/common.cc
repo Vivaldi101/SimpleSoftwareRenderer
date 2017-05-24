@@ -101,7 +101,7 @@ Platform Com_Init() {
 	// FIXME: make a single double ended stack, with temp allocations coming from the other side
 	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
 	pf.game_state->num_entities = 32;
-	FileInfo ttf_file = pf.file_ptrs.read_file("C:/Windows/Fonts/cambriab.ttf");
+	FileInfo ttf_file = pf.file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
 
 	for (int i = 'a'; i <= 'z'; ++i) {
 		pf.game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.temp_data, &ttf_file, i);

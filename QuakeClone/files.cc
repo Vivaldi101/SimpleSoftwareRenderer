@@ -44,6 +44,8 @@ Debug_ReadFile(DebugReadFile) {
 		Sys_Print("\nInvalid file handle\n");
 		Assert(0);
 	}
+
+	Sys_Print("\nFile read!\n");
 	return fi;
 }
 

@@ -22,23 +22,49 @@
 
 
 #define MAX_PLG_LINE_LEN 256
-#define IsEmptyChar(c) ((char)(c) == 10 || (c) == ' ' || (c) == '\t') 
+//#define IsValidChar(c) ((c)) 
+#define IsEmptyChar(c) ((char)(c) == 10 || (char)(c) == 13 || (c) == ' ' || (c) == '\t') 
 #define IsHashTag(c) ((c) == '#') 
 #define IsNewLine(c) ((c) == '\n') 
+#define IsMinus(c) ((c) == '-') 
+
+static inline b32 IsAlpha(char c) {
+	if (c >= 'a' && c <= 'z') {
+		return true;
+	}
+	if (c >= 'A' && c <= 'Z') {
+		return true;
+	}
+	return false;
+}
+static inline b32 IsNumeral(char c) {
+	if (c == '-') {
+		return true;
+	}
+	if (c >= '0' && c <= '9') {
+		return true;
+	}
+	return false;
+}
 
 static ptrdiff_t PLG_ReadLine(char *buffer, const void *load_data, u32 load_data_len, ptrdiff_t load_data_index) {
 	Assert(load_data);
 	char *base = (char *)load_data;
 	char *src = base + load_data_index;
 
-	while (IsHashTag(*src)) {
-		while ((ptrdiff_t)(src - base) <  (ptrdiff_t)load_data_len && !IsNewLine(*src++)) ;
+	while (!IsAlpha(*src) && !IsNumeral(*src)) {
+		while ((ptrdiff_t)(src - base) <  (ptrdiff_t)load_data_len && !IsNewLine(*src)) {
+			++src;
+		}
+		if (IsNewLine(*src)) {
+			++src;
+		}
 	} 
 	do {
 		if (IsNewLine(*src)) {
 			break;
 		}
-		if (!IsEmptyChar(*src)) {
+		if (IsMinus(*src) || IsAlpha(*src) || IsNumeral(*src)) {
 			*buffer++ = *src;
 		} else {
 			*buffer++ = ' ';
@@ -108,10 +134,10 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 
 		// NOTE: convert from ccw into cw vertex winding order for our left-handed system
 		r32 v0 = local_vertex_array[i][0];
-		r32 v2 = local_vertex_array[i][2];
+		r32 v1 = local_vertex_array[i][1];
 
-		local_vertex_array[i][0] = v2;
-		local_vertex_array[i][2] = v0;
+		local_vertex_array[i][0] = v1;
+		local_vertex_array[i][1] = v0;
 	}
 
 	int poly_num_verts = 0;
