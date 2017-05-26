@@ -3,23 +3,15 @@
 
 #include "shared.h"
 
-// Console
-enum ConVisibility {
-	CON_HIDE,
-	CON_SHOW,
-	CON_MINIMIZE
-};
-extern void	Sys_CreateConsole(HINSTANCE hinstance);
-extern void	Sys_DestroyConsole();
-extern void Sys_Print(const char *msg);
-extern void Sys_Sleep(DWORD ms);
-extern void Con_AppendText(const char *msg);
 
 // System
 extern void Sys_Init();
 extern void Sys_Quit();
+extern void Sys_Sleep(DWORD ms);
+extern void Sys_Print(const char *msg, ...);
 
-extern b32 InitWindow(struct RenderTarget *rt, int width, int height, void *wndproc, void *hinstance);
+extern b32 InitWindow(struct RenderTarget *rt, void *wndproc, void *hinstance);
+//extern b32 InitWindow(struct RenderTarget *rt, int width, int height, void *wndproc, void *hinstance);
 extern void Sys_ToggleFullscreen(HWND window);
 
 // Events

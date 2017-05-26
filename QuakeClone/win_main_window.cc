@@ -3,47 +3,53 @@
 #define	WINDOW_CLASS_NAME "QC"
 
 
-#define	WINDOW_STYLE (WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_VISIBLE)
-b32 InitWindow(RenderTarget *rt, int width, int height, void *wndproc, void *hinstance) {
-	WNDCLASS wc;
-	memset(&wc, 0, sizeof(wc));
+#define	FULL_SCREEN (WS_POPUP|WS_VISIBLE|WS_SYSMENU)
+#define	WINDOWED ()
+b32 InitWindow(RenderTarget *rt, void *wndproc, void *hinstance) {
+	WNDCLASS wc = {};
 
-	RECT rect;
-	int	x, y, w, h;
-	int	ex_style = WS_EX_TOPMOST;
-	int	style_bits = 0;
+	//RECT rect;
+	//int	x, y, w, h;
+
+	int	style_bits = FULL_SCREEN;
+	int ex_style_bits = WS_EX_TOPMOST;
+
+	HDC hdc = GetDC(GetDesktopWindow());
+	int width = GetDeviceCaps(hdc, HORZRES);
+	int height = GetDeviceCaps(hdc, VERTRES);
+	ReleaseDC(GetDesktopWindow(), hdc);
 
     wc.lpfnWndProc   = (WNDPROC)wndproc;
     wc.hInstance     = (HINSTANCE)hinstance;
-    wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)COLOR_GRAYTEXT;
     wc.lpszClassName = WINDOW_CLASS_NAME;
 
-    if (!RegisterClass (&wc) ) {
+    if (!RegisterClass (&wc)) {
 		return false;
 	}
 
-	rect.left = 0;
-	rect.top = 0;
-	rect.right  = width;
-	rect.bottom = height;
+	//rect.left = 0;
+	//rect.top = 0;
+	//rect.right  = width;
+	//rect.bottom = height;
 
-	AdjustWindowRect(&rect, style_bits, FALSE);
+	//AdjustWindowRect(&rect, style_bits, FALSE);
 
-	w = rect.right - rect.left;
-	h = rect.bottom - rect.top;
-	x = 0;
-	y = 0;
+	//w = rect.right - rect.left;
+	//h = rect.bottom - rect.top;
+	//x = 0;
+	//y = 0;
 
-	rt->win_handles.window = CreateWindowEx(ex_style,
-												WINDOW_CLASS_NAME,
-										  		"Test",
-										  		style_bits,
-										  		x, y, w, h,
-										  		0,
-										  		0,
-										  		(HINSTANCE)hinstance,
-										  		0);
+	rt->win_handles.window = CreateWindowEx(ex_style_bits,
+											WINDOW_CLASS_NAME,
+										  	"Engine",
+										  	style_bits,
+										  	0, 0, width, height,
+										  	0,
+										  	0,
+										  	(HINSTANCE)hinstance,
+										  	0);
 	rt->width = width;
 	rt->height = height;
 

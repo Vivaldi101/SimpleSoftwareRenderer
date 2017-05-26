@@ -19,7 +19,7 @@ void Sys_Quit() {
 	exit(0);
 }
 
-void Sys_Print(const char *msg) {
+void Sys_Print(const char *msg, ...) {
 	Con_AppendText(msg);
 }
 
@@ -119,7 +119,6 @@ void Sys_GenerateEvents() {
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
 
 	Sys_CreateConsole(hinstance);
-	Sys_FetchConsole(CON_SHOW, false);
 
 	// initial time resolution
 	timeBeginPeriod(1);

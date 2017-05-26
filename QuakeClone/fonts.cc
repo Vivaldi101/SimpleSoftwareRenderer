@@ -12,9 +12,10 @@ Bitmap TTF_Init(MemoryStack *ms, const FileInfo *ttf_file, int code_point) {
 	u32 *dst;
 
 	stbtt_fontinfo font;
-	int w, h;
+	int w, h, ascent, descent, line_gap;
 
 	stbtt_InitFont(&font, (const byte *)ttf_file->data, stbtt_GetFontOffsetForIndex((const byte *)ttf_file->data, 0));
+	stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);
 	base = src = stbtt_GetCodepointBitmap(&font, 0,stbtt_ScaleForPixelHeight(&font, 23.0f), code_point, &w, &h, 0, 0);
 	bm = MakeBitmap(ms, w, h);
 	src = src + (w * (h - 1));

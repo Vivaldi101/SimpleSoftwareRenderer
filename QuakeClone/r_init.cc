@@ -22,7 +22,7 @@ Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	rs->back_end.cmds.used_buffer_size = 0;
 	rs->back_end.entities = pf->game_state->entities;
 
-	if (!InitWindow(&rs->back_end.target, WINDOW_WIDTH, WINDOW_HEIGHT, wndproc, hinstance)) {
+	if (!InitWindow(&rs->back_end.target, wndproc, hinstance)) {
 		Sys_Print("Error while creating the window\n");
 		Com_Quit();
 	}	

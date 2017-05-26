@@ -284,7 +284,11 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 		rs->front_end.is_wireframe = !rs->front_end.is_wireframe;
 	} else if (pf->input_state->keys['L'].released) {
 		rs->front_end.is_ambient = (AmbientState)(!rs->front_end.is_ambient);
-	}
+	} else if (pf->input_state->keys['C'].released) {
+		(global_console.visibility == CON_HIDE) ? 
+			Sys_FetchConsole(CON_SHOW, true) : 
+			Sys_FetchConsole(CON_HIDE, true);
+	} 
 
 	Com_RunEventLoop();
 
@@ -361,10 +365,10 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 	//}
 	R_BeginFrame(&rs->back_end.target, &rs->back_end.cmds);
 
-	int num_entities = pf->game_state->num_entities;
 	Vec3 *local_verts = 0; 
 	Vec3 *trans_verts = 0;
 	Poly *polys = 0;
+	int num_entities = pf->game_state->num_entities;
 	// FIXME: rethink on this style of vert transforms
 	for (int i = 0; i < num_entities; ++i) {
 		if (auto sub_type = GetAnonType(&entities[i], player, EntityType_)) {
@@ -410,10 +414,8 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 					rs->back_end.poly_verts,
 					rs->back_end.num_polys);
 	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
-
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
-
 	R_PushPolysCmd(&rs->back_end.target, 
 				  &rs->back_end.cmds,
 				  rs->back_end.polys,
@@ -422,24 +424,27 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 				  rs->front_end.is_wireframe);
 
 	// font testing
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 20.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 40.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 60.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 80.0f));
-	R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, rs->back_end.target.height - 100.0f));
+	{
+		r32 text_pos = (r32)rs->back_end.target.height;
+		r32 line_gap = 20.0f;
+		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+	}
 
+	// frame timing
 	{
 		static int last_time = Sys_GetMilliseconds();
 		int	now_time = Sys_GetMilliseconds();
 		int	frame_msec = now_time - last_time;
 		last_time = now_time;
 
-		// FIXME: v-sync when switching to hw-accelerated rendering
-		//if (frame_msec > 0.016f) {
 		R_EndFrame(&rs->back_end.target, &rs->back_end.cmds);
 
 		ClearRenderState(&rs->back_end);
-		//}
 
 		char buffer[64];
 		sprintf_s(buffer, "Frame msec %d\n", frame_msec);

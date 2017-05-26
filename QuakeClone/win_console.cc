@@ -8,41 +8,9 @@
 #define EDIT_ID			100
 #define INPUT_ID		101
 
+// FIXME: should this be global or not?
+Console global_console;
 
-struct WinConsole {
-	HWND			hwnd;
-	HWND			hwnd_buffer;
-
-	HWND			hwnd_buttonclear;
-	HWND			hwnd_buttoncopy;
-	HWND			hwnd_buttonquit;
-
-	HWND			hwnd_errorbox;
-	HWND			hwnd_errortext;
-
-	HBITMAP			hbm_logo;
-	HBITMAP			hbm_clearbitmap;
-
-	HBRUSH			hbr_edit_background;
-	HBRUSH			hbr_error_background;
-
-	HFONT			hf_buffer_font;
-	HFONT			hf_button_font;
-
-	HWND			hwnd_inputline;
-
-	char			error_string[80];
-
-	char			console_text[512], returned_text[512];
-	ConVisibility	vis_level;
-	b32				quit_on_close;
-	int				window_width, window_height;
-	
-	WNDPROC			sys_input_line_wndproc;
-
-};
-
-static WinConsole global_console;
 static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam) {
 #define TIMER_ID 1
 	char *cmd_string;
@@ -202,16 +170,13 @@ static LRESULT WINAPI ConWndProc(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lpa
 }
 
 void Con_AppendText(const char *msg) {
-	char buffer[1 << 14];	
+	static u32 total_chars;
+	char buffer[1 << 12];	
 	char *b = buffer;
 	const char *temp_msg = msg;
-
-	static u32 total_chars;
 	int i = 0;
 
-	//
 	// copy into an intermediate buffer
-	//
 	while (temp_msg[i] && ((b - buffer) < sizeof(buffer) - 1)) {
 		if (temp_msg[i] == '\n' && temp_msg[i+1] == '\r') {
 			b[0] = '\r';
@@ -238,12 +203,12 @@ void Con_AppendText(const char *msg) {
 	u32 buf_len = (u32)(b - buffer);
 	total_chars += buf_len;
 
-	if (total_chars > 0x7fff) {
-		SendMessage( global_console.hwnd_buffer, EM_SETSEL, 0, -1 );
+	if (total_chars > (1 << 12)) {
+		SendMessage(global_console.hwnd_buffer, EM_SETSEL, 0, -1);
 		total_chars = buf_len;
 	}
 
-	SendMessage(global_console.hwnd_buffer, EM_SCROLLCARET, 0, 0 );
+	SendMessage(global_console.hwnd_buffer, EM_SCROLLCARET, 0, 0);
 	SendMessage(global_console.hwnd_buffer, EM_REPLACESEL, 0, (LPARAM)buffer);
 }
 #if 1
@@ -255,7 +220,7 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 	const char *console_class_name = "Debug Console";
 	int nheight;
 	int swidth, sheight;
-	int DEDSTYLE = WS_POPUPWINDOW | WS_CAPTION | WS_MINIMIZEBOX;
+	int style_bits = WS_POPUPWINDOW | WS_CAPTION | WS_MINIMIZEBOX;
 
 	wc.lpfnWndProc   = ConWndProc;
 	wc.hInstance     = hinstance;
@@ -270,7 +235,7 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 	rect.right = 540;
 	rect.top = 0;
 	rect.bottom = 450;
-	AdjustWindowRect(&rect, DEDSTYLE, FALSE);
+	AdjustWindowRect(&rect, style_bits, FALSE);
 
 	hdc = GetDC(GetDesktopWindow());
 	swidth = GetDeviceCaps(hdc, HORZRES);
@@ -283,8 +248,8 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 	global_console.hwnd = CreateWindowEx(0,
 									   console_class_name,
 									   "Console",
-									   DEDSTYLE,
-									   1350, 550, /*( swidth - 600 ) / 2, ( sheight - 450 ) / 2 ,*/
+									   style_bits,
+									   1365, 600, /*( swidth - 600 ) / 2, ( sheight - 450 ) / 2 , FIXME: calculate the fit size*/
 									   rect.right - rect.left + 1, rect.bottom - rect.top + 1,
 									   0,
 									   0,
@@ -333,30 +298,27 @@ void Sys_CreateConsole(HINSTANCE hinstance) {
 											  hinstance, 0 );
 }
 
-// FIXME: bind the console into hotkey
-void Sys_FetchConsole(ConVisibility vis_level, b32 quit_on_close) {
+void Sys_FetchConsole(ConsoleVis visibility, b32 quit_on_close) {
 	if (!global_console.hwnd) {
 		return;
 	}
 
 	global_console.quit_on_close = quit_on_close;
-	if (vis_level == global_console.vis_level) {
+	if (visibility == global_console.visibility) {
 		return;
 	}
-	global_console.vis_level = vis_level;
+	global_console.visibility = visibility;
 
-	switch (vis_level) {
+	switch (visibility) {
 		case CON_HIDE: {
 			ShowWindow(global_console.hwnd, SW_HIDE);
 		} break;
 		case CON_SHOW: {
-			ShowWindow(global_console.hwnd, SW_SHOWNORMAL);
+			SetWindowPos(global_console.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW);
 			SendMessage(global_console.hwnd_buffer, EM_LINESCROLL, 0, 0xffff );
-			Sys_Print("\nConsole created\n");
 		} break;
 		case CON_MINIMIZE: {
 			ShowWindow(global_console.hwnd, SW_MINIMIZE);
-			Sys_Print("Console minimized");
 		} break;
 		default: {
 			Sys_Print("\nInvalid vis_level sent to Sys_ShowConsole\n");

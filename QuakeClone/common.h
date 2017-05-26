@@ -6,7 +6,7 @@
 
 #define MAX_UPS 120
 #define MSEC_PER_SIM (1000 / MAX_UPS)
-#define PLATFORM_FULLSCREEN
+//#define PLATFORM_FULLSCREEN
 
 #undef MAX_PERM_MEMORY
 #undef MAX_TEMP_MEMORY
@@ -138,8 +138,49 @@ struct SysEvent {
 };
 
 // Console
-extern void Sys_FetchConsole(enum ConVisibility vis_level, b32 quit_on_close);
-extern void Sys_Print(const char *msg);
+enum ConsoleVis {
+	CON_HIDE = 0,
+	CON_SHOW,
+	CON_MINIMIZE
+};
+struct Console {
+	HWND			hwnd;
+	HWND			hwnd_buffer;
+
+	HWND			hwnd_buttonclear;
+	HWND			hwnd_buttoncopy;
+	HWND			hwnd_buttonquit;
+
+	HWND			hwnd_errorbox;
+	HWND			hwnd_errortext;
+
+	HBITMAP			hbm_logo;
+	HBITMAP			hbm_clearbitmap;
+
+	HBRUSH			hbr_edit_background;
+	HBRUSH			hbr_error_background;
+
+	HFONT			hf_buffer_font;
+	HFONT			hf_button_font;
+
+	HWND			hwnd_inputline;
+
+	char			error_string[80];
+
+	char			console_text[512], returned_text[512];
+	ConsoleVis		visibility;
+	b32				quit_on_close;
+	int				window_width, window_height;
+	
+	WNDPROC			sys_input_line_wndproc;
+
+};
+
+extern Console global_console;
+extern void	Sys_CreateConsole(HINSTANCE hinstance);
+extern void	Sys_DestroyConsole();
+extern void Con_AppendText(const char *msg);
+extern void Sys_FetchConsole(ConsoleVis visibility, b32 quit_on_close);
 
 // Timing
 extern int Sys_GetMilliseconds();
