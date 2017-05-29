@@ -90,24 +90,23 @@ void R_SetupFrustum(ViewSystem *vs) {
 		frustum[i].dist = Dot3(frustum[i].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
 	}
 
-	int x = 42;
 	memcpy(&vs->frustum, &frustum, sizeof(frustum));
 }
 
-void R_TransformWorldToView(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
+void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
 		r32 vert[4], tmp[4];
-		Vec3Copy(vert, poly_verts[i]);
+		Vec3Copy(vert, poly_verts[i].xyz);
 		vert[3] = 1.0f;
 
 		Mat1x4Mul(tmp, vert, vs->view_matrix);  
-		Vec3Copy(poly_verts[i], tmp);
+		Vec3Copy(poly_verts[i].xyz, tmp);
 	}
 }
 
-void R_TransformModelToWorld(Vec3 *local_poly_verts, Vec3 *trans_poly_verts, int num_verts, Vec3 world_pos) {
+void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos) {
 	for (int i = 0; i < num_verts; ++i) {
-		trans_poly_verts[i] = local_poly_verts[i] + world_pos;
+		trans_poly_verts[i].xyz = local_poly_verts[i].xyz + world_pos;
 	}
 }
 
@@ -126,51 +125,47 @@ ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	return CULL_IN;
 }
 
-void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
+void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
 	r32 in[4];
 	r32 out[4];
 
 	for (int i = 0; i < num_verts; ++i) {
-		in[0] = poly_verts[i][0];
-		in[1] = poly_verts[i][1];
-		in[2] = poly_verts[i][2];
+		in[0] = poly_verts[i].xyz[0];
+		in[1] = poly_verts[i].xyz[1];
+		in[2] = poly_verts[i].xyz[2];
 		in[3] = 1.0f;
 
 		Mat1x4Mul(out, in, m);  
-		poly_verts[i][0] = out[0] / out[3];
-		poly_verts[i][1] = out[1] / out[3];
-		poly_verts[i][2] = out[2] / out[3];
+		poly_verts[i].xyz[0] = out[0] / out[3];
+		poly_verts[i].xyz[1] = out[1] / out[3];
+		poly_verts[i].xyz[2] = out[2] / out[3];
 	}
 }
 
-void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts) {
+void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 in[3];
-	//r32 out[9];
-	//r32 (*m)[3] = vs->screen_matrix;
 	r32 screen_width_factor = (0.5f * (vs->viewport_width - 1.0f));
 	r32 screen_height_factor = (0.5f * (vs->viewport_height - 1.0f));
 	for (int i = 0; i < num_verts; ++i) {
-		//poly_verts[i][2] = 1.0f;
-		//Mat1x3Mul(&poly_verts[i], &poly_verts[i], m);
-		poly_verts[i][0] = (screen_width_factor + (poly_verts[i][0] * screen_width_factor));
-		poly_verts[i][1] = (screen_height_factor + (poly_verts[i][1] * screen_height_factor));
+		poly_verts[i].xyz[0] = (screen_width_factor + (poly_verts[i].xyz[0] * screen_width_factor));
+		poly_verts[i].xyz[1] = (screen_height_factor + (poly_verts[i].xyz[1] * screen_height_factor));
 	}
 }
 
-void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts) {
+void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
-		r32 x = Dot3(rot_mat[0], points[i]);
-		r32 y = Dot3(rot_mat[1], points[i]);
-		r32 z = Dot3(rot_mat[2], points[i]);
+		r32 x = Dot3(rot_mat[0], poly_verts[i].xyz);
+		r32 y = Dot3(rot_mat[1], poly_verts[i].xyz);
+		r32 z = Dot3(rot_mat[2], poly_verts[i].xyz);
 
-		points[i][0] = x;
-		points[i][1] = y;
-		points[i][2] = z;
+		poly_verts[i].xyz[0] = x;
+		poly_verts[i].xyz[1] = y;
+		poly_verts[i].xyz[2] = z;
 	}
 }
 
-void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys) {
+void R_CullBackFaces(ViewSystem *vs, Poly *polys, const PolyVert *poly_verts, int num_polys) {
 	Vec3 p = {};
 
 	for (int i = 0; i < num_polys; ++i) {
@@ -178,13 +173,13 @@ void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int nu
 			continue;
 		}
 
-		Vec3 v0 = polys[i].vertex_array[0];
-		Vec3 v1 = polys[i].vertex_array[1];
-		Vec3 v2 = polys[i].vertex_array[2];
-		Vec3 u = MakeVec3(v0, v1);
-		Vec3 v = MakeVec3(v0, v2);
+		PolyVert v0 = polys[i].vertex_array[0];
+		PolyVert v1 = polys[i].vertex_array[1];
+		PolyVert v2 = polys[i].vertex_array[2];
+		Vec3 u = MakeVec3(v0.xyz, v1.xyz);
+		Vec3 v = MakeVec3(v0.xyz, v2.xyz);
 		Vec3 n = Cross3(u, v);
-		Vec3 view = MakeVec3(v0, p);
+		Vec3 view = MakeVec3(v0.xyz, p);
 
 		r32 dot = Dot3(view, n);
 		if (dot < 0.0f) {
@@ -244,13 +239,12 @@ void R_RenderView(ViewSystem *vs) {
 	R_SetupFrustum(vs);					
 }
 
-void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_polys) {
-	Poly *poly;
+void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys) {
 	int num_verts = 3;	// triangle
 	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
 
 	for (int i = 0; i < num_polys; ++i) {
-		poly = &rb->polys[rb->num_polys];
+		Poly *poly = &rb->polys[rb->num_polys];
 		poly->num_verts = num_verts;
 		poly->state = poly_array[i].state;
 		poly->color = poly_array[i].color;
@@ -265,4 +259,7 @@ void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int nu
 		rb->num_verts += num_verts;
 		//verts += num_verts;
 	}
+}
+
+void R_CalculateVertexNormals(Poly *polys, int num_polys) {
 }

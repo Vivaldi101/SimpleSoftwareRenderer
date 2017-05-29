@@ -22,9 +22,6 @@
 
 
 #define MAX_PLG_LINE_LEN 256
-//#define IsValidChar(c) ((c)) 
-#define IsEmptyChar(c) ((char)(c) == 10 || (char)(c) == 13 || (c) == ' ' || (c) == '\t') 
-#define IsHashTag(c) ((c) == '#') 
 #define IsNewLine(c) ((c) == '\n') 
 #define IsMinus(c) ((c) == '-') 
 
@@ -117,7 +114,7 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 			InvalidCodePath("Unhandled entitity type!");
 		}
 	}
-	Vec3 *local_vertex_array = (Vec3 *)((byte *)typeless_ent + local_verts_offset);  
+	PolyVert *local_vertex_array = (PolyVert *)((byte *)typeless_ent + local_verts_offset);  
 	int num_verts = typeless_ent->status.num_verts;
 
 	for (int i = 0; i < num_verts; ++i) {
@@ -127,17 +124,17 @@ b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len,
 		}
 
 		sscanf_s(buffer, "%f %f %f",
-				 &local_vertex_array[i][0],
-				 &local_vertex_array[i][1],
-				 &local_vertex_array[i][2]);
+				 &local_vertex_array[i].xyz[0],
+				 &local_vertex_array[i].xyz[1],
+				 &local_vertex_array[i].xyz[2]);
 		memset(buffer, 0, sizeof(buffer));
 
 		// NOTE: convert from ccw into cw vertex winding order for our left-handed system
-		r32 v0 = local_vertex_array[i][0];
-		r32 v1 = local_vertex_array[i][1];
+		r32 v0 = local_vertex_array[i].xyz[0];
+		r32 v1 = local_vertex_array[i].xyz[1];
 
-		local_vertex_array[i][0] = v1;
-		local_vertex_array[i][1] = v0;
+		local_vertex_array[i].xyz[0] = v1;
+		local_vertex_array[i].xyz[1] = v0;
 	}
 
 	int poly_num_verts = 0;

@@ -194,7 +194,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	for (int i = 0; i < num_frames; ++i) {
 		for (int j = 0; j < num_entities; ++j) {
 			if (auto player = GetAnonType(&ents[j], player, EntityType_)) {
-				Vec3 *verts = player->local_vertex_array;
+				PolyVert *verts = player->local_vertex_array;
 				Vec3 acc = {};
 				if (in->keys['W'].down) {
 					acc = Vec3Norm(current_view->world_orientation.dir);
@@ -213,7 +213,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 						current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 						current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 						for (int i = 0; i < ents[0].status.num_verts; ++i) {
-							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+							Mat1x3Mul(&verts[i].xyz, &verts[i].xyz, rot_mat_y);
 						}
 					}
 				}
@@ -234,7 +234,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 						current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
 						current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
 						for (int i = 0; i < ents[0].status.num_verts; ++i) {
-							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+							Mat1x3Mul(&verts[i].xyz, &verts[i].xyz, rot_mat_y);
 						}
 					}
 				}
@@ -251,7 +251,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 					// reset player yaw angle and position
 					if (yaw != 0.0f) {
 						for (int i = 0; i < ents[0].status.num_verts; ++i) {
-							Mat1x3Mul(&verts[i], &verts[i], rot_mat_y);
+							Mat1x3Mul(&verts[i].xyz, &verts[i].xyz, rot_mat_y);
 						}
 					}
 
@@ -365,13 +365,14 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 	//}
 	R_BeginFrame(&rs->back_end.target, &rs->back_end.cmds);
 
-	Vec3 *local_verts = 0; 
-	Vec3 *trans_verts = 0;
+	PolyVert *local_verts = 0; 
+	PolyVert *trans_verts = 0;
 	Poly *polys = 0;
 	int num_entities = pf->game_state->num_entities;
 	// FIXME: rethink on this style of vert transforms
 	for (int i = 0; i < num_entities; ++i) {
 		if (auto sub_type = GetAnonType(&entities[i], player, EntityType_)) {
+			Assert(i == 0);
 			local_verts = sub_type->local_vertex_array;
 			trans_verts = sub_type->trans_vertex_array;
 
@@ -413,6 +414,7 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 					rs->back_end.polys,
 					rs->back_end.poly_verts,
 					rs->back_end.num_polys);
+	R_CalculateVertexNormals(rs->back_end.polys, rs->back_end.num_polys);
 	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);

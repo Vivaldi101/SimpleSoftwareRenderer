@@ -8,20 +8,28 @@ struct Bitmap {
 	byte *	data;		
 };
 
+struct DrawVert {
+	Vec3		xyz;
+	r32			uv[2];
+	r32			lightmap[2];
+	Vec3		normal;
+	byte		color[4];
+};
+
+struct PolyVert {
+	Vec3		xyz;
+	r32			uv[2];
+	byte		modulate[4];
+};
+
 struct Poly {
-	Vec3 *		vertex_array;	
+	PolyVert *	vertex_array;	
 	u16			vert_indices[3];
 	int			num_verts;
 	int			state;
 	u32			color;	// rgba, packed
 };
 
-struct Vert {
-	Vec3	model_space_pos;     
-	Vec3	unit_normal;
-	u32		color;               // rgba, packed
-	r32		u, v;                // texture coordinates
-};
 
 //struct PipelineVert {
 //	Vec3	view_space_pos;      // xyz
@@ -38,16 +46,4 @@ struct Vert {
 //}; // 60 bytes
 
 
-//// self contained
-//struct LinkedPoly {
-//	Vec3			orig_vertex_array[3];	// original
-//	Vec3			trans_vertex_array[3];	// transformed
-//
-//	int				state;
-//	int				attr;
-//	u32				color;
-//
-//	LinkedPoly *	next;
-//	LinkedPoly *	prev;
-//};
 #endif	// Header guard

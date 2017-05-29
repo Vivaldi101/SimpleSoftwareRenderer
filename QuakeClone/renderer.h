@@ -91,7 +91,7 @@ struct RendererFrontend {
 
 struct RendererBackend {
 	RenderCommands		cmds;
-	RenderTarget 		target;		// FIXME: embed into the structure
+	RenderTarget 		target;		
 
 	Entity *			entities;
 
@@ -99,7 +99,7 @@ struct RendererBackend {
 	int					num_lights;
 
 	Poly *				polys;			
-	Vec3 *				poly_verts;		// FIXME: change type to proper vert type 			
+	PolyVert *			poly_verts;		
 	int					num_polys;
 	int					num_verts;
 };
@@ -114,21 +114,21 @@ struct Renderer {
 //
 extern Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc); 
 extern void R_RenderView(ViewSystem *vs);
-
 extern void R_SetupFrustum(ViewSystem *vs);
 extern void R_SetupProjection(ViewSystem *vs);
+extern void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys);
 
-extern void R_TransformModelToWorld(Vec3 *local_poly_verts, Vec3 *trans_poly_verts, int num_verts, Vec3 world_pos);
-extern void R_TransformWorldToView(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
-extern void R_TransformViewToClip(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
-extern void R_TransformClipToScreen(ViewSystem *vs, Vec3 *poly_verts, int num_verts);
+extern void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos);
+extern void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
+extern void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
+extern void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 
-extern void R_RotatePoints(r32 rot_mat[3][3], Vec3 *points, int num_verts);
 ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 1.0f);
-extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, const Vec3 *poly_verts, int num_polys);
-extern void R_AddPolys(RendererBackend *rb, const Vec3 *verts, Poly *poly_array, int num_polys);
+extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, const PolyVert *poly_verts, int num_polys);
 
+extern void R_CalculateVertexNormals(Poly *polys, int num_polys);
 
+extern void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts);
 //
 //	Renderer backend
 //

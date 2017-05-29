@@ -64,7 +64,7 @@ void R_PushTextCmd(RenderTarget *rt, RenderCommands *rc, const char *text, Bitma
 	cmd->color = PackRGBA(color);
 }
 
-void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 is_wireframe) {
+void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, PolyVert *poly_verts, int num_polys, b32 is_wireframe) {
 	DrawPolyCmd *cmd = PushRenderCmd(rc, DrawPolyCmd);
 	Assert(cmd);
 

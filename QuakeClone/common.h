@@ -58,17 +58,17 @@ static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
 
 struct Entity {
 	union {
-		// FIXME: is this a good way to store vertex arrays?
-		// FIXME: hardcoded arrays for now, must match the vertex and poly numbers in the asset file
+		// FIXME: move into file format module
+		// FIXME: just for test stuff
 		struct {
-			Poly 	polys[12];
-			Vec3	local_vertex_array[8];		
-			Vec3	trans_vertex_array[8];		
+			Poly 		polys[12];
+			PolyVert	local_vertex_array[8];		
+			PolyVert	trans_vertex_array[8];		
 		} cube;		
 		struct {
-			Poly 	polys[12];
-			Vec3	local_vertex_array[8];		
-			Vec3	trans_vertex_array[8];		
+			Poly 		polys[12];
+			PolyVert	local_vertex_array[8];		
+			PolyVert	trans_vertex_array[8];		
 		} player;
 	};
 
@@ -83,7 +83,7 @@ struct Entity {
 		r32		avg_radius;
 		r32		max_radius;
 
-		r32		world_matrix[4][4];	// currently unused
+		//r32		world_matrix[4][4];	// currently unused
 		Vec3	axis[3];			// rotation vectors
 		Vec3	world_pos;
 		Vec3	orientation;

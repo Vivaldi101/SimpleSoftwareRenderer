@@ -47,11 +47,11 @@ struct DrawTextCmd {
 };
 
 struct DrawPolyCmd {
-	int		cmd_id;
-	Poly *	polys;
-	Vec3 *	poly_verts;
-	int		num_polys;
-	b32		is_wireframe;	
+	int			cmd_id;
+	Poly *		polys;
+	PolyVert *	poly_verts;
+	int			num_polys;
+	b32			is_wireframe;	
 };
 
 struct SwapBuffersCmd {
@@ -70,5 +70,5 @@ extern void R_BeginFrame(RenderTarget *rt, RenderCommands *rc);
 extern void R_EndFrame(RenderTarget *rt, RenderCommands *rc);
 extern void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale = 1.0f, Vec4 color = MakeVec4(1.0f,1.0f,1.0f,1.0f));
 extern void R_PushTextCmd(RenderTarget *rt, RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale = 1.0f, Vec4 color = MakeVec4(1.0f,1.0f,1.0f,1.0f));
-extern void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, Vec3 *poly_verts, int num_polys, b32 solid);
+extern void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, PolyVert *poly_verts, int num_polys, b32 is_wireframe);
 #endif	// Header guard

@@ -22,9 +22,9 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 		base.c.g = (r32)(((rb->polys[i].color & 0xff00) >> 8u) / 255.0f);
 		base.c.b = (r32)((rb->polys[i].color & 0xff >> 0u) / 255.0f);
 
-		Vec3 v0 = rb->polys[i].vertex_array[0];
-		Vec3 v1 = rb->polys[i].vertex_array[1];
-		Vec3 v2 = rb->polys[i].vertex_array[2];
+		PolyVert v0 = rb->polys[i].vertex_array[0];
+		PolyVert v1 = rb->polys[i].vertex_array[1];
+		PolyVert v2 = rb->polys[i].vertex_array[2];
 
 		for (int j = 0; j < num_lights; ++j) {
 			if (!lights[j].is_active) {
@@ -40,11 +40,11 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			ambient.c.g = base.c.g * (lights[j].ambient.c.g * as);		
 			ambient.c.b = base.c.b * (lights[j].ambient.c.b * as);		
 
-			Vec3 u = MakeVec3(v0, v1);
-			Vec3 v = MakeVec3(v0, v2);
+			Vec3 u = MakeVec3(v0.xyz, v1.xyz);
+			Vec3 v = MakeVec3(v0.xyz, v2.xyz);
 			Vec3 n = Cross3(u, v);
 
-			Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0, (camera_pos)) : MakeVec3(v0, lights[j].pos); 
+			Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0.xyz, (camera_pos)) : MakeVec3(v0.xyz, lights[j].pos); 
 			r32 llen = Vec3Len(l);
 			l = Vec3Norm(l);
 
@@ -55,7 +55,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			r32 nlen = Vec3Len(n);
 			n = Vec3Norm(n);
 
-			Vec3 view = MakeVec3(v0, camera_pos); 
+			Vec3 view = MakeVec3(v0.xyz, camera_pos); 
 			view = Vec3Norm(view);
 
 

@@ -208,58 +208,58 @@ static void RB_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, 
 	}
 }
 
-static void RB_DrawWireframeMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
 		}
 
-		Vec3 v0 = polys[i].vertex_array[0];
-		Vec3 v1 = polys[i].vertex_array[1];
-		Vec3 v2 = polys[i].vertex_array[2];
+		PolyVert v0 = polys[i].vertex_array[0];
+		PolyVert v1 = polys[i].vertex_array[1];
+		PolyVert v2 = polys[i].vertex_array[2];
 
 		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)(v0.v.x + 0.5f),
-				   (int)(v0.v.y + 0.5f),
-				   (int)(v1.v.x + 0.5f),
-				   (int)(v1.v.y + 0.5f),
+				   (int)(v0.xyz.v.x + 0.5f),
+				   (int)(v0.xyz.v.y + 0.5f),
+				   (int)(v1.xyz.v.x + 0.5f),
+				   (int)(v1.xyz.v.y + 0.5f),
 				   width, height);
 
 		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)(v1.v.x + 0.5f),
-				   (int)(v1.v.y + 0.5f),
-				   (int)(v2.v.x + 0.5f),
-				   (int)(v2.v.y + 0.5f),
+				   (int)(v1.xyz.v.x + 0.5f),
+				   (int)(v1.xyz.v.y + 0.5f),
+				   (int)(v2.xyz.v.x + 0.5f),
+				   (int)(v2.xyz.v.y + 0.5f),
 				   width, height);
 
 		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)(v2.v.x + 0.5f),
-				   (int)(v2.v.y + 0.5f),
-				   (int)(v0.v.x + 0.5f),
-				   (int)(v0.v.y + 0.5f),
+				   (int)(v2.xyz.v.x + 0.5f),
+				   (int)(v2.xyz.v.y + 0.5f),
+				   (int)(v0.xyz.v.x + 0.5f),
+				   (int)(v0.xyz.v.y + 0.5f),
 				   width, height);
 	}
 }
 
 #if 1
-static void RB_DrawSolidMesh(Poly *polys, Vec3 *verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
 		}
 
-		Vec3 v0 = polys[i].vertex_array[0];
-		Vec3 v1 = polys[i].vertex_array[1];
-		Vec3 v2 = polys[i].vertex_array[2];
+		PolyVert v0 = polys[i].vertex_array[0];
+		PolyVert v1 = polys[i].vertex_array[1];
+		PolyVert v2 = polys[i].vertex_array[2];
 
-		r32 x0 = v0.v.x;
-		r32 y0 = v0.v.y;
+		r32 x0 = v0.xyz.v.x;
+		r32 y0 = v0.xyz.v.y;
 
-		r32 x1 = v1.v.x;
-		r32 y1 = v1.v.y;
+		r32 x1 = v1.xyz.v.x;
+		r32 y1 = v1.xyz.v.y;
 
-		r32 x2 = v2.v.x;
-		r32 y2 = v2.v.y;
+		r32 x2 = v2.xyz.v.x;
+		r32 y2 = v2.xyz.v.y;
 
 		// sort v0, v1, v2 in ascending y order
 		if (y1 < y0) {
