@@ -8,18 +8,20 @@ struct Bitmap {
 	byte *	data;		
 };
 
-struct DrawVert {
-	Vec3		xyz;
-	r32			uv[2];
-	r32			lightmap[2];
-	Vec3		normal;
-	byte		color[4];
-};
+//struct DrawVert {
+//	Vec3		xyz;
+//	r32			uv[2];
+//	r32			lightmap[2];
+//	Vec3		normal;
+//	byte		color[4];
+//};
 
 struct PolyVert {
 	Vec3		xyz;
 	r32			uv[2];
-	byte		modulate[4];
+	//r32			lightmap[2];
+	Vec3		normal;
+	byte		color[4];
 };
 
 struct Poly {

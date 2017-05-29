@@ -148,7 +148,7 @@ static void ClearRenderState(RendererBackend *rb) {
 		rb->polys[j].state &= (~CULL_OUT);
 	}
 	rb->num_polys = 0;
-	rb->num_verts = 0;
+	rb->num_poly_verts = 0;
 }
 
 static void ProcessEvent(SysEvent se) {
@@ -410,14 +410,11 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 			}
 		}
 	}
-	R_CullBackFaces(&rs->front_end.current_view,
-					rs->back_end.polys,
-					rs->back_end.poly_verts,
-					rs->back_end.num_polys);
-	R_CalculateVertexNormals(rs->back_end.polys, rs->back_end.num_polys);
+	R_CullBackFaces(&rs->front_end.current_view, rs->back_end.polys, rs->back_end.num_polys);
+	R_CalculateVertexNormals(rs->back_end.polys, rs->back_end.num_polys, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
 	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
-	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
-	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_verts);
+	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
+	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
 	R_PushPolysCmd(&rs->back_end.target, 
 				  &rs->back_end.cmds,
 				  rs->back_end.polys,

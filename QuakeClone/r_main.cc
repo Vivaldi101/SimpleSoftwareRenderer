@@ -165,7 +165,7 @@ void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 	}
 }
 
-void R_CullBackFaces(ViewSystem *vs, Poly *polys, const PolyVert *poly_verts, int num_polys) {
+void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 	Vec3 p = {};
 
 	for (int i = 0; i < num_polys; ++i) {
@@ -248,18 +248,43 @@ void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, in
 		poly->num_verts = num_verts;
 		poly->state = poly_array[i].state;
 		poly->color = poly_array[i].color;
-		poly->vertex_array = &rb->poly_verts[rb->num_verts];
+		poly->vertex_array = &rb->poly_verts[rb->num_poly_verts];
 
-		//memcpy(poly->vertex_array, &verts[*poly_array[i].vert_indices], num_verts * sizeof(*verts));
 		for (int j = 0; j < num_verts; ++j) {
 			poly->vertex_array[j] = verts[poly_array[i].vert_indices[j]];
 		}
 
 		++rb->num_polys; 
-		rb->num_verts += num_verts;
-		//verts += num_verts;
+		rb->num_poly_verts += num_verts;
 	}
 }
 
-void R_CalculateVertexNormals(Poly *polys, int num_polys) {
+void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts) {
+	for (int i = 0; i < num_poly_verts; ++i) {
+		poly_verts[i].normal[0] = 0.0f;
+		poly_verts[i].normal[1] = 0.0f;
+		poly_verts[i].normal[2] = 0.0f;
+	}
+	// FIXME: function to compute poly normals
+	for (int i = 0; i < num_polys; ++i) {
+		if (polys[i].state & POLY_STATE_BACKFACE) {
+			continue;
+		}
+		PolyVert v0 = polys[i].vertex_array[0];
+		PolyVert v1 = polys[i].vertex_array[1];
+		PolyVert v2 = polys[i].vertex_array[2];
+		Vec3 u = MakeVec3(v0.xyz, v1.xyz);
+		Vec3 v = MakeVec3(v0.xyz, v2.xyz);
+		Vec3 n = Cross3(u, v);
+		v0.normal = v0.normal + n;
+		v1.normal = v1.normal + n;
+		v2.normal = v2.normal + n;
+		polys[i].vertex_array[0].normal = v0.normal;
+		polys[i].vertex_array[1].normal = v1.normal;
+		polys[i].vertex_array[2].normal = v2.normal;
+	}
+	for (int i = 0; i < num_poly_verts; ++i) {
+		poly_verts[i].normal = Vec3Norm(poly_verts[i].normal);
+	}
+	int x = 42;
 }

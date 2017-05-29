@@ -4,7 +4,7 @@
 #include "r_types.h"
 #include "input.h"
 
-#define MAX_UPS 120
+#define MAX_UPS 60
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 //#define PLATFORM_FULLSCREEN
 

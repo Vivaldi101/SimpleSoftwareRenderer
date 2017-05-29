@@ -101,7 +101,7 @@ struct RendererBackend {
 	Poly *				polys;			
 	PolyVert *			poly_verts;		
 	int					num_polys;
-	int					num_verts;
+	int					num_poly_verts;
 };
 
 struct Renderer {
@@ -124,9 +124,9 @@ extern void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_
 extern void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 
 ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 1.0f);
-extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, const PolyVert *poly_verts, int num_polys);
+extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys);
 
-extern void R_CalculateVertexNormals(Poly *polys, int num_polys);
+extern void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts);
 
 extern void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts);
 //
