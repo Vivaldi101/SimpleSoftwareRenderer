@@ -6,15 +6,25 @@
 
 Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) { 
 	Renderer *rs = PushStruct(&pf->main_memory_stack.perm_data, Renderer);
-	r32 width, height;
 
-	// init backend
-
+	// init renderer backend
 	Assert(MAX_NUM_POLYS < 0xffff);
 	rs->back_end.polys = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
 	rs->back_end.poly_verts = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_POLY_VERTS, PolyVert);
 	rs->back_end.lights = PushArray(&pf->main_memory_stack.perm_data, MAX_NUM_LIGHTS, Light);
-	R_AddLight(&rs->back_end, MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec4(1.0f, 1.0f, 1.0f, 1.0f), MakeVec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0055f, 0.0f, (LightTypeFlags)(CAMERA_LIGHT|SPOT_LIGHT));
+
+	// init lights
+	Light l = {};
+	l.ambient = MakeVec4(1.0f, 1.0f, 1.0f, 1.0f); 
+	l.diffuse  = MakeVec4(1.0f, 1.0f, 1.0f, 1.0f); 
+	l.specular = MakeVec4(1.0f, 1.0f, 1.0f, 1.0f); 
+	l.radius = 10.0f;
+	l.kc = 0.0f; 
+	l.kl = 0.055f;
+	l.kq = 0.0f;
+	l.is_active = true;
+	l.flags |= (CAMERA_LIGHT|POINT_LIGHT);
+	R_AddLight(&rs->back_end, &l);
 
 	// FIXME: this into a separate function
 	rs->back_end.cmds.buffer_base = PushSize(&pf->main_memory_stack.perm_data, MAX_RENDER_BUFFER, byte);
@@ -34,8 +44,8 @@ Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 
 	Sys_Print("Renderer backend init done\n");
 
-	// init frontend
-	rs->front_end.is_ambient = AMBIENT_ON;
+	// init renderer frontend
+	rs->front_end.is_ambient = AMBIENT_OFF;
 	Vec3Init(rs->front_end.current_view.world_orientation.origin, 0.0f, 0.0f, 0.0f);
 
 	Vec3Init(rs->front_end.current_view.world_orientation.dir, 0.0f, 0.0f, 1.0f);
@@ -52,16 +62,7 @@ Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc) {
 	rs->front_end.current_view.viewport_width = rs->back_end.target.width;		
 	rs->front_end.current_view.viewport_height = rs->back_end.target.height;
 
-
-	//width = (r32)rs->back_end.target->width - 1.0f;
-	//height = (r32)rs->back_end.target->height - 1.0f;
-
-	//r32 screen_matrix[9] = {
-	//	width * 0.5f,				0.0f,						0.0f,
-	//	0.0f,						height * 0.5f,				0.0f,
-	//	width * 0.5f,				height * 0.5f,		1.0f
-	//};
-	//memcpy(rs->front_end.current_view.screen_matrix, screen_matrix, sizeof(screen_matrix));
+	//rs->front_end.current_view.world_scale = 1.0f / 1.0f;
 
 	Sys_Print("Renderer frontend init done\n");
 

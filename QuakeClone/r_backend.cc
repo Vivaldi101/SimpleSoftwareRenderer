@@ -1,6 +1,19 @@
 #include "r_cmds.h"
 #include "renderer.h"
 
+// FIXME: atm the drawing routines receive pitch and bpp, 
+// will make them dynamic or remove the concept completely at some point
+static inline int Orient2D(Point2D a, Point2D b, Point2D c) {
+	return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+}
+
+static inline int Orient2D(int ax, int ay, int bx, int by, int cx, int cy) {
+	Point2D a = {ax, ay};
+	Point2D b = {bx, by};
+	Point2D c = {cx, cy};
+	return Orient2D(a, b, c);
+}
+
 #if 0
 #define MapAsciiToTTF(c) (c) - 65
 #else
@@ -143,7 +156,7 @@ static void RB_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int
 		byte *line = (byte*)buffer;
 		line = (line + (pitch * y0)) + x0 * bpp;
 
-		for (int i = 0; i < num_pixels; ++i) {
+		for (int i = 0; i < num_pixels; i++) {
 			//for (int j = 0; j < bpp; ++j) {
 			u32 *pixel = (u32 *)line;
 			*pixel = color;
@@ -160,7 +173,6 @@ static void RB_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int
 	}
 }
 
-#if 1
 // FIXME: pack the points into structures
 static void RB_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
 	r32 t = x1;
@@ -177,13 +189,12 @@ static void RB_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 colo
 	r32 xe = x0 + 1.0f;
 	xs = xs + ((cy0 - y0) * dxy_left);
 	xe = xe + ((cy0 - y0) * dxy_right);
-	for (int y = cy0; y <= cy2; ++y) {
+	for (int y = cy0; y <= cy2; y++) {
 		RB_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
 		xs += dxy_left;
 		xe += dxy_right;
 	}
 }
-#endif
 
 // FIXME: pack the points into structures
 static void RB_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
@@ -201,15 +212,16 @@ static void RB_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, 
 	r32 xe = x1 + 1.0f;
 	xs = xs + ((cy0 - y0) * dxy_left);
 	xe = xe + ((cy0 - y0) * dxy_right);
-	for (int y = cy0; y <= cy2; ++y) {
+	for (int y = cy0; y <= cy2; y++) {
 		RB_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
 		xs += dxy_left;
 		xe += dxy_right;
 	}
 }
 
+// FIXME: change width and height to render_target_*
 static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
-	for (int i = 0; i < num_polys; ++i) {
+	for (int i = 0; i < num_polys; i++) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
 		}
@@ -241,9 +253,71 @@ static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer
 	}
 }
 
-#if 1
+// FIXME: change width and height to render_target_*
+// FIXME: top-left fill convention, sub-pixel accuracy, SIMD ops and parallel row filling
+static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+	for (int i = 0; i < num_polys; i++) {
+		if ((polys[i].state & POLY_STATE_BACKFACE)) {
+			continue;
+		}
+
+		PolyVert v0 = polys[i].vertex_array[0];
+		PolyVert v1 = polys[i].vertex_array[1];
+		PolyVert v2 = polys[i].vertex_array[2];
+
+		u32 color = polys[i].color;
+
+		r32 x0 = v0.xyz.v.x;
+		r32 y0 = v0.xyz.v.y;
+
+		r32 x1 = v1.xyz.v.x;
+		r32 y1 = v1.xyz.v.y;
+
+		r32 x2 = v2.xyz.v.x;
+		r32 y2 = v2.xyz.v.y;
+
+		// make separate point structures for edge testing
+		Point2D pv0 = {(int)x0, (int)y0};
+		Point2D pv1 = {(int)x1, (int)y1};
+		Point2D pv2 = {(int)x2, (int)y2};
+
+		// compute triangle AABB
+		int min_x = (int)MIN3(x0, x1, x2);
+		int min_y = (int)MIN3(y0, y1, y2);
+
+		int max_x = (int)MAX3(x0, x1, x2);
+		int max_y = (int)MAX3(y0, y1, y2);
+
+		// clip against the screen bounds
+		min_x = MAX(min_x, 0);
+		min_y = MAX(min_y, 0);
+
+		max_x = MIN(max_x, width - 1);
+		max_y = MIN(max_y, height - 1);
+
+		// rasterize
+		Point2D pt;
+		byte *line = buffer + (min_y * pitch);
+		for (pt.y = min_y; pt.y <= max_y; pt.y++) {
+			for (pt.x = min_x; pt.x <= max_x; pt.x++) {
+				int w0 = Orient2D(pv1, pv2, pt);
+				int w1 = Orient2D(pv2, pv0, pt);
+				int w2 = Orient2D(pv0, pv1, pt);
+
+				// ccw vertex winding order
+				if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+					u32 *pixel = (u32 *)line;
+					pixel[pt.x] = color;
+				}
+			}
+			line += pitch;
+		}
+	}
+}
+
+// FIXME: change width and height to render_target_*
 static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
-	for (int i = 0; i < num_polys; ++i) {
+	for (int i = 0; i < num_polys; i++) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
 		}
@@ -291,7 +365,6 @@ static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, in
 		RB_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
 	}
 }
-#endif
 
 static void RB_ClearMemset(void *buffer, size_t size) {
 	memset(buffer, 0, size);
@@ -307,7 +380,11 @@ static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	if (cmd->is_wireframe) {
 		RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	} else {
+#ifdef PARALLEL_RASTERIZER
+		RB_DrawSolidMeshParallel(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+#else
 		RB_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+#endif
 	}
 
 	return (const void *)(cmd + 1);
@@ -368,9 +445,9 @@ static void RB_DrawChar(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	byte *dst = rt->buffer + (pitch * (int)(origin[1] + 0.5f)) + ((int)(origin[0] + 0.5f) * rt->bpp);	
 	u32 *src_pixel = (u32 *)src;
 
-	for (int i = 0; i < h; ++i){
+	for (int i = 0; i < h; i++){
 		u32 *dst_pixel = (u32 *)dst;
-		for (int j = 0; j < w; ++j) {
+		for (int j = 0; j < w; j++) {
 			*dst_pixel++ = (*src_pixel & 0x00ff0000);
 			++src_pixel;
 		}
@@ -388,7 +465,7 @@ static const void *RB_DrawRect(RenderTarget *rt, const void *data) {
 static const void *RB_DrawText(RenderTarget *rt, const void *data) {
 	DrawTextCmd *cmd = (DrawTextCmd *)data;
 	Vec2 o = cmd->basis.origin;
-	for (char i = *cmd->text; i; i = *++cmd->text) {
+	for (char i = *cmd->text; i = *cmd->text; ++cmd->text) {
 		if (i != ' ') {
 			int k = (i >= 97) ? MapLowerAsciiToTTF(i) : MapHigherAsciiToTTF(i);
 			RB_DrawChar(rt, &cmd->bitmap[k], o);

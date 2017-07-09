@@ -24,7 +24,7 @@ void R_IssueRenderCommands(RenderTarget *rt, RenderCommands *rc) {
 	rc->used_buffer_size = 0;
 }
 
-void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale, Vec4 color) {
+void R_PushRectCmd(RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale, Vec4 color) {
 	DrawRectCmd *cmd = PushRenderCmd(rc, DrawRectCmd);
 	Assert(cmd);
 
@@ -50,7 +50,7 @@ void R_PushRectCmd(RenderTarget *rt, RenderCommands *rc, Bitmap bm, Vec2 origin,
 	cmd->color = PackRGBA(color);
 }
 
-void R_PushTextCmd(RenderTarget *rt, RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale, Vec4 color) {
+void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale, Vec4 color) {
 	DrawTextCmd *cmd = PushRenderCmd(rc, DrawTextCmd);
 	Assert(cmd);
 
@@ -64,7 +64,7 @@ void R_PushTextCmd(RenderTarget *rt, RenderCommands *rc, const char *text, Bitma
 	cmd->color = PackRGBA(color);
 }
 
-void R_PushPolysCmd(RenderTarget *rt, RenderCommands *rc, Poly *polys, PolyVert *poly_verts, int num_polys, b32 is_wireframe) {
+void R_PushPolysCmd(RenderCommands *rc, Poly *polys, PolyVert *poly_verts, int num_polys, b32 is_wireframe) {
 	DrawPolyCmd *cmd = PushRenderCmd(rc, DrawPolyCmd);
 	Assert(cmd);
 

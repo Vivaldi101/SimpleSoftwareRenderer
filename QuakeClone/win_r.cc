@@ -83,8 +83,8 @@ b32 InitDIB(RenderTarget *rt) {
 	win_dib_info->bmiHeader.biSizeImage     = 0;
 	win_dib_info->bmiHeader.biXPelsPerMeter = 0;
 	win_dib_info->bmiHeader.biYPelsPerMeter = 0;
-	win_dib_info->bmiHeader.biClrUsed       = /*256*/ 0;
-	win_dib_info->bmiHeader.biClrImportant  = /*256*/ 0;
+	win_dib_info->bmiHeader.biClrUsed       = 0;
+	win_dib_info->bmiHeader.biClrImportant  = 0;
 
 	rt->win_handles.dib_section = CreateDIBSection(rt->win_handles.hdc,
 														win_dib_info,
@@ -98,7 +98,7 @@ b32 InitDIB(RenderTarget *rt) {
 		return false;
 	}
 
-	rt->pitch = rt->width * (dib.header.biBitCount / 8);
+	rt->pitch = rt->width * BYTES_PER_PIXEL;
 
 	memset(rt->buffer, 0, rt->pitch * rt->height);
 

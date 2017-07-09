@@ -4,22 +4,13 @@
 #include "r_types.h"
 #include "input.h"
 
-#define MAX_UPS 60
+#define MAX_UPS (60)
 #define MSEC_PER_SIM (1000 / MAX_UPS)
-//#define PLATFORM_FULLSCREEN
 
 #undef MAX_PERM_MEMORY
 #undef MAX_TEMP_MEMORY
 #define MAX_PERM_MEMORY MEGABYTES(256) 
 #define MAX_TEMP_MEMORY MEGABYTES(64) 
-
-#ifdef PLATFORM_FULLSCREEN
-#define WINDOW_WIDTH	1920
-#define WINDOW_HEIGHT	1080
-#else
-#define WINDOW_WIDTH	800
-#define WINDOW_HEIGHT	600
-#endif	// PLATFORM_FULLSCREEN
 
 // DebugFileIO
 #ifdef PLATFORM_DEBUG

@@ -95,18 +95,18 @@ void R_SetupFrustum(ViewSystem *vs) {
 
 void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
-		r32 vert[4], tmp[4];
-		Vec3Copy(vert, poly_verts[i].xyz);
-		vert[3] = 1.0f;
+		Vec4 p, tmp;
+		Vec3Copy(p, poly_verts[i].xyz);
+		p[3] = 1.0f;
 
-		Mat1x4Mul(tmp, vert, vs->view_matrix);  
-		Vec3Copy(poly_verts[i].xyz, tmp);
+		Mat1x4Mul(&p, &p, vs->view_matrix);  
+		Vec3Copy(poly_verts[i].xyz, p);
 	}
 }
 
-void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos) {
+void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
 	for (int i = 0; i < num_verts; ++i) {
-		trans_poly_verts[i].xyz = local_poly_verts[i].xyz + world_pos;
+		trans_poly_verts[i].xyz = (local_poly_verts[i].xyz * world_scale) + world_pos;
 	}
 }
 
@@ -127,19 +127,20 @@ ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 
 void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
-	r32 in[4];
-	r32 out[4];
 
 	for (int i = 0; i < num_verts; ++i) {
+		r32 in[4];
+		r32 out[4];
+
 		in[0] = poly_verts[i].xyz[0];
 		in[1] = poly_verts[i].xyz[1];
 		in[2] = poly_verts[i].xyz[2];
 		in[3] = 1.0f;
 
 		Mat1x4Mul(out, in, m);  
-		poly_verts[i].xyz[0] = out[0] / out[3];
-		poly_verts[i].xyz[1] = out[1] / out[3];
-		poly_verts[i].xyz[2] = out[2] / out[3];
+		poly_verts[i].xyz[0] = (out[0] / out[3]);
+		poly_verts[i].xyz[1] = (out[1] / out[3]);
+		poly_verts[i].xyz[2] = (out[2] / out[3]);
 	}
 }
 
@@ -165,8 +166,9 @@ void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 	}
 }
 
+// culling in view space
 void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
-	Vec3 p = {};
+	Vec3 p = {0.0f, 0.0f, 0.0f};
 
 	for (int i = 0; i < num_polys; ++i) {
 		if ((polys[i].state & POLY_STATE_BACKFACE) || !(polys[i].state & POLY_STATE_ACTIVE)) {
@@ -178,7 +180,7 @@ void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 		PolyVert v2 = polys[i].vertex_array[2];
 		Vec3 u = MakeVec3(v0.xyz, v1.xyz);
 		Vec3 v = MakeVec3(v0.xyz, v2.xyz);
-		Vec3 n = Cross3(u, v);
+		Vec3 n = -Cross3(u, v);		// NOTE: negated because of left-handed system and because we are using ccw winding order
 		Vec3 view = MakeVec3(v0.xyz, p);
 
 		r32 dot = Dot3(view, n);
@@ -275,7 +277,7 @@ void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, 
 		PolyVert v2 = polys[i].vertex_array[2];
 		Vec3 u = MakeVec3(v0.xyz, v1.xyz);
 		Vec3 v = MakeVec3(v0.xyz, v2.xyz);
-		Vec3 n = Cross3(u, v);
+		Vec3 n = -Cross3(u, v);
 		v0.normal = v0.normal + n;
 		v1.normal = v1.normal + n;
 		v2.normal = v2.normal + n;
@@ -286,5 +288,4 @@ void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, 
 	for (int i = 0; i < num_poly_verts; ++i) {
 		poly_verts[i].normal = Vec3Norm(poly_verts[i].normal);
 	}
-	int x = 42;
 }

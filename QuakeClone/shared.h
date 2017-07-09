@@ -134,10 +134,13 @@ MATHLIB
 ==============================================================
 */
 
-#undef MAX
-#define MAX(a,b)	((a) > (b) ? (a) : (b))
 #undef MIN
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
+#undef MAX
+#define MAX(a,b)	((a) > (b) ? (a) : (b))
+
+#define MIN3(a,b,c)	(MIN(MIN((a), (b)), (c)))
+#define MAX3(a,b,c)	(MAX(MAX((a), (b)), (c)))
 
 #define ABS(a) (((a) >= 0) ? (a) : -(a))
 
@@ -478,9 +481,9 @@ static inline r32 Dot3(Vec3 v1, r32 *v2) {
 static inline Vec3 Cross3(Vec3 v1, Vec3 v2) {
 	Vec3 cross = {};
 
-	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
-	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
-	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
+	cross[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
+	cross[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
+	cross[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);
 
 	return cross;
 }
@@ -617,21 +620,25 @@ static inline u32 RoundReal32ToU32(r32 value) {
 	return result;
 }
 
-extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[9]);
 extern void Mat1x3Mul(r32 out[3], const r32 a[3], const r32 b[3][3]);
 extern void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[16]);
 extern void Mat2x2Mul(r32 out[4], const r32 a[4], const r32 b[4]);
 extern void Mat3x3Mul(r32 out[9], const r32 a[9], const r32 b[9]);
 extern void Mat4x4Mul(r32 out[16], const r32 a[16], const r32 b[16]);
 
-extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
 extern void Mat1x4Mul(r32 out[4], const r32 a[4], const r32 b[4][4]);
 extern void Mat2x2Mul(r32 out[2][2], const r32 a[2][2], const r32 b[2][2]);
 extern void Mat3x3Mul(r32 out[3][3], const r32 a[3][3], const r32 b[3][3]);
 extern void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]);
 
+extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[9]);
+extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
+extern void Mat1x4Mul(Vec4 *out, const Vec4 *a, const r32 b[4][4]);
 extern void MatTranspose(r32 out[9], const r32 in[9]);
 
+//struct Point2D;
+//extern int Orient2D(Point2D a, Point2D b, Point2D c);
+//extern int Orient2D(r32 ax, r32 ay, r32 bx, r32 by, r32 cx, r32 cy);
 struct Orientation {
 	Vec3	origin;			// in world coordinates
 	Vec3	axis[3];		// orientation in world, uvn

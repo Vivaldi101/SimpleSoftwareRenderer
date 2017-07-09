@@ -2,8 +2,7 @@
 #include "renderer.h"
 #include "lights.h"
 
-// some simple flat shading
-// no directional light sources atm
+// simple flat shading
 void R_CalculateLighting(const RendererBackend *rb, const Light *lights, AmbientState as, Vec3 camera_dir, Vec3 camera_pos) {
 	Vec4 base = {};
 	Vec4 total = {};
@@ -42,7 +41,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 			Vec3 u = MakeVec3(v0.xyz, v1.xyz);
 			Vec3 v = MakeVec3(v0.xyz, v2.xyz);
-			Vec3 n = Cross3(u, v);
+			Vec3 n = -Cross3(u, v);		// NOTE: negated because of left-handed system and because we are using ccw winding order
 
 			Vec3 l = (lights[j].flags & CAMERA_LIGHT) ? MakeVec3(v0.xyz, (camera_pos)) : MakeVec3(v0.xyz, lights[j].pos); 
 			r32 llen = Vec3Len(l);
@@ -96,16 +95,24 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 
 void R_AddLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specular, Vec3 pos, r32 radius, r32 kc, r32 kl, r32 kq, LightTypeFlags sf) {
 	Assert(rb->num_lights + 1 <= MAX_NUM_LIGHTS);
-	int light = rb->num_lights;
-	rb->lights[light].ambient = ambient;
-	rb->lights[light].diffuse = diffuse;
-	rb->lights[light].specular = specular;
-	rb->lights[light].pos = pos;
-	rb->lights[light].kc = kc;
-	rb->lights[light].kl = kl;
-	rb->lights[light].kq = kq;
-	rb->lights[light].is_active = true;
-	rb->lights[light].radius = radius;
-	rb->lights[light].flags |= sf;
-	++rb->num_lights;
+	int i = rb->num_lights;
+	rb->lights[i].ambient = ambient;
+	rb->lights[i].diffuse = diffuse;
+	rb->lights[i].specular = specular;
+	rb->lights[i].pos = pos;
+	rb->lights[i].kc = kc;
+	rb->lights[i].kl = kl;
+	rb->lights[i].kq = kq;
+	rb->lights[i].is_active = true;
+	rb->lights[i].radius = radius;
+	rb->lights[i].flags |= sf;
+	rb->num_lights++;
+}
+
+void R_AddLight(RendererBackend *rb, const Light *l) {
+	//Assert(rb->num_lights + 1 <= MAX_NUM_LIGHTS);
+	int i = rb->num_lights;
+	memcpy(&rb->lights[i], l, sizeof(*l));
+	//rb->lights[i] = *l;
+	rb->num_lights++;
 }

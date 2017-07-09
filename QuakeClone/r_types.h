@@ -8,14 +8,6 @@ struct Bitmap {
 	byte *	data;		
 };
 
-//struct DrawVert {
-//	Vec3		xyz;
-//	r32			uv[2];
-//	r32			lightmap[2];
-//	Vec3		normal;
-//	byte		color[4];
-//};
-
 struct PolyVert {
 	Vec3		xyz;
 	r32			uv[2];
@@ -32,7 +24,19 @@ struct Poly {
 	u32			color;	// rgba, packed
 };
 
+struct Point2D {
+	int	x, y;
+};
 
+
+
+//struct DrawVert {
+//	Vec3		xyz;
+//	r32			uv[2];
+//	r32			lightmap[2];
+//	Vec3		normal;
+//	byte		color[4];
+//};
 //struct PipelineVert {
 //	Vec3	view_space_pos;      // xyz
 //	Vec3	view_space_normal;   // xyz

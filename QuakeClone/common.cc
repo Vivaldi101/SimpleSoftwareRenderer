@@ -131,7 +131,7 @@ void Com_LoadEntities(Platform *pf) {
 	pf->game_state->entities[0].type_enum = EntityType_player;
 
 	for (int i = 1; i < (num_entities); ++i) {
-		Vec3 world_pos = {-100.0f + (i * 50.0f), -20.0f, 500.0f};
+		Vec3 world_pos = {-100.0f + (20.0f * i), 0.0f, 200.0f};
 		memcpy(&pf->game_state->entities[i], &common_ent, sizeof(Entity));
 		pf->game_state->entities[i].status.world_pos = world_pos;
 		pf->game_state->entities[i].type_enum = EntityType_cube;
@@ -271,7 +271,6 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	}
 }
 
-#if 1
 void Com_RunFrame(Platform *pf, Renderer *rs) {
 	Entity *entities = pf->game_state->entities;
 
@@ -292,10 +291,11 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 
 	Com_RunEventLoop();
 
-	static b32 first_run = true;
+	//static b32 first_run = true;
 
 	int num_game_frames_to_run = 0;
 
+	// FIXME: add matrix returning routines
 	r32 rot_mat_x[3][3];
 	rot_mat_x[0][0] = 1.0f;
 	rot_mat_x[0][1] = 0.0f;
@@ -378,11 +378,11 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 
 			// hacky player third person cam test stuff
 			entities[i].status.world_pos = 
-				rs->front_end.current_view.world_orientation.origin + (rs->front_end.current_view.world_orientation.dir * 60.0f);
-			entities[i].status.world_pos[1] -= 20.0f;
+				rs->front_end.current_view.world_orientation.origin + (rs->front_end.current_view.world_orientation.dir * 30.0f);
+			entities[i].status.world_pos[1] -= 10.0f;
 
 			// FIXME: combine these two
-			R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos); 
+			R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos, 0.40f); 
 			R_TransformWorldToView(&rs->front_end.current_view, trans_verts, ArrayCount(sub_type->trans_vertex_array));
 			R_AddPolys(&rs->back_end, trans_verts, sub_type->polys, ArrayCount(sub_type->polys));
 		} else {
@@ -402,7 +402,7 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 			} 
 			R_RotatePoints(rot_mat_z, local_verts, num_local_verts); 
 			R_RotatePoints(rot_mat_x, local_verts, num_local_verts); 
-			R_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos); 
+			R_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos, 1.8f); 
 			entities[i].status.state = (u16)R_CullPointAndRadius(&rs->front_end.current_view, entities[i].status.world_pos);			
 			if (!(entities[i].status.state & CULL_OUT)) {
 				R_TransformWorldToView(&rs->front_end.current_view, trans_verts, num_trans_verts);
@@ -412,11 +412,10 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 	}
 	R_CullBackFaces(&rs->front_end.current_view, rs->back_end.polys, rs->back_end.num_polys);
 	R_CalculateVertexNormals(rs->back_end.polys, rs->back_end.num_polys, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
-	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient);
+	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
 	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
 	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
-	R_PushPolysCmd(&rs->back_end.target, 
-				  &rs->back_end.cmds,
+	R_PushPolysCmd(&rs->back_end.cmds,
 				  rs->back_end.polys,
 				  rs->back_end.poly_verts,
 				  rs->back_end.num_polys,
@@ -426,12 +425,12 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 	{
 		r32 text_pos = (r32)rs->back_end.target.height;
 		r32 line_gap = 20.0f;
-		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.target, &rs->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&rs->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 	}
 
 	// frame timing
@@ -450,11 +449,10 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 		OutputDebugStringA(buffer);
 	}
 
-	if (first_run) {
-		first_run = false;
-	}
+	//if (first_run) {
+	//	first_run = false;
+	//}
 }
-#endif
 
 void Com_Quit() {
 	Sys_Quit();

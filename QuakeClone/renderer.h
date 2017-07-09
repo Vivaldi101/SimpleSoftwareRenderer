@@ -8,8 +8,9 @@
 #include "r_cmds.h"
 #include "lights.h"
 
-#define BYTES_PER_PIXEL 4	// support 1 and 2 ?
-// FIXME: maybe move all the constants these into .cc file if only impl needs access
+#define PLATFORM_FULLSCREEN
+#define PARALLEL_RASTERIZER
+#define BYTES_PER_PIXEL 4	
 
 // FIXME: put into enums
 #define POLY_STATE_ACTIVE	0x0001
@@ -75,11 +76,11 @@ struct ViewSystem {
 	r32				fov_x, fov_y;
 	r32				view_dist;	
 
-	Plane			frustum[NUM_FRUSTUM_PLANES];			// order of left, right, top, bottom, FIXME: far z
+	Plane			frustum[NUM_FRUSTUM_PLANES];			// order of left, right, top, bottom, near z
 	r32				z_far, z_near;
 
 	r32				aspect_ratio;
-	//r32				meter_to_pixel_ratio;
+	//r32				world_scale;
 };
 
 struct RendererFrontend {
@@ -118,7 +119,7 @@ extern void R_SetupFrustum(ViewSystem *vs);
 extern void R_SetupProjection(ViewSystem *vs);
 extern void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys);
 
-extern void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos);
+extern void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale);
 extern void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 extern void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 extern void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
@@ -128,7 +129,9 @@ extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys);
 
 extern void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts);
 
+// FIXME: move this elsewhere
 extern void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts);
+
 //
 //	Renderer backend
 //

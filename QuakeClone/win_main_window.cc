@@ -15,8 +15,13 @@ b32 InitWindow(RenderTarget *rt, void *wndproc, void *hinstance) {
 	int ex_style_bits = WS_EX_TOPMOST;
 
 	HDC hdc = GetDC(GetDesktopWindow());
+#ifdef PLATFORM_FULLSCREEN
+	int width = GetDeviceCaps(hdc, HORZRES);
+	int height = GetDeviceCaps(hdc, VERTRES);
+#else
 	int width = GetDeviceCaps(hdc, HORZRES) / 2;
 	int height = GetDeviceCaps(hdc, VERTRES) / 2;
+#endif
 	ReleaseDC(GetDesktopWindow(), hdc);
 
     wc.lpfnWndProc   = (WNDPROC)wndproc;
