@@ -93,7 +93,7 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 
 // FIXME: fine tune these
 // min/max values
-#define	MAX_NUM_ENTITIES	256
+#define	MAX_NUM_ENTITIES	(1 << 4)
 #define	MAX_NUM_POLYS		(1 << 10)
 #define	MAX_NUM_POLY_VERTS	(1 << 12)
 #define	MAX_NUM_LIGHTS		8
@@ -382,9 +382,18 @@ static inline Vec3 MV3(r32 x, r32 y, r32 z) {
 	return v;
 }
 
-
 static inline Vec3 operator +(Vec3 a, Vec3 b) {
 	Vec3 v = {};
+
+	v[0] = a[0] + b[0];
+	v[1] = a[1] + b[1];
+	v[2] = a[2] + b[2];
+
+	return v;
+}
+
+static inline Vec3i operator +(Vec3i a, Vec3i b) {
+	Vec3i v = {};
 
 	v[0] = a[0] + b[0];
 	v[1] = a[1] + b[1];
@@ -403,8 +412,28 @@ static inline Vec3 operator -(Vec3 a) {
 	return v;
 }
 
+static inline Vec3i operator -(Vec3i a) {
+	Vec3i v = {};
+
+	v[0] = -a[0]; 
+	v[1] = -a[1];
+	v[2] = -a[2];
+
+	return v;
+}
+
 static inline Vec3 operator -(Vec3 a, Vec3 b) {
 	Vec3 v = {};
+
+	v[0] = a[0] - b[0];
+	v[1] = a[1] - b[1];
+	v[2] = a[2] - b[2];
+
+	return v;
+}
+
+static inline Vec3i operator -(Vec3i a, Vec3i b) {
+	Vec3i v = {};
 
 	v[0] = a[0] - b[0];
 	v[1] = a[1] - b[1];
@@ -460,6 +489,12 @@ static inline r32 Dot3(Vec3 v1, Vec3 v2) {
 	return dot;
 }
 
+static inline s32 Dot3i(Vec3i v1, Vec3i v2) {
+	s32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+
+	return dot;
+}
+
 static inline r32 Dot3(r32 *v1, r32 *v2) {
 	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 
@@ -488,6 +523,16 @@ static inline Vec3 Cross3(Vec3 v1, Vec3 v2) {
 	return cross;
 }
 
+static inline Vec3i Cross3(Vec3i v1, Vec3i v2) {
+	Vec3i cross = {};
+
+	cross[0] = (v1[1]*v2[2]) - (v1[2]*v2[1]);
+	cross[1] = (v1[2]*v2[0]) - (v1[0]*v2[2]);
+	cross[2] = (v1[0]*v2[1]) - (v1[1]*v2[0]);
+
+	return cross;
+}
+
 //static inline r32 Vec3Len(const Vec3 *v) {
 //	r32	len;
 //
@@ -503,6 +548,15 @@ static inline r32 Vec3Len(Vec3 v) {
 
 	len = Dot3(v, v);
 	len = sqrt(len);
+		
+	return len;
+}
+
+static inline s32 Vec3iLen(Vec3i v) {
+	s32	len;
+
+	len = Dot3i(v, v);
+	len = (s32)sqrt((r32)len);
 		
 	return len;
 }
@@ -636,13 +690,12 @@ extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
 extern void Mat1x4Mul(Vec4 *out, const Vec4 *a, const r32 b[4][4]);
 extern void MatTranspose(r32 out[9], const r32 in[9]);
 
-//struct Point2D;
-//extern int Orient2D(Point2D a, Point2D b, Point2D c);
-//extern int Orient2D(r32 ax, r32 ay, r32 bx, r32 by, r32 cx, r32 cy);
+extern void RotatePoints(r32 rot_mat[3][3], struct PolyVert *poly_verts, int num_verts);
+
 struct Orientation {
 	Vec3	origin;			// in world coordinates
 	Vec3	axis[3];		// orientation in world, uvn
-	Vec3	dir;			// look at vector in uvn system, or euler angles
+	Vec3	dir;			// look at vector in uvn system
 };
 
 struct Plane {
@@ -650,7 +703,6 @@ struct Plane {
 	r32		dist;
 	//byte	type;			// for fast side tests: 0,1,2 = axial, 3 = nonaxial
 	//byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
-	//byte	pad[2];			// for 4 byte alignment
 };
 
 struct Dim2d {

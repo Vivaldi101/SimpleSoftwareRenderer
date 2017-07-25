@@ -46,17 +46,24 @@ void _Pop_(MemoryStack *ms, size_t num_bytes) {
 	ms->bytes_used -= num_bytes;
 }
 
-static void InitStackMemory(MemoryStack *ms, size_t num_bytes) {
+// FIXME: pass flags for protect, reserving etc...
+#if 0
+static MemoryStack InitStackMemory(size_t num_bytes) {
+	MemoryStack ms = {};
 	void *ptr = VirtualAlloc(0, num_bytes, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	ms->base_ptr = (byte *)ptr;
-	ms->max_size = num_bytes;
-	ms->bytes_used = 0;
 
-	if (!ms->base_ptr) {
+	ms.base_ptr = (byte *)ptr;
+	ms.max_size = num_bytes;
+	ms.bytes_used = 0;
+
+	if (!ms.base_ptr) {
 		Sys_Print("Failed to init the stack allocator\n");
 		Com_Quit();
 	}
+
+	return ms;
 }
+#endif
 
 /*
 ==============================================================
@@ -86,34 +93,59 @@ inline static int MapHigherAsciiToTTF(char c) {
 static r32 global_game_time_residual;
 static int global_game_frame;
 
-// FIXME: test stuff
 static r32 yaw = 0.0f;
-Platform Com_Init() {
-	Sys_Init();
-	Platform pf = {};
-	InitStackMemory(&pf.main_memory_stack.perm_data, MAX_PERM_MEMORY);
-	InitStackMemory(&pf.main_memory_stack.temp_data, MAX_TEMP_MEMORY);
+void Com_Allocate(Platform **pf, Renderer **ren) {
+	// make sure we are allocating memory for the first time
+	Assert(!*pf);
+	Assert(!*ren);
 
-	pf.file_ptrs.free_file = DebugFreeFile;
-	pf.file_ptrs.read_file = DebugReadFile;
-	pf.file_ptrs.write_file = DebugWriteFile;
+	// start allocating
+	void *ptr = VirtualAlloc(0, MAX_PERM_MEMORY + MAX_TEMP_MEMORY + sizeof(Platform), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	CheckMemory(ptr);
 
-	// FIXME: make a single double ended stack, with temp allocations coming from the other side
-	pf.game_state = PushStruct(&pf.main_memory_stack.perm_data, GameState);
-	pf.game_state->num_entities = 32;
-	FileInfo ttf_file = pf.file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
+	// platform
+	*pf = (Platform *)ptr;
+	// FIXME: atm the base pointers of permanent and temp stacks may overlap if permanent allocations are made carelessly 
+	(*pf)->main_memory_stack.perm_data.base_ptr = (byte *)(*pf) + sizeof(Platform);
+	(*pf)->main_memory_stack.perm_data.max_size = MAX_PERM_MEMORY;
+	(*pf)->main_memory_stack.perm_data.bytes_used = 0;
+
+	(*pf)->main_memory_stack.temp_data.base_ptr = (*pf)->main_memory_stack.perm_data.base_ptr + MAX_PERM_MEMORY;
+	(*pf)->main_memory_stack.temp_data.max_size = MAX_TEMP_MEMORY;
+	(*pf)->main_memory_stack.temp_data.bytes_used = 0;
+
+	(*pf)->game_state = PushStruct(&(*pf)->main_memory_stack.perm_data, GameState);
+	(*pf)->input_state = PushStruct(&(*pf)->main_memory_stack.perm_data, Input);
+
+	// renderer
+	//Assert(MAX_NUM_POLYS < 0xffff);
+	//Assert(MAX_RENDER_BUFFER < MEGABYTES(10));
+	*ren = PushStruct(&(*pf)->main_memory_stack.perm_data, Renderer);
+	(*ren)->back_end.polys = PushArray(&(*pf)->main_memory_stack.perm_data, MAX_NUM_POLYS, Poly);
+	(*ren)->back_end.poly_verts = PushArray(&(*pf)->main_memory_stack.perm_data, MAX_NUM_POLY_VERTS, PolyVert);
+	(*ren)->back_end.lights = PushArray(&(*pf)->main_memory_stack.perm_data, MAX_NUM_LIGHTS, Light);
+	(*ren)->back_end.cmds.buffer_base = PushSize(&(*pf)->main_memory_stack.perm_data, MAX_RENDER_BUFFER, byte);
+	(*ren)->back_end.cmds.max_buffer_size = MAX_RENDER_BUFFER;
+	(*ren)->back_end.cmds.used_buffer_size = 0;
+	(*ren)->back_end.entities = (*pf)->game_state->entities;
+}
+
+void Com_Init(Platform **pf) {
+	Assert(*pf);
+	(*pf)->file_ptrs.free_file = DebugFreeFile;
+	(*pf)->file_ptrs.read_file = DebugReadFile;
+	(*pf)->file_ptrs.write_file = DebugWriteFile;
+
+	(*pf)->game_state->num_entities = MAX_NUM_ENTITIES;
+	FileInfo ttf_file = (*pf)->file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
 
 	for (int i = 'a'; i <= 'z'; ++i) {
-		pf.game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.temp_data, &ttf_file, i);
+		(*pf)->game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
 	}
 	for (int i = 'A'; i <= 'Z'; ++i) {
-		pf.game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_Init(&pf.main_memory_stack.temp_data, &ttf_file, i);
+		(*pf)->game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
 	}
-	pf.file_ptrs.free_file(&ttf_file);
-
-	pf.input_state = PushStruct(&pf.main_memory_stack.perm_data, Input);
-
-	return pf;
+	(*pf)->file_ptrs.free_file(&ttf_file);
 }
 
 void Com_LoadEntities(Platform *pf) {
@@ -189,12 +221,43 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	rot_mat_y[1][2] = 0.0f;
 
 	// FIXME: scaling of the world
-	r32 speed = 600.0f;
+	r32 speed = 60.0f;
+	// FIXME: add matrix returning routines
+	r32 rot_mat_x[3][3];
+	rot_mat_x[0][0] = 1.0f;
+	rot_mat_x[0][1] = 0.0f;
+	rot_mat_x[0][2] = 0.0f;
+
+	r32 rot_mat_z[3][3];
+	rot_mat_z[2][0] = 0.0f;
+	rot_mat_z[2][1] = 0.0f;
+	rot_mat_z[2][2] = 1.0f;
+
+	// FIXME: just for testing!!!!!!!!
+	r32 rot_theta = DEG2RAD(-1.0f*0.025f);
+	rot_mat_x[1][0] = 0.0f;
+	rot_mat_x[1][1] = cos(rot_theta);
+	rot_mat_x[1][2] = sin(rot_theta);
+
+	rot_mat_x[2][0] = 0.0f;
+	rot_mat_x[2][1] = -rot_mat_x[1][2];
+	rot_mat_x[2][2] = rot_mat_x[1][1];
+
+	rot_mat_z[0][0] = cos(rot_theta);
+	rot_mat_z[0][1] = sin(rot_theta);
+	rot_mat_z[0][2] = 0.0f;
+
+	rot_mat_z[1][0] = -rot_mat_z[0][1];
+	rot_mat_z[1][1] = rot_mat_z[0][0];
+	rot_mat_z[1][2] = 0.0f;
 
 	for (int i = 0; i < num_frames; ++i) {
 		for (int j = 0; j < num_entities; ++j) {
 			if (auto player = GetAnonType(&ents[j], player, EntityType_)) {
 				PolyVert *verts = player->local_vertex_array;
+				int num_local_verts = ArrayCount(player->local_vertex_array);
+				RotatePoints(rot_mat_z, verts, num_local_verts); 
+				RotatePoints(rot_mat_x, verts, num_local_verts); 
 				Vec3 acc = {};
 				if (in->keys['W'].down) {
 					acc = Vec3Norm(current_view->world_orientation.dir);
@@ -271,7 +334,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	}
 }
 
-void Com_RunFrame(Platform *pf, Renderer *rs) {
+void Com_RunFrame(Platform *pf, Renderer *ren) {
 	Entity *entities = pf->game_state->entities;
 
 	Sys_GenerateEvents();
@@ -280,9 +343,9 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 	if (pf->input_state->keys[ESC_KEY].released) {
 		Com_Quit();
 	} else if (pf->input_state->keys[SPACE_KEY].released) {
-		rs->front_end.is_wireframe = !rs->front_end.is_wireframe;
+		ren->front_end.is_wireframe = !ren->front_end.is_wireframe;
 	} else if (pf->input_state->keys['L'].released) {
-		rs->front_end.is_ambient = (AmbientState)(!rs->front_end.is_ambient);
+		ren->front_end.is_ambient = (AmbientState)(!ren->front_end.is_ambient);
 	} else if (pf->input_state->keys['C'].released) {
 		(global_console.visibility == CON_HIDE) ? 
 			Sys_FetchConsole(CON_SHOW, true) : 
@@ -294,19 +357,6 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 	//static b32 first_run = true;
 
 	int num_game_frames_to_run = 0;
-
-	// FIXME: add matrix returning routines
-	r32 rot_mat_x[3][3];
-	rot_mat_x[0][0] = 1.0f;
-	rot_mat_x[0][1] = 0.0f;
-	rot_mat_x[0][2] = 0.0f;
-
-	r32 rot_mat_z[3][3];
-	rot_mat_z[2][0] = 0.0f;
-	rot_mat_z[2][1] = 0.0f;
-	rot_mat_z[2][2] = 1.0f;
-
-	r32 rot_theta = DEG2RAD(-1.0f);
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -340,30 +390,12 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 				(num_game_frames_to_run > 5) ? 5 : num_game_frames_to_run,
 				pf->game_state->num_entities,
 				entities, pf->input_state,
-				&rs->front_end.current_view);
+				&ren->front_end.current_view);
 
-	// FIXME: add matrix returning routines
-	rot_mat_x[1][0] = 0.0f;
-	rot_mat_x[1][1] = cos(rot_theta);
-	rot_mat_x[1][2] = sin(rot_theta);
-
-	rot_mat_x[2][0] = 0.0f;
-	rot_mat_x[2][1] = -rot_mat_x[1][2];
-	rot_mat_x[2][2] = rot_mat_x[1][1];
-
-	rot_mat_z[0][0] = cos(rot_theta);
-	rot_mat_z[0][1] = sin(rot_theta);
-	rot_mat_z[0][2] = 0.0f;
-
-	rot_mat_z[1][0] = -rot_mat_z[0][1];
-	rot_mat_z[1][1] = rot_mat_z[0][0];
-	rot_mat_z[1][2] = 0.0f;
-
-
-	//if (rs->front_end.is_view_changed || first_run) {
-	R_RenderView(&rs->front_end.current_view);
+	//if (ren->front_end.is_view_changed || first_run) {
+	RF_RenderView(&ren->front_end.current_view);
 	//}
-	R_BeginFrame(&rs->back_end.target, &rs->back_end.cmds);
+	R_BeginFrame(&ren->back_end.target, &ren->back_end.cmds);
 
 	PolyVert *local_verts = 0; 
 	PolyVert *trans_verts = 0;
@@ -378,13 +410,13 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 
 			// hacky player third person cam test stuff
 			entities[i].status.world_pos = 
-				rs->front_end.current_view.world_orientation.origin + (rs->front_end.current_view.world_orientation.dir * 30.0f);
+				ren->front_end.current_view.world_orientation.origin + (ren->front_end.current_view.world_orientation.dir * 50.0f);
 			entities[i].status.world_pos[1] -= 10.0f;
 
 			// FIXME: combine these two
-			R_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos, 0.40f); 
-			R_TransformWorldToView(&rs->front_end.current_view, trans_verts, ArrayCount(sub_type->trans_vertex_array));
-			R_AddPolys(&rs->back_end, trans_verts, sub_type->polys, ArrayCount(sub_type->polys));
+			RF_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos, 1.0f); 
+			RF_TransformWorldToView(&ren->front_end.current_view, trans_verts, ArrayCount(sub_type->trans_vertex_array));
+			RF_AddPolys(&ren->back_end, trans_verts, sub_type->polys, ArrayCount(sub_type->polys));
 		} else {
 			int num_local_verts = 0; 
 			int num_trans_verts = 0; 
@@ -400,37 +432,35 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 			} else {
 				InvalidCodePath("Unhandled entitity type!");
 			} 
-			R_RotatePoints(rot_mat_z, local_verts, num_local_verts); 
-			R_RotatePoints(rot_mat_x, local_verts, num_local_verts); 
-			R_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos, 1.8f); 
-			entities[i].status.state = (u16)R_CullPointAndRadius(&rs->front_end.current_view, entities[i].status.world_pos);			
+			RF_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos, 1.2f); 
+			entities[i].status.state = (u16)RF_CullPointAndRadius(&ren->front_end.current_view, entities[i].status.world_pos);			
 			if (!(entities[i].status.state & CULL_OUT)) {
-				R_TransformWorldToView(&rs->front_end.current_view, trans_verts, num_trans_verts);
-				R_AddPolys(&rs->back_end, trans_verts, polys, num_polys);
+				RF_TransformWorldToView(&ren->front_end.current_view, trans_verts, num_trans_verts);
+				RF_AddPolys(&ren->back_end, trans_verts, polys, num_polys);
 			}
 		}
 	}
-	R_CullBackFaces(&rs->front_end.current_view, rs->back_end.polys, rs->back_end.num_polys);
-	R_CalculateVertexNormals(rs->back_end.polys, rs->back_end.num_polys, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
-	R_CalculateLighting(&rs->back_end, rs->back_end.lights, rs->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
-	R_TransformViewToClip(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
-	R_TransformClipToScreen(&rs->front_end.current_view, rs->back_end.poly_verts, rs->back_end.num_poly_verts);
-	R_PushPolysCmd(&rs->back_end.cmds,
-				  rs->back_end.polys,
-				  rs->back_end.poly_verts,
-				  rs->back_end.num_polys,
-				  rs->front_end.is_wireframe);
+	RF_CullBackFaces(&ren->front_end.current_view, ren->back_end.polys, ren->back_end.num_polys);
+	RF_CalculateVertexNormals(ren->back_end.polys, ren->back_end.num_polys, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
+	R_CalculateLighting(&ren->back_end, ren->back_end.lights, ren->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
+	RF_TransformViewToClip(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
+	RF_TransformClipToScreen(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
+	R_PushPolysCmd(&ren->back_end.cmds,
+				  ren->back_end.polys,
+				  ren->back_end.poly_verts,
+				  ren->back_end.num_polys,
+				  ren->front_end.is_wireframe);
 
 	// font testing
 	{
-		r32 text_pos = (r32)rs->back_end.target.height;
+		r32 text_pos = (r32)ren->back_end.target.height;
 		r32 line_gap = 20.0f;
-		R_PushTextCmd(&rs->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&rs->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 	}
 
 	// frame timing
@@ -440,9 +470,9 @@ void Com_RunFrame(Platform *pf, Renderer *rs) {
 		int	frame_msec = now_time - last_time;
 		last_time = now_time;
 
-		R_EndFrame(&rs->back_end.target, &rs->back_end.cmds);
+		R_EndFrame(&ren->back_end.target, &ren->back_end.cmds);
 
-		ClearRenderState(&rs->back_end);
+		ClearRenderState(&ren->back_end);
 
 		char buffer[64];
 		sprintf_s(buffer, "Frame msec %d\n", frame_msec);

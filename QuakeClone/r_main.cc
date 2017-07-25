@@ -2,7 +2,7 @@
 #include "win_r.h"
 #include "plg_loader.h"
 
-void R_SetupProjection(ViewSystem *vs) {
+void RF_SetupProjection(ViewSystem *vs) {
 	r32 aspect_ratio = vs->aspect_ratio;
 	r32 fov_y = vs->fov_y;
 	r32 z_near = vs->z_near, z_far = vs->z_far;
@@ -46,7 +46,7 @@ void R_SetupProjection(ViewSystem *vs) {
 }
 
 // Gribb & Hartmann method
-void R_SetupFrustum(ViewSystem *vs) {
+void RF_SetupFrustum(ViewSystem *vs) {
 	Plane frustum[NUM_FRUSTUM_PLANES];
 	r32	combo_matrix[4][4];
 	Mat4x4Mul(combo_matrix, vs->view_matrix, vs->projection_matrix);
@@ -93,7 +93,7 @@ void R_SetupFrustum(ViewSystem *vs) {
 	memcpy(&vs->frustum, &frustum, sizeof(frustum));
 }
 
-void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
+void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
 		Vec4 p, tmp;
 		Vec3Copy(p, poly_verts[i].xyz);
@@ -104,13 +104,13 @@ void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 	}
 }
 
-void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
+void RF_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
 	for (int i = 0; i < num_verts; ++i) {
 		trans_poly_verts[i].xyz = (local_poly_verts[i].xyz * world_scale) + world_pos;
 	}
 }
 
-ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
+ClipFlags RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = vs->frustum[i];
 		r32 dist = Dot3(pt, pl.unit_normal) - pl.dist;
@@ -125,7 +125,7 @@ ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	return CULL_IN;
 }
 
-void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
+void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
 
 	for (int i = 0; i < num_verts; ++i) {
@@ -144,7 +144,7 @@ void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) 
 	}
 }
 
-void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
+void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 in[3];
 	r32 screen_width_factor = (0.5f * (vs->viewport_width - 1.0f));
 	r32 screen_height_factor = (0.5f * (vs->viewport_height - 1.0f));
@@ -154,7 +154,7 @@ void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts
 	}
 }
 
-void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
+void RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
 		r32 x = Dot3(rot_mat[0], poly_verts[i].xyz);
 		r32 y = Dot3(rot_mat[1], poly_verts[i].xyz);
@@ -167,7 +167,7 @@ void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 }
 
 // culling in view space
-void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
+void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 	Vec3 p = {0.0f, 0.0f, 0.0f};
 
 	for (int i = 0; i < num_polys; ++i) {
@@ -235,13 +235,13 @@ static void R_RotateForViewer(ViewSystem *vs) {
 	memcpy(vs->view_matrix, view_matrix, sizeof(view_matrix));
 }
 
-void R_RenderView(ViewSystem *vs) {
+void RF_RenderView(ViewSystem *vs) {
 	R_RotateForViewer(vs);
-	R_SetupProjection(vs);
-	R_SetupFrustum(vs);					
+	RF_SetupProjection(vs);
+	RF_SetupFrustum(vs);					
 }
 
-void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys) {
+void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys) {
 	int num_verts = 3;	// triangle
 	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
 
@@ -261,7 +261,7 @@ void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, in
 	}
 }
 
-void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts) {
+void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts) {
 	for (int i = 0; i < num_poly_verts; ++i) {
 		poly_verts[i].normal[0] = 0.0f;
 		poly_verts[i].normal[1] = 0.0f;

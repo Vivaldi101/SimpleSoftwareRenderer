@@ -10,7 +10,7 @@ WinVars global_win_vars;
 static WINDOWPLACEMENT global_window_pos = { sizeof(global_window_pos) };
 
 void Sys_Init() {
-	// does all the system specific init stuff
+	timeBeginPeriod(1);
 }
 
 void Sys_Quit() {
@@ -117,19 +117,23 @@ void Sys_GenerateEvents() {
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
+	Renderer *ren = 0;
+	Platform *pf = 0; 
 
 	Sys_CreateConsole(hinstance);
 
 	// initial time resolution
-	timeBeginPeriod(1);
+	Sys_Init();
 	Sys_GetMilliseconds();
 
-	Platform pf = Com_Init();
-	Com_LoadEntities(&pf);
-	Renderer *rs = R_Init(&pf, hinstance, MainWndProc);
+	Com_Allocate(&pf, &ren);
+	Com_Init(&pf);
+	R_Init(&ren, hinstance, MainWndProc);
+
+	Com_LoadEntities(pf);
 
 	for (;;) {
 		// run 1 frame of update and render  
-		Com_RunFrame(&pf, rs);
+		Com_RunFrame(pf, ren);
 	}
 }

@@ -1,17 +1,44 @@
 #include "r_cmds.h"
 #include "renderer.h"
 
+#define SUB_PIXEL_STEP 8
+#define SUB_PIXEL_POW2 (1<<SUB_PIXEL_STEP)
+#define SUB_PIXEL_POW2_MINUS_1 (1<<(SUB_PIXEL_STEP-1))
+#define SUB_PIXEL_OFFSET ((1<<SUB_PIXEL_STEP) >> 1)
+
+
 // FIXME: atm the drawing routines receive pitch and bpp, 
-// will make them dynamic or remove the concept completely at some point
-static inline int Orient2D(Point2D a, Point2D b, Point2D c) {
-	return (b.x-a.x)*(c.y-a.y) - (b.y-a.y)*(c.x-a.x);
+// will remove the concept completely at some point 
+
+// FIXME: these determinant predicates are here for the time being
+// ccw vertex winding order
+static inline s32 Orient2D(Point2D a, Point2D b, Point2D c) {
+	//Assert((((s64)(b.x-a.x))*((c.y-a.y))) > SINT32_MIN);	// checking for underflow
+	//Assert((((s64)(b.y-a.y))*((c.x-a.x))) > SINT32_MIN);
+	//Assert((((s64)(b.x-a.x))*((c.y-a.y))) < SINT32_MAX);	// checking for overflow
+	//Assert((((s64)(b.y-a.y))*((c.x-a.x))) < SINT32_MAX);
+	s64 tmp = ((s64)(b.x-a.x))*((s64)(c.y-a.y)) - ((s64)(b.y-a.y))*((s64)(c.x-a.x));
+	s64 result = tmp + ((tmp & SUB_PIXEL_POW2_MINUS_1) << 1);
+	return (s32)(result >> SUB_PIXEL_STEP);
 }
 
-static inline int Orient2D(int ax, int ay, int bx, int by, int cx, int cy) {
+// FIXME: these determinant predicates are here for the time being
+// ccw vertex winding order
+static inline s32 Orient2D(s32 ax, s32 ay, s32 bx, s32 by, s32 cx, s32 cy) {
 	Point2D a = {ax, ay};
 	Point2D b = {bx, by};
 	Point2D c = {cx, cy};
 	return Orient2D(a, b, c);
+}
+
+// ccw vertex winding order
+static inline b32 IsTopLeftEdge(Point2D a, Point2D b) {
+	if (a.y == b.y && a.x > b.x) {	
+		return true;	// top
+	} else if (a.y > b.y) {			
+		return true;	// left
+	}
+	return false;
 }
 
 #if 0
@@ -254,62 +281,102 @@ static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer
 }
 
 // FIXME: change width and height to render_target_*
-// FIXME: top-left fill convention, sub-pixel accuracy, SIMD ops and parallel row filling
+// FIXME: SIMD ops and parallel row filling
 static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
 		}
 
+		u32 color = polys[i].color;
+
+		// original vertices
 		PolyVert v0 = polys[i].vertex_array[0];
 		PolyVert v1 = polys[i].vertex_array[1];
 		PolyVert v2 = polys[i].vertex_array[2];
 
-		u32 color = polys[i].color;
+		s32 x0 = RoundReal32ToS32(v0.xyz.v.x * SUB_PIXEL_POW2);
+		s32 y0 = RoundReal32ToS32(v0.xyz.v.y * SUB_PIXEL_POW2);
 
-		r32 x0 = v0.xyz.v.x;
-		r32 y0 = v0.xyz.v.y;
+		s32 x1 = RoundReal32ToS32(v1.xyz.v.x * SUB_PIXEL_POW2);
+		s32 y1 = RoundReal32ToS32(v1.xyz.v.y * SUB_PIXEL_POW2);
 
-		r32 x1 = v1.xyz.v.x;
-		r32 y1 = v1.xyz.v.y;
+		s32 x2 = RoundReal32ToS32(v2.xyz.v.x * SUB_PIXEL_POW2);
+		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
 
-		r32 x2 = v2.xyz.v.x;
-		r32 y2 = v2.xyz.v.y;
+		// compute triangle AABB for the scaled points
+		int min_x = (MIN3(x0, x1, x2));
+		int min_y = (MIN3(y0, y1, y2));
 
-		// make separate point structures for edge testing
-		Point2D pv0 = {(int)x0, (int)y0};
-		Point2D pv1 = {(int)x1, (int)y1};
-		Point2D pv2 = {(int)x2, (int)y2};
+		int max_x = (MAX3(x0, x1, x2));
+		int max_y = (MAX3(y0, y1, y2));
 
-		// compute triangle AABB
-		int min_x = (int)MIN3(x0, x1, x2);
-		int min_y = (int)MIN3(y0, y1, y2);
+		Point2D min_pt = {(min_x >> SUB_PIXEL_STEP) << SUB_PIXEL_STEP, (min_y >> SUB_PIXEL_STEP) << SUB_PIXEL_STEP};
+		min_pt.x = min_pt.x + SUB_PIXEL_OFFSET;
+		min_pt.y = min_pt.y + SUB_PIXEL_OFFSET;
+		Point2D max_pt = {(max_x >> SUB_PIXEL_STEP) << SUB_PIXEL_STEP, (max_y >> SUB_PIXEL_STEP) << SUB_PIXEL_STEP};
+		max_pt.x = max_pt.x + SUB_PIXEL_OFFSET; 
+		max_pt.y = max_pt.y + SUB_PIXEL_OFFSET;
 
-		int max_x = (int)MAX3(x0, x1, x2);
-		int max_y = (int)MAX3(y0, y1, y2);
 
 		// clip against the screen bounds
-		min_x = MAX(min_x, 0);
-		min_y = MAX(min_y, 0);
+		//min_x = MAX(min_x, 0);
+		//min_y = MAX(min_y, 0);
 
-		max_x = MIN(max_x, width - 1);
-		max_y = MIN(max_y, height - 1);
+		//max_x = MIN(max_x, width - 1);
+		//max_y = MIN(max_y, height - 1);
 
-		// rasterize
+		// make separate point structures for edge testing
+		Point2D pv0 = {x0, y0};
+		Point2D pv1 = {x1, y1};
+		Point2D pv2 = {x2, y2};
+
+		s32 tri2d_area = Orient2D(pv0, pv1, pv2);
+
+		// starting point to test
+		//Point2D top_left = {min_x << SUB_PIXEL_STEP, min_y << SUB_PIXEL_STEP};
+
+		// compute biases for top-left fill convention
+		int bias0 = IsTopLeftEdge(pv1, pv2) ? 0 : -1;
+		int bias1 = IsTopLeftEdge(pv2, pv0) ? 0 : -1;
+		int bias2 = IsTopLeftEdge(pv0, pv1) ? 0 : -1;
+
+		// positive edge test if pt is to the left of the directed line segment
+		s32 w0_row = (Orient2D(pv1, pv2, min_pt)) + bias0;
+		s32 w1_row = (Orient2D(pv2, pv0, min_pt)) + bias1;
+		s32 w2_row = (Orient2D(pv0, pv1, min_pt)) + bias2;
+
+		// compute delta terms for the edge functions for the scaled points
+		s32 a01 = (y0 - y1), b01 = (x1 - x0); 
+		s32 a12 = (y1 - y2), b12 = (x2 - x1);
+		s32 a20 = (y2 - y0), b20 = (x0 - x2);
+
+		// point to test against the triangle
 		Point2D pt;
-		byte *line = buffer + (min_y * pitch);
-		for (pt.y = min_y; pt.y <= max_y; pt.y++) {
-			for (pt.x = min_x; pt.x <= max_x; pt.x++) {
-				int w0 = Orient2D(pv1, pv2, pt);
-				int w1 = Orient2D(pv2, pv0, pt);
-				int w2 = Orient2D(pv0, pv1, pt);
+		min_pt.x = ((min_pt.x+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
+		min_pt.y = ((min_pt.y+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
+		max_pt.x = ((max_pt.x+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
+		max_pt.y = ((max_pt.y+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
 
+
+		byte *line = buffer + (min_pt.y * pitch);
+		for (pt.y = min_pt.y; pt.y <= max_pt.y; pt.y++) {
+			int w0_col = w0_row;
+			int w1_col = w1_row;
+			int w2_col = w2_row;
+			for (pt.x = min_pt.x; pt.x <= max_pt.x; pt.x++) {
 				// ccw vertex winding order
-				if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+				if ((w0_col | w1_col | w2_col) >= 0) {
 					u32 *pixel = (u32 *)line;
 					pixel[pt.x] = color;
 				}
+				w0_col += a12;
+				w1_col += a20;
+				w2_col += a01;
 			}
+			w0_row += b12;
+			w1_row += b20;
+			w2_row += b01;
 			line += pitch;
 		}
 	}

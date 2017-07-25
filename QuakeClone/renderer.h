@@ -110,31 +110,24 @@ struct Renderer {
 	RendererBackend		back_end;
 };
 
-//
-//	Renderer frontend
-//
-extern Renderer *R_Init(Platform *pf, void *hinstance, void *wndproc); 
-extern void R_RenderView(ViewSystem *vs);
-extern void R_SetupFrustum(ViewSystem *vs);
-extern void R_SetupProjection(ViewSystem *vs);
-extern void R_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys);
+extern void R_Init(Renderer **ren, void *hinstance, void *wndproc); 
+extern void RF_RenderView(ViewSystem *vs);
+extern void RF_SetupFrustum(ViewSystem *vs);
+extern void RF_SetupProjection(ViewSystem *vs);
 
-extern void R_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale);
-extern void R_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
-extern void R_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
-extern void R_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
+extern void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys);
 
-ClipFlags R_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 1.0f);
-extern void R_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys);
+extern void RF_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale);
+extern void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
+extern void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
+extern void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 
-extern void R_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts);
+ClipFlags RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 1.0f);
+extern void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys);
 
-// FIXME: move this elsewhere
-extern void R_RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts);
+extern void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts);
 
-//
-//	Renderer backend
-//
+
 extern void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data);
 
 

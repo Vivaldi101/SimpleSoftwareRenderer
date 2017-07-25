@@ -9,8 +9,8 @@
 
 #undef MAX_PERM_MEMORY
 #undef MAX_TEMP_MEMORY
-#define MAX_PERM_MEMORY MEGABYTES(256) 
-#define MAX_TEMP_MEMORY MEGABYTES(64) 
+#define MAX_PERM_MEMORY MEGABYTES(64) 
+#define MAX_TEMP_MEMORY MEGABYTES(256) 
 
 // DebugFileIO
 #ifdef PLATFORM_DEBUG
@@ -178,9 +178,10 @@ extern int Sys_GetMilliseconds();
 //static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
-extern Platform Com_Init();
+extern void Com_Allocate(Platform **pf, struct Renderer **ren);
+extern void Com_Init(Platform **pf);
 extern void Com_LoadEntities(Platform *pf);
-extern void Com_RunFrame(Platform *pf, struct Renderer *rs);
+extern void Com_RunFrame(Platform *pf, struct Renderer *ren);
 extern void Com_Quit();
 
 // Events

@@ -19,8 +19,8 @@ b32 InitWindow(RenderTarget *rt, void *wndproc, void *hinstance) {
 	int width = GetDeviceCaps(hdc, HORZRES);
 	int height = GetDeviceCaps(hdc, VERTRES);
 #else
-	int width = GetDeviceCaps(hdc, HORZRES) / 2;
-	int height = GetDeviceCaps(hdc, VERTRES) / 2;
+	int width = GetDeviceCaps(hdc, HORZRES) / 4;
+	int height = GetDeviceCaps(hdc, VERTRES) / 4;
 #endif
 	ReleaseDC(GetDesktopWindow(), hdc);
 
