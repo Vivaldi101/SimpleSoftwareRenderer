@@ -220,8 +220,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	rot_mat_y[1][1] = 1.0f;
 	rot_mat_y[1][2] = 0.0f;
 
-	// FIXME: scaling of the world
-	r32 speed = 60.0f;
+	r32 speed = 30.0f;
 	// FIXME: add matrix returning routines
 	r32 rot_mat_x[3][3];
 	rot_mat_x[0][0] = 1.0f;
@@ -234,7 +233,7 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 	rot_mat_z[2][2] = 1.0f;
 
 	// FIXME: just for testing!!!!!!!!
-	r32 rot_theta = DEG2RAD(-1.0f*0.025f);
+	r32 rot_theta = DEG2RAD(-1.0f*0.1f);
 	rot_mat_x[1][0] = 0.0f;
 	rot_mat_x[1][1] = cos(rot_theta);
 	rot_mat_x[1][2] = sin(rot_theta);
@@ -339,24 +338,11 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 
 	Sys_GenerateEvents();
 	IN_GetInput(pf->input_state);
-	// FIXME: move elsewhere
-	if (pf->input_state->keys[ESC_KEY].released) {
-		Com_Quit();
-	} else if (pf->input_state->keys[SPACE_KEY].released) {
-		ren->front_end.is_wireframe = !ren->front_end.is_wireframe;
-	} else if (pf->input_state->keys['L'].released) {
-		ren->front_end.is_ambient = (AmbientState)(!ren->front_end.is_ambient);
-	} else if (pf->input_state->keys['C'].released) {
-		(global_console.visibility == CON_HIDE) ? 
-			Sys_FetchConsole(CON_SHOW, true) : 
-			Sys_FetchConsole(CON_HIDE, true);
-	} 
+	IN_HandleInput(pf->input_state);
 
 	Com_RunEventLoop();
 
-	//static b32 first_run = true;
-
-	int num_game_frames_to_run = 0;
+	int num_frames_to_run = 0;
 
 	for (;;) {
 		const int current_frame_time = Sys_GetMilliseconds();
@@ -369,17 +355,17 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		global_game_time_residual += delta_milli_seconds;
 
 		for (;;) {
-			// how much time to wait before running the next frame
+			// how much to wait before running the next frame
 			if (global_game_time_residual < MSEC_PER_SIM) {		
 				break;
 			}
 			global_game_time_residual -= MSEC_PER_SIM;
 			global_game_frame++;
-			num_game_frames_to_run++;
+			num_frames_to_run++;
 		}
 
-		if (num_game_frames_to_run > 0) {
-			// ready to actually run the frames
+		if (num_frames_to_run > 0) {
+			// run the frames
 			break;
 		}
 		Sys_Sleep(0);
@@ -387,7 +373,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 
 	Com_SimFrame((MSEC_PER_SIM / 1000.0f),
 				global_game_time_residual,
-				(num_game_frames_to_run > 5) ? 5 : num_game_frames_to_run,
+				(num_frames_to_run > 5) ? 5 : num_frames_to_run,
 				pf->game_state->num_entities,
 				entities, pf->input_state,
 				&ren->front_end.current_view);
@@ -397,6 +383,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	//}
 	R_BeginFrame(&ren->back_end.target, &ren->back_end.cmds);
 
+	// FIXME: move the entity stuff into entity.cc
 	PolyVert *local_verts = 0; 
 	PolyVert *trans_verts = 0;
 	Poly *polys = 0;
@@ -414,7 +401,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 			entities[i].status.world_pos[1] -= 10.0f;
 
 			// FIXME: combine these two
-			RF_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos, 1.0f); 
+			RF_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos, 1.5f); 
 			RF_TransformWorldToView(&ren->front_end.current_view, trans_verts, ArrayCount(sub_type->trans_vertex_array));
 			RF_AddPolys(&ren->back_end, trans_verts, sub_type->polys, ArrayCount(sub_type->polys));
 		} else {
@@ -478,10 +465,6 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		sprintf_s(buffer, "Frame msec %d\n", frame_msec);
 		OutputDebugStringA(buffer);
 	}
-
-	//if (first_run) {
-	//	first_run = false;
-	//}
 }
 
 void Com_Quit() {
@@ -528,6 +511,14 @@ SysEvent Com_GetEvent() {
 	return Sys_GetEvent();
 }
 
+u32 PackRGBA(Vec4 color) {
+	u32 result = (RoundReal32ToU32(color.c.a * 255.0f) << 24 |
+				  RoundReal32ToU32(color.c.r * 255.0f) << 16 |
+				  RoundReal32ToU32(color.c.g * 255.0f) << 8  |
+				  RoundReal32ToU32(color.c.b * 255.0f));
+
+	return result;
+}
 
 
 /*
@@ -566,14 +557,6 @@ Bitmap MakeBitmap(MemoryStack *ms, int width, int height) {
 	return result;
 }
 
-u32 PackRGBA(Vec4 color) {
-	u32 result = (RoundReal32ToU32(color.c.a * 255.0f) << 24 |
-				  RoundReal32ToU32(color.c.r * 255.0f) << 16 |
-				  RoundReal32ToU32(color.c.g * 255.0f) << 8  |
-				  RoundReal32ToU32(color.c.b * 255.0f));
-
-	return result;
-}
 
 
 

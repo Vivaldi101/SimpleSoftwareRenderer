@@ -1,5 +1,4 @@
 #include "shared.h"
-
 #include "win_r.h"
 #include "renderer.h"
 #include "r_cmds.h"
@@ -15,7 +14,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 	l.kl = 0.055f;
 	l.kq = 0.0f;
 	l.is_active = true;
-	l.flags |= (CAMERA_LIGHT|SPOT_LIGHT);
+	l.flags |= (CAMERA_LIGHT|POINT_LIGHT);
 	R_AddLight(&(*ren)->back_end, &l);
 
 	if (!InitWindow(&(*ren)->back_end.target, wndproc, hinstance)) {
@@ -41,7 +40,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 
 	(*ren)->front_end.current_view.fov_y = 90.0f;
 
-	(*ren)->front_end.current_view.z_near = 60.0f;
+	(*ren)->front_end.current_view.z_near = 20.0f;
 	(*ren)->front_end.current_view.z_far = 1000.0f;
 
 	(*ren)->front_end.current_view.viewport_width = (*ren)->back_end.target.width;		

@@ -9,7 +9,6 @@
 #include "lights.h"
 
 #define PLATFORM_FULLSCREEN
-#define PARALLEL_RASTERIZER
 #define BYTES_PER_PIXEL 4	
 
 // FIXME: put into enums

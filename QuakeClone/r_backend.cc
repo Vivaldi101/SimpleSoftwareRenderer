@@ -281,8 +281,7 @@ static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer
 }
 
 // FIXME: change width and height to render_target_*
-// FIXME: SIMD ops and parallel row filling
-static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -304,7 +303,7 @@ static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *bu
 		s32 x2 = RoundReal32ToS32(v2.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
 
-		// compute triangle AABB for the scaled points
+		// compute triangle 2d AABB for the scaled points
 		int min_x = (MIN3(x0, x1, x2));
 		int min_y = (MIN3(y0, y1, y2));
 
@@ -320,11 +319,11 @@ static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *bu
 
 
 		// clip against the screen bounds
-		//min_x = MAX(min_x, 0);
-		//min_y = MAX(min_y, 0);
+		min_pt.x = MAX(min_pt.x, 0);
+		min_pt.y = MAX(min_pt.y, 0);
 
-		//max_x = MIN(max_x, width - 1);
-		//max_y = MIN(max_y, height - 1);
+		max_pt.x = MIN(max_pt.x, ((width-1)		<< SUB_PIXEL_STEP) - SUB_PIXEL_OFFSET);
+		max_pt.y = MIN(max_pt.y, ((height-1)	<< SUB_PIXEL_STEP) - SUB_PIXEL_OFFSET);
 
 		// make separate point structures for edge testing
 		Point2D pv0 = {x0, y0};
@@ -332,9 +331,6 @@ static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *bu
 		Point2D pv2 = {x2, y2};
 
 		s32 tri2d_area = Orient2D(pv0, pv1, pv2);
-
-		// starting point to test
-		//Point2D top_left = {min_x << SUB_PIXEL_STEP, min_y << SUB_PIXEL_STEP};
 
 		// compute biases for top-left fill convention
 		int bias0 = IsTopLeftEdge(pv1, pv2) ? 0 : -1;
@@ -353,6 +349,7 @@ static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *bu
 
 		// point to test against the triangle
 		Point2D pt;
+
 		min_pt.x = ((min_pt.x+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
 		min_pt.y = ((min_pt.y+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
 		max_pt.x = ((max_pt.x+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
@@ -383,79 +380,7 @@ static void RB_DrawSolidMeshParallel(Poly *polys, PolyVert *poly_verts, byte *bu
 }
 
 // FIXME: change width and height to render_target_*
-static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
-	for (int i = 0; i < num_polys; i++) {
-		if ((polys[i].state & POLY_STATE_BACKFACE)) {
-			continue;
-		}
 
-		PolyVert v0 = polys[i].vertex_array[0];
-		PolyVert v1 = polys[i].vertex_array[1];
-		PolyVert v2 = polys[i].vertex_array[2];
-
-		r32 x0 = v0.xyz.v.x;
-		r32 y0 = v0.xyz.v.y;
-
-		r32 x1 = v1.xyz.v.x;
-		r32 y1 = v1.xyz.v.y;
-
-		r32 x2 = v2.xyz.v.x;
-		r32 y2 = v2.xyz.v.y;
-
-		// sort v0, v1, v2 in ascending y order
-		if (y1 < y0) {
-			AnySwap(x1, x0, r32);
-			AnySwap(y1, y0, r32);
-		} 
-
-		// now we know that v0 and v1 are in order 
-		if (y2 < y0) {
-			AnySwap(x2, x0, r32);
-			AnySwap(y2, y0, r32);
-		} 
-
-		if (y2 < y1) {
-			AnySwap(x2, x1, r32);
-			AnySwap(y2, y1, r32);
-		} 
-
-		// m = (y - y0) / (x - x0)
-		// m(x - x0) = y - y0
-		// mx - mx0 = y - y0
-		// x - x0 = (y - y0) / m
-		// x = (y - y0) / m + x0
-		// x derived from the point-slope form of the line
-		// split the triangle into 2 parts
-		r32 m = (y2 - y0) / (x2 - x0);
-		r32 x = (y1 - y0) / m + x0;
-		RB_DrawFlatBottomTriangle(buffer, pitch, bpp, polys[i].color, x0, y0, x, y1, x1, y1, width, height);
-		RB_DrawFlatTopTriangle(buffer, pitch, bpp, polys[i].color, x1, y1, x, y1, x2, y2, width, height);
-	}
-}
-
-static void RB_ClearMemset(void *buffer, size_t size) {
-	memset(buffer, 0, size);
-}
-
-static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
-	BitBlt(hdc, min_xy[0], min_xy[1], max_xy[0], max_xy[1], hdc_dib, 0, 0, SRCCOPY);
-}
-
-static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
-	DrawPolyCmd *cmd = (DrawPolyCmd *)data;
-
-	if (cmd->is_wireframe) {
-		RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
-	} else {
-#ifdef PARALLEL_RASTERIZER
-		RB_DrawSolidMeshParallel(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
-#else
-		RB_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
-#endif
-	}
-
-	return (const void *)(cmd + 1);
-}
 
 #if 0
 static void RB_DrawFilledRect(RenderTarget *rt, Bitmap *bm, Vec2 origin, Vec2 x, Vec2 y) {
@@ -540,6 +465,26 @@ static const void *RB_DrawText(RenderTarget *rt, const void *data) {
 		} else {
 			o[0] += 10.0f;
 		}
+	}
+
+	return (const void *)(cmd + 1);
+}
+
+static void RB_ClearMemset(void *buffer, size_t size) {
+	memset(buffer, 0, size);
+}
+
+static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
+	BitBlt(hdc, min_xy[0], min_xy[1], max_xy[0], max_xy[1], hdc_dib, 0, 0, SRCCOPY);
+}
+
+static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
+	DrawPolyCmd *cmd = (DrawPolyCmd *)data;
+
+	if (cmd->is_wireframe) {
+		RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+	} else {
+		RB_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	}
 
 	return (const void *)(cmd + 1);

@@ -10,7 +10,6 @@ void RF_SetupProjection(ViewSystem *vs) {
 	r32 left = -(w / 2.0f), right = (w / 2.0f); 
 	r32 bottom = -(h / 2.0f), top = (h / 2.0f); 
 
-	// NOTE: currently this handles only view planes 2x2 dimension
 	// FIXME: handle variable sized view planes
 	r32 d = (w / 2.0f) / tan(DEG2RAD(fov_y / 2.0f));
 
@@ -72,23 +71,18 @@ void RF_SetupFrustum(ViewSystem *vs) {
 	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = combo_matrix[2][1] + combo_matrix[2][3];
 	frustum[FRUSTUM_PLANE_BOTTOM].dist = combo_matrix[3][1] - combo_matrix[3][3];
 
-#if 1
 	frustum[FRUSTUM_PLANE_NEAR].unit_normal[0] = combo_matrix[0][2];
 	frustum[FRUSTUM_PLANE_NEAR].unit_normal[1] = combo_matrix[1][2];
 	frustum[FRUSTUM_PLANE_NEAR].unit_normal[2] = combo_matrix[2][2];
 	frustum[FRUSTUM_PLANE_NEAR].dist = combo_matrix[3][2];
-	int y = 42;
-#endif
 
 	// normalize
 	for (int i = 0; i < NUM_FRUSTUM_PLANES - 1; ++i) {
 		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
 		frustum[i].dist = Dot3(frustum[i].unit_normal, vs->world_orientation.origin);
 	}
-	for (int i = NUM_FRUSTUM_PLANES - 1; i < NUM_FRUSTUM_PLANES; ++i) {
-		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
-		frustum[i].dist = Dot3(frustum[i].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
-	}
+	frustum[FRUSTUM_PLANE_NEAR].unit_normal = Vec3Norm(frustum[FRUSTUM_PLANE_NEAR].unit_normal);
+	frustum[FRUSTUM_PLANE_NEAR].dist = Dot3(frustum[FRUSTUM_PLANE_NEAR].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
 
 	memcpy(&vs->frustum, &frustum, sizeof(frustum));
 }
