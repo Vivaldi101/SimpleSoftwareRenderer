@@ -26,24 +26,14 @@ typedef u32 b32;
 typedef float	r32;
 typedef double	r64;
 
-enum {
-	PITCH,		// up / down
-	YAW,		// left / right
-	ROLL		// fall over
-};
 
-enum {
-	PLANE_X,
-	PLANE_Y,
-	PLANE_Z,
-	PLANE_NON_AXIAL	
-};
+#define MAX_UPS (60)
+#define MSEC_PER_SIM (1000 / MAX_UPS)
 
-enum {
-	UVN_U, 
-	UVN_V,
-	UVN_N
-};
+#undef MAX_PERM_MEMORY
+#undef MAX_TEMP_MEMORY
+#define MAX_PERM_MEMORY MEGABYTES(64) 
+#define MAX_TEMP_MEMORY MEGABYTES(256) 
 
 // angle conversions
 #if 1
@@ -125,6 +115,25 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #else
 #define Assert(cond)
 #endif	// PLATFORM_DEBUG
+
+enum {
+	PITCH,		// up / down
+	YAW,		// left / right
+	ROLL		// fall over
+};
+
+enum {
+	PLANE_X,
+	PLANE_Y,
+	PLANE_Z,
+	PLANE_NON_AXIAL	
+};
+
+enum {
+	UVN_U, 
+	UVN_V,
+	UVN_N
+};
 
 /*
 ==============================================================
@@ -756,7 +765,7 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #ifdef _WIN32
 #include <Windows.h>
 #ifdef PLATFORM_DEBUG
-#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); Com_Quit(); } while(0)
+#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); __debugbreak(); } while(0)
 #define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
 #define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
 #else

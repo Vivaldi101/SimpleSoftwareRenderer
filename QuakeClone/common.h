@@ -4,14 +4,6 @@
 #include "r_types.h"
 #include "input.h"
 
-#define MAX_UPS (60)
-#define MSEC_PER_SIM (1000 / MAX_UPS)
-
-#undef MAX_PERM_MEMORY
-#undef MAX_TEMP_MEMORY
-#define MAX_PERM_MEMORY MEGABYTES(64) 
-#define MAX_TEMP_MEMORY MEGABYTES(256) 
-
 // DebugFileIO
 #ifdef PLATFORM_DEBUG
 struct FileInfo {
@@ -32,8 +24,6 @@ struct Input {
 	Key keys[MAX_NUM_KEYS];
 };
 
-// FIXME: move into entities.h 
-//#define SetupEntity(table, e, fn) (table)[EntityTypeEnum::##e].fn = (fn##e)
 enum EntityTypeEnum {
 	EntityType_invalid,
 	EntityType_player,
@@ -87,6 +77,7 @@ struct Entity {
 
 struct GameState {
 	Entity 		entities[MAX_NUM_ENTITIES];
+	//Entity 		*entities;
 	int			num_entities;
 
 	Bitmap		test_font[MAX_NUM_GLYPHS];

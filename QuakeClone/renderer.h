@@ -8,7 +8,7 @@
 #include "r_cmds.h"
 #include "lights.h"
 
-#define PLATFORM_FULLSCREEN
+//#define PLATFORM_FULLSCREEN
 #define BYTES_PER_PIXEL 4	
 
 // FIXME: put into enums

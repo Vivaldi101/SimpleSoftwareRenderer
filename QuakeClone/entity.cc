@@ -1,95 +1,21 @@
 #include "entity.h"
-#include "shared.h"
 
-// will get rounded up to the next 4k page boundary on Win64
-#undef ENTITY_MEMORY_SIZE 
-// arbitrary value
-#define ENTITY_MEMORY_SIZE 4096*2
-#if ENTITY_MEMORY_SIZE <= 0
-#error "ENTITY_MEMORY_SIZE must be positive nonzero number!"
-#endif
-
-#define INVALID_XMACRO_CASE ((EntityEnum)-1)
-#define X(name) name,
-#define XFunc(name) static void Update##name##_(void *_data_)
-
-// give here the data types to use 
-// suffix them with an underscore: MyType_
-#define XMACRO X(First_) X(Second_) X(Third_) X(Fourth_) 
-#undef X
-
-typedef enum {
-#define X(name) name,
-	XMACRO
-#undef X
-} EntityEnum;
-
-typedef struct {
-	EntityEnum	type;
-	void		*base;			
-} Entity;
-
-// types
-typedef struct {
-	int i1, i2, i3;
-} First;
-
-typedef struct {
-	int i1, i2, i3;
-	float f1, f2, f3;
-} Second;
-
-typedef struct {
-	int i1, i2, i3;
-} Third;
-
-typedef struct {
-	int i1, i2, i3;
-	float f1, f2, f3;
-} Fourth;
-
-// x-routines
+/***
+**** X-routines
+****/
 
 // usage: XFunc(MyType) { 
 //     MyType *p = (MyType *)_data_;
 // }
 
-XFunc(First) {
-	First *fp = (First *)_data_;
-	//RunFirst(fp);
-	MessageBoxA(0, "1\n", 0, 0);
+XFunc(Cube) {
+	Cube_ *fp = (Cube_ *)_data_;
+	MessageBoxA(0, "Cube\n", 0, 0);
 }
 
-XFunc(Second) {
-	Second *sp = (Second *)_data_;
-	//RunSecond(sp);
-	MessageBoxA(0, "2\n", 0, 0);
-}
-
-XFunc(Third) {
-	Third *tp = (Third *)_data_;
-	//RunFirst(fp);
-	MessageBoxA(0, "3\n", 0, 0);
-}
-
-XFunc(Fourth) {
-	Fourth *sp = (Fourth *)_data_;
-	sp->i1 = 42;
-	//RunSecond(sp);
-	MessageBoxA(0, "4\n", 0, 0);
-}
-
-static void UpdateTypes(Entity *ents, int num_entities) {
-#define X(name) case(name): Update##name(ents[i].base); break;
-	for (int i = 0; i < num_entities; i++) {
-		switch(ents[i].type) { XMACRO }
-	}
-#undef X
-}
-
-static void *AdvanceBySizeof(EntityEnum size_to_advance, void *curr_ptr) {
-#define X(name) case(name): { return (new_ptr += sizeof(name)); }
-	byte *new_ptr = (byte *)curr_ptr;
+static void *AdvanceBySizeof(EntityEnum size_to_advance, void *start) {
+#define X(name) case(name): { return (end += sizeof(name##_)); }
+	byte *end = (byte *)start;
 	switch(size_to_advance) { XMACRO }
 #undef X
 
@@ -97,35 +23,48 @@ static void *AdvanceBySizeof(EntityEnum size_to_advance, void *curr_ptr) {
 	return 0;
 }
 
-static void InitAll(Entity *ents, byte *base_memory_addr, int num_entities) {
-	byte *start_addr = base_memory_addr;
-
-	Assert(start_addr);
+static void UpdateEntities(byte *buffer, int num_entities) {
+	void *start, *end;
+#define X(name) case(name): Update##name(((BaseEntity *)start)->data); break;
 	for (int i = 0; i < num_entities; i++) {
-		ents[i].type = (EntityEnum)i; 
-		ents[i].base = base_memory_addr;
-		base_memory_addr = (byte *)AdvanceBySizeof(ents[i].type, base_memory_addr);	
-		Assert((ptrdiff_t)base_memory_addr < (ptrdiff_t)start_addr+ENTITY_MEMORY_SIZE);
+		start = buffer;
+		switch(((BaseEntity *)start)->type) { XMACRO }
+		end = (byte *)start + sizeof(BaseEntity);
+		buffer = (byte *)AdvanceBySizeof(((BaseEntity *)start)->type, end);
 	}
-}
-
-// FIXME: how should we call this?
-// includes test code only atm
-void CommonMain(MemoryStack *ms, Entity *types) {
-#define X(name) + 1
-#define GLOBAL_NUM_ENTITIES (0 + XMACRO) 
-	//Entity types[GLOBAL_NUM_ENTITIES];
-
-	// FIXME: do allocation here or let the caller pass a buffer?
-	byte *base_memory_addr = (byte *)VirtualAlloc(0, ENTITY_MEMORY_SIZE, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-	Assert(base_memory_addr);
-	ms->base_ptr = (byte *)base_memory_addr;
-	ms->max_size = ENTITY_MEMORY_SIZE;
-
-	InitAll(types, base_memory_addr, GLOBAL_NUM_ENTITIES);
-
-	UpdateTypes(types, GLOBAL_NUM_ENTITIES);
-	
 #undef X
 }
 
+
+// for entity array types
+#define X(name) + 1
+static const int NUM_ENTITY_TYPES = (0 + XMACRO); 
+#undef X
+
+byte *AddEntity(byte *buffer, EntityEnum ee) {
+	byte *old_buffer;
+	BaseEntity *be = (BaseEntity *)buffer;
+	be->type = ee; 
+	buffer += sizeof(BaseEntity);
+	be->data = (byte *)buffer;
+	old_buffer = buffer;
+	buffer = (byte *)AdvanceBySizeof(be->type, buffer);	
+
+	return buffer;
+}
+
+byte *CreateEntities(byte *entity_buffer) {
+
+	// create some cubes
+	int num_cubes = 3;
+	byte *curr_pos = entity_buffer;
+	for (int i = 0; i < num_cubes; i++) {
+		curr_pos = AddEntity(curr_pos, Cube);
+		//Assert((ptrdiff_t)base_memory_addr < ((ptrdiff_t)start_addr+(ptrdiff_t)ENTITY_MEMORY_SIZE));
+	}
+
+	// in sim loop
+	//UpdateEntities(entity_buffer, num_cubes);
+
+	return curr_pos;
+}

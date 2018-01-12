@@ -117,6 +117,8 @@ void Sys_GenerateEvents() {
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
+	// FIXME: change the platform layer into "push and pull" data-api approach:
+	// one big struct, which holds all the platform specific data
 	Renderer *ren = 0;
 	Platform *pf = 0; 
 
