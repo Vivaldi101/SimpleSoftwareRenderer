@@ -2,6 +2,7 @@
 #define COMMON_H
 #include "shared.h"		
 #include "r_types.h"
+#include "entity.h"
 #include "input.h"
 
 // DebugFileIO
@@ -24,63 +25,63 @@ struct Input {
 	Key keys[MAX_NUM_KEYS];
 };
 
-enum EntityTypeEnum {
-	EntityType_invalid,
-	EntityType_player,
-	EntityType_cube,
-	MAX_NUM_ENTITY_TYPES
-};
-
-static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
-	"invalid",
-	"player",
-	"cube",
-};
-
-struct Entity {
-	union {
-		// FIXME: move into file format module
-		// FIXME: just for test stuff
-		struct {
-			Poly 		polys[12];
-			PolyVert	local_vertex_array[8];		
-			PolyVert	trans_vertex_array[8];		
-		} cube;		
-		struct {
-			Poly 		polys[12];
-			PolyVert	local_vertex_array[8];		
-			PolyVert	trans_vertex_array[8];		
-		} player;
-	};
-
-	EntityTypeEnum type_enum;
-	struct {
-		int		guid;
-		char	type_name[32];
-
-		u16		state;
-		u16		attr;
-
-		r32		avg_radius;
-		r32		max_radius;
-
-		//r32		world_matrix[4][4];	// currently unused
-		Vec3	axis[3];			// rotation vectors
-		Vec3	world_pos;
-		Vec3	orientation;
-		Vec3	velocity;
-
-		s16		num_verts;
-		s16		num_polys;
-	} status;	
-};
+//enum EntityTypeEnum {
+//	EntityType_invalid,
+//	EntityType_player,
+//	EntityType_cube,
+//	MAX_NUM_ENTITY_TYPES
+//};
+//
+//static const char *global_entity_names[MAX_NUM_ENTITY_TYPES] = {
+//	"invalid",
+//	"player",
+//	"cube",
+//};
+//
+//struct Entity {
+//	union {
+//		// FIXME: move into file format module
+//		// FIXME: just for test stuff
+//		struct {
+//			Poly 		polys[12];
+//			PolyVert	local_vertex_array[8];		
+//			PolyVert	trans_vertex_array[8];		
+//		} cube;		
+//		struct {
+//			Poly 		polys[12];
+//			PolyVert	local_vertex_array[8];		
+//			PolyVert	trans_vertex_array[8];		
+//		} player;
+//	};
+//
+//	EntityTypeEnum type_enum;
+//	struct {
+//		int		guid;
+//		char	type_name[32];
+//
+//		u16		state;
+//		u16		attr;
+//
+//		r32		avg_radius;
+//		r32		max_radius;
+//
+//		//r32		world_matrix[4][4];	// currently unused
+//		Vec3	axis[3];			// rotation vectors
+//		Vec3	world_pos;
+//		Vec3	orientation;
+//		Vec3	velocity;
+//
+//		s16		num_verts;
+//		s16		num_polys;
+//	} status;	
+//};
 
 struct GameState {
-	Entity 		entities[MAX_NUM_ENTITIES];
-	//Entity 		*entities;
-	int			num_entities;
+	//Entity 		entities[MAX_NUM_ENTITIES];
+	BaseEntity 		*entities;
+	int				num_entities;
 
-	Bitmap		test_font[MAX_NUM_GLYPHS];
+	Bitmap			test_font[MAX_NUM_GLYPHS];
 };
 
 struct StackAllocator {

@@ -136,6 +136,6 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 
 	for (;;) {
 		// run 1 frame of update and render  
-		Com_RunFrame(pf, ren);
+		//Com_RunFrame(pf, ren);
 	}
 }

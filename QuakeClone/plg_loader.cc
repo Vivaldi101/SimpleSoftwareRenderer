@@ -75,7 +75,7 @@ static ptrdiff_t PLG_ReadLine(char *buffer, const void *load_data, u32 load_data
 }
 
 // FIXME: check for sscanf_s over/underflows
-b32 PLG_LoadMesh(Entity *typeless_ent, const void *load_data, u32 load_data_len, r32 scale) {
+b32 PLG_LoadMesh(BaseEntity *typeless_ent, const void *load_data, u32 load_data_len, r32 scale) {
 	char buffer[MAX_PLG_LINE_LEN];
 	int local_verts_offset = 0;
 	int polys_offset = 0;

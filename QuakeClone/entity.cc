@@ -1,70 +1,86 @@
-#include "entity.h"
+#include <Windows.h>
+#include "common.h"
+#include <stdio.h>
 
 /***
 **** X-routines
 ****/
-
-// usage: XFunc(MyType) { 
-//     MyType *p = (MyType *)_data_;
-// }
-
-XFunc(Cube) {
-	Cube_ *fp = (Cube_ *)_data_;
-	MessageBoxA(0, "Cube\n", 0, 0);
+XFunc(Pyramid) {
+	Pyramid_ *pp = (Pyramid_ *)_raw_entity_data_;
+	MessageBoxA(0, "NPC(pyr)\n", 0, 0);
 }
 
-static void *AdvanceBySizeof(EntityEnum size_to_advance, void *start) {
-#define X(name) case(name): { return (end += sizeof(name##_)); }
-	byte *end = (byte *)start;
-	switch(size_to_advance) { XMACRO }
+XFunc(Cube) {
+	Cube_ *fp = (Cube_ *)_raw_entity_data_;
+	switch(_extra_flags_) {
+		case PLAYER: {
+			MessageBoxA(0, "Player(cube)\n", 0, 0);
+		} break; 
+		case NPC: {
+			MessageBoxA(0, "NPC(cube)\n", 0, 0);
+		} break; 
+		default: Assert(0);
+	}
+}
+
+static size_t GetSize(EntityEnum ee) {
+#define X(name) case(name): { return sizeof(name##_); }
+	switch(ee) { XMACRO }
 #undef X
 
-	Assert(0);	// invalid case
 	return 0;
 }
 
-static void UpdateEntities(byte *buffer, int num_entities) {
-	void *start, *end;
-#define X(name) case(name): Update##name(((BaseEntity *)start)->data); break;
-	for (int i = 0; i < num_entities; i++) {
-		start = buffer;
-		switch(((BaseEntity *)start)->type) { XMACRO }
-		end = (byte *)start + sizeof(BaseEntity);
-		buffer = (byte *)AdvanceBySizeof(((BaseEntity *)start)->type, end);
-	}
+void UpdateEntities(BaseEntity *root_be) {
+#define X(name) case(name): Update##name(raw_entity_data, extra_flags); break;
+	for (BaseEntity *p = root_be; p; p = p->next) {
+		EntityEnum ee = p->type;
+		int num_entities = p->num_entities;
+		int extra_flags = p->extra_flags;
+		byte *raw_entity_data = (byte *)p->raw_entity_data;
+		for (int i = 0; i < num_entities; i++) {
+			switch(ee) { XMACRO }
+			raw_entity_data += GetSize(ee);
+		}
+	}	
 #undef X
 }
 
+static size_t AddEntities(BaseEntity **root_be, size_t *used_entity_memory, int num_entities, EntityEnum ee, u8 extra_flags) {
+	BaseEntity *curr_be, *new_be;
+	byte *curr_pos;
 
-// for entity array types
-#define X(name) + 1
-static const int NUM_ENTITY_TYPES = (0 + XMACRO); 
-#undef X
-
-byte *AddEntity(byte *buffer, EntityEnum ee) {
-	byte *old_buffer;
-	BaseEntity *be = (BaseEntity *)buffer;
-	be->type = ee; 
-	buffer += sizeof(BaseEntity);
-	be->data = (byte *)buffer;
-	old_buffer = buffer;
-	buffer = (byte *)AdvanceBySizeof(be->type, buffer);	
-
-	return buffer;
-}
-
-byte *CreateEntities(byte *entity_buffer) {
-
-	// create some cubes
-	int num_cubes = 3;
-	byte *curr_pos = entity_buffer;
-	for (int i = 0; i < num_cubes; i++) {
-		curr_pos = AddEntity(curr_pos, Cube);
-		//Assert((ptrdiff_t)base_memory_addr < ((ptrdiff_t)start_addr+(ptrdiff_t)ENTITY_MEMORY_SIZE));
+	curr_pos = (byte *)*root_be;
+	while ((curr_be = (*root_be))) {
+		curr_pos += (sizeof(BaseEntity) + (GetSize(curr_be->type) * curr_be->num_entities));
+		root_be = &curr_be->next;
 	}
 
-	// in sim loop
-	//UpdateEntities(entity_buffer, num_cubes);
+	new_be = (BaseEntity *)curr_pos;
+	new_be->next = curr_be;
+	new_be->type = ee;
+	new_be->num_entities = num_entities;
+	new_be->extra_flags = extra_flags;
+	new_be->raw_entity_data = curr_pos + sizeof(BaseEntity);
+	*root_be = new_be;
 
-	return curr_pos;
+	*used_entity_memory += (num_entities * GetSize(ee));
+	return num_entities * GetSize(ee);
+}
+
+void InitEntities(Platform *pf, size_t max_entity_memory_limit) {
+	size_t used_entity_memory = 0;
+	int num_players = 1;
+	int num_npcs_cubes = 3;
+	int num_npcs_pyrs = 3;
+
+	byte *prev_pos = (byte *)GetMemStackPos(&pf->main_memory_stack.perm_data);
+	pf->game_state->entities = (BaseEntity *)prev_pos;
+	memset(pf->game_state->entities, 0, sizeof(*pf->game_state->entities));
+	AddEntities(&pf->game_state->entities, &used_entity_memory, num_npcs_cubes, Cube, NPC);
+	AddEntities(&pf->game_state->entities, &used_entity_memory, num_players, Cube, PLAYER);
+	AddEntities(&pf->game_state->entities, &used_entity_memory, num_npcs_pyrs, Pyramid, NPC);
+	PushArray(&pf->main_memory_stack.perm_data, used_entity_memory, byte);	// push the entities onto the stack
+	byte *curr_pos = (byte *)GetMemStackPos(&pf->main_memory_stack.perm_data);
+	Assert(used_entity_memory <= max_entity_memory_limit);
 }

@@ -737,16 +737,7 @@ struct MemoryStack {
 	size_t	bytes_used;
 };
 
-//
-// fixed size allocator
-//
-
-//struct FBAllocator {
-//	byte *	data;
-//	size_t	max_size;
-//	int		num_rows;
-//};
-
+extern void *GetMemStackPos(MemoryStack *ms);
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
 // FIXME: pass alignment
 extern void *_Push_(MemoryStack *ms, size_t num_bytes);
@@ -759,6 +750,7 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 
 #define PushArray(stack, count, type) ((type *)_Push_(stack, (count) * sizeof(type)))
 #define PopArray(stack, count, type) (_Pop_(stack, (count) * sizeof(type)))  
+//#define PushBytes(stack, count) ((type *)_Push_(stack, (count) * sizeof(byte)))
 
 
 // windows specific

@@ -1,6 +1,6 @@
 #include "common.h"
-#include "r_cmds.h"
 #include "renderer.h"
+#include "r_cmds.h"
 #include "plg_loader.h"
 #include "lights.h"
 
@@ -29,6 +29,10 @@ static inline u32 NextPO2(u32 v) {
 //
 // stack based allocator
 //
+void *GetMemStackPos(MemoryStack *ms) {
+	void *ptr = ms->base_ptr + ms->bytes_used;
+	return ptr;
+}
 
 // NOTE: dont use the _Push_ and _Pop_ functions directly, go through the macros
 // FIXME: pass alignment
@@ -127,7 +131,7 @@ void Com_Allocate(Platform **pf, Renderer **ren) {
 	(*ren)->back_end.cmds.buffer_base = PushSize(&(*pf)->main_memory_stack.perm_data, MAX_RENDER_BUFFER, byte);
 	(*ren)->back_end.cmds.max_buffer_size = MAX_RENDER_BUFFER;
 	(*ren)->back_end.cmds.used_buffer_size = 0;
-	(*ren)->back_end.entities = (*pf)->game_state->entities;
+	//(*ren)->back_end.entities = (*pf)->game_state->entities;
 }
 
 void Com_Init(Platform **pf) {
@@ -149,25 +153,27 @@ void Com_Init(Platform **pf) {
 }
 
 void Com_LoadEntities(Platform *pf) {
+
 	// FIXME: testing entity stuff!!
-	// FIXME: asset streaming
-	Entity common_ent = {};
-	common_ent.type_enum = EntityType_player;
+	size_t max_entity_memory = 1024 << 5;
+	InitEntities(pf, max_entity_memory);
+	BaseEntity common_ent = {};
+
+	common_ent.type = Cube;
 	FileInfo cube_assets = pf->file_ptrs.read_file("cube1.plg");
-	int num_entities = pf->game_state->num_entities;
 
 	// FIXME: testing!!
 	// FIXME: 0 hardcoded for player for now
-	Assert(PLG_LoadMesh(&common_ent, cube_assets.data, cube_assets.size));
-	memcpy(&pf->game_state->entities[0], &common_ent, sizeof(Entity));
-	pf->game_state->entities[0].type_enum = EntityType_player;
+	//Assert(PLG_LoadMesh(&common_ent, cube_assets.data, cube_assets.size));
+	//memcpy(&pf->game_state->entities[0], &common_ent, sizeof(Entity));
+	//pf->game_state->entities[0].type_enum = EntityType_player;
 
-	for (int i = 1; i < (num_entities); ++i) {
-		Vec3 world_pos = {-100.0f + (20.0f * i), 0.0f, 200.0f};
-		memcpy(&pf->game_state->entities[i], &common_ent, sizeof(Entity));
-		pf->game_state->entities[i].status.world_pos = world_pos;
-		pf->game_state->entities[i].type_enum = EntityType_cube;
-	}
+	//for (int i = 1; i < num_entities; ++i) {
+	//	Vec3 world_pos = {-100.0f + (20.0f * i), 0.0f, 200.0f};
+	//	memcpy(&pf->game_state->entities[i], &common_ent, sizeof(Entity));
+	//	pf->game_state->entities[i].status.world_pos = world_pos;
+	//	pf->game_state->entities[i].type_enum = EntityType_cube;
+	//}
 
 	pf->file_ptrs.free_file(&cube_assets);
 }
@@ -210,6 +216,7 @@ static void Com_RunEventLoop() {
 	}
 }
 
+#if 0
 static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entities, Entity *ents, Input *in, ViewSystem *current_view) {
 	// test stuff
 	static r32 rot_mat_y[3][3];
@@ -332,9 +339,11 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 		sim_dt -= (1.0f / 60.0f);
 	}
 }
+#endif
 
+#if 0
 void Com_RunFrame(Platform *pf, Renderer *ren) {
-	Entity *entities = pf->game_state->entities;
+	//Entity *entities = pf->game_state->entities;
 
 	Sys_GenerateEvents();
 	IN_GetInput(pf->input_state);
@@ -371,12 +380,12 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		Sys_Sleep(0);
 	}
 
-	Com_SimFrame((MSEC_PER_SIM / 1000.0f),
-				global_game_time_residual,
-				(num_frames_to_run > 5) ? 5 : num_frames_to_run,
-				pf->game_state->num_entities,
-				entities, pf->input_state,
-				&ren->front_end.current_view);
+	//Com_SimFrame((MSEC_PER_SIM / 1000.0f),
+	//			global_game_time_residual,
+	//			(num_frames_to_run > 5) ? 5 : num_frames_to_run,
+	//			pf->game_state->num_entities,
+	//			entities, pf->input_state,
+	//			&ren->front_end.current_view);
 
 	//if (ren->front_end.is_view_changed || first_run) {
 	RF_RenderView(&ren->front_end.current_view);
@@ -466,6 +475,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		OutputDebugStringA(buffer);
 	}
 }
+#endif
 
 void Com_Quit() {
 	Sys_Quit();

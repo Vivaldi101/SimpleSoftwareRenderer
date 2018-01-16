@@ -6,6 +6,7 @@
 #include "win_shared.h"
 #include "r_types.h"
 #include "r_cmds.h"
+#include "entity.h"
 #include "lights.h"
 
 //#define PLATFORM_FULLSCREEN
@@ -93,7 +94,7 @@ struct RendererBackend {
 	RenderCommands		cmds;
 	RenderTarget 		target;		
 
-	Entity *			entities;
+	BaseEntity *		entities;
 
 	Light *				lights;
 	int					num_lights;
