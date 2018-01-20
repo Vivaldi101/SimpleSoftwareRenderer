@@ -98,13 +98,13 @@ void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts
 	}
 }
 
-void RF_TransformModelToWorld(PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
+void RF_TransformModelToWorld(const PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
 	for (int i = 0; i < num_verts; ++i) {
 		trans_poly_verts[i].xyz = (local_poly_verts[i].xyz * world_scale) + world_pos;
 	}
 }
 
-ClipFlags RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
+int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = vs->frustum[i];
 		r32 dist = Dot3(pt, pl.unit_normal) - pl.dist;
@@ -121,8 +121,26 @@ ClipFlags RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 
 void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
+	r32 one_over_ar = 1.0f / vs->aspect_ratio;
+   Vec3 q = {0.0f, 0.0f, 1.0f};
+   Vec3 e = {0.0f, 0.0f, 0.0f};
+   Vec3 n = {0.0f, 0.0f, 1.0f};
+   r32 a = Dot3(q, n);
 
 	for (int i = 0; i < num_verts; ++i) {
+      //Vec3 p, pn;
+      //r32 c;
+
+      //p[0] = poly_verts[i].xyz[0];
+      //p[1] = poly_verts[i].xyz[1];
+      //p[2] = poly_verts[i].xyz[2];
+      //c = a / Dot3(p, n);
+      //pn = (e + c*(p-e));
+
+      //poly_verts[i].xyz[0] = pn[0] * one_over_ar;;
+      //poly_verts[i].xyz[1] = pn[1];
+      //poly_verts[i].xyz[2] = pn[2];
+
 		r32 in[4];
 		r32 out[4];
 
@@ -140,11 +158,11 @@ void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 
 void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 in[3];
-	r32 screen_width_factor = (0.5f * (vs->viewport_width - 1.0f));
-	r32 screen_height_factor = (0.5f * (vs->viewport_height - 1.0f));
+	s32 screen_width_factor = vs->viewport_width >> 1;
+	s32 screen_height_factor = vs->viewport_height >> 1;
 	for (int i = 0; i < num_verts; ++i) {
-		poly_verts[i].xyz[0] = (screen_width_factor + (poly_verts[i].xyz[0] * screen_width_factor));
-		poly_verts[i].xyz[1] = (screen_height_factor + (poly_verts[i].xyz[1] * screen_height_factor));
+		poly_verts[i].xyz[0] = (poly_verts[i].xyz[0] + 1) * screen_width_factor;
+		poly_verts[i].xyz[1] = (poly_verts[i].xyz[1] + 1) * screen_height_factor;
 	}
 }
 
@@ -165,7 +183,7 @@ void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 	Vec3 p = {0.0f, 0.0f, 0.0f};
 
 	for (int i = 0; i < num_polys; ++i) {
-		if ((polys[i].state & POLY_STATE_BACKFACE) || !(polys[i].state & POLY_STATE_ACTIVE)) {
+		if (polys[i].state & POLY_STATE_BACKFACE) {
 			continue;
 		}
 
@@ -229,26 +247,25 @@ static void R_RotateForViewer(ViewSystem *vs) {
 	memcpy(vs->view_matrix, view_matrix, sizeof(view_matrix));
 }
 
-void RF_RenderView(ViewSystem *vs) {
+void RF_UpdateView(ViewSystem *vs) {
 	R_RotateForViewer(vs);
 	RF_SetupProjection(vs);
 	RF_SetupFrustum(vs);					
 }
 
-void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, int num_polys) {
+void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const Vec3i *index_list, int num_polys) {
 	int num_verts = 3;	// triangle
 	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
 
 	for (int i = 0; i < num_polys; ++i) {
 		Poly *poly = &rb->polys[rb->num_polys];
 		poly->num_verts = num_verts;
-		poly->state = poly_array[i].state;
-		poly->color = poly_array[i].color;
+		poly->color = PackRGBA(0.75f,0.75f,0.75f,1.0f);	// test color
 		poly->vertex_array = &rb->poly_verts[rb->num_poly_verts];
 
-		for (int j = 0; j < num_verts; ++j) {
-			poly->vertex_array[j] = verts[poly_array[i].vert_indices[j]];
-		}
+		poly->vertex_array[0] = verts[index_list[i][0]];
+		poly->vertex_array[1] = verts[index_list[i][1]];
+		poly->vertex_array[2] = verts[index_list[i][2]];
 
 		++rb->num_polys; 
 		rb->num_poly_verts += num_verts;
@@ -256,13 +273,13 @@ void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, Poly *poly_array, i
 }
 
 void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts) {
-	for (int i = 0; i < num_poly_verts; ++i) {
+	for (int i = 0; i < num_poly_verts; i++) {
 		poly_verts[i].normal[0] = 0.0f;
 		poly_verts[i].normal[1] = 0.0f;
 		poly_verts[i].normal[2] = 0.0f;
 	}
 	// FIXME: function to compute poly normals
-	for (int i = 0; i < num_polys; ++i) {
+	for (int i = 0; i < num_polys; i++) {
 		if (polys[i].state & POLY_STATE_BACKFACE) {
 			continue;
 		}
@@ -271,7 +288,7 @@ void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts,
 		PolyVert v2 = polys[i].vertex_array[2];
 		Vec3 u = MakeVec3(v0.xyz, v1.xyz);
 		Vec3 v = MakeVec3(v0.xyz, v2.xyz);
-		Vec3 n = -Cross3(u, v);
+		Vec3 n = -Cross3(u, v);					// NOTE: negated because of left-handed system and because we are using ccw winding order
 		v0.normal = v0.normal + n;
 		v1.normal = v1.normal + n;
 		v2.normal = v2.normal + n;
@@ -279,7 +296,7 @@ void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts,
 		polys[i].vertex_array[1].normal = v1.normal;
 		polys[i].vertex_array[2].normal = v2.normal;
 	}
-	for (int i = 0; i < num_poly_verts; ++i) {
+	for (int i = 0; i < num_poly_verts; i++) {
 		poly_verts[i].normal = Vec3Norm(poly_verts[i].normal);
 	}
 }

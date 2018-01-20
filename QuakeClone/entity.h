@@ -1,18 +1,19 @@
 #ifndef ENTITY_H
 #define ENTITY_H
-#include "r_types.h"
-static const Vec3 global_model_verts[8] = {
-	{ 1, 1, 1	},
-	{-1, 1, 1	},
-	{-1, 1, -1	},
-   	{ 1, 1, -1	},
-	{ 1, -1, 1	},
-	{-1, -1, 1	},
-	{-1, -1, -1	},
-	{ 1, -1, -1	}
+#include "shared.h"
+
+static const PolyVert global_cube_normalized_model_verts[8] = {
+	{{1, 1, 1}		},
+	{{-1, 1, 1}		},
+	{{-1, 1, -1}	},
+	{{1, 1, -1}		},
+	{{1, -1, 1}		},
+	{{-1, -1, 1}	},
+	{{-1, -1, -1}	},
+	{{1, -1, -1}	}
 };
 
-static const Vec3 global_cube_model_index_array[12] = {
+static const Vec3i global_cube_model_indices[12] = {
 	{ 0, 1, 2 },
 	{ 0, 2, 3 },
 	{ 4, 7, 6 },
@@ -30,10 +31,11 @@ static const Vec3 global_cube_model_index_array[12] = {
 
 #define INVALID_XMACRO_CASE ((EntityEnum)-1)
 #define X(name) name,
-#define XFunc(name) static void Update##name(void *_raw_entity_data_, int _extra_flags_)
+#define UpdateEntity(name) static inline void UpdateEntity##name(void *_raw_entity_data_, Renderer *_renderer_, Input *_in_, r32 _dt_, int _extra_flags_)
+#define RenderEntity(name) static void RenderEntity##name(void *_raw_entity_data_, Renderer *_renderer_, int _extra_flags_)
 
-// give here the entity data types to use 
-#define XMACRO X(Cube) X(Pyramid)
+// give here the entities to use 
+#define XMACRO X(Cube)
 #undef X
 
 enum EntityEnum {
@@ -59,30 +61,30 @@ enum {
 	Z_AXIS	= 2
 };
 
-struct PositionData {
-	Vec3		axis[3];		// rotation vectors
-	Vec3		world_pos;
-	Vec3		orientation;
-	Vec3		velocity;
-};
+//struct EntityPosition {
+//	Vec3		axis[3];		// rotation vectors
+//	Vec3		world_pos;
+//	Vec3		orientation;
+//	Vec3		velocity;
+//};
 
 struct BaseEntity {
 	EntityEnum			type;															
 	int					num_entities;		// the actual number of entities of type	   
 	u8					extra_flags;													
 	void				*raw_entity_data;	// pointer to a specific entity: Cube_ etc	
-	BaseEntity			*next;
 };
 
 struct Cube_ {
-	Vec3			trans_verts[8];
-	PositionData	pos_data;
+	PolyVert	model_verts[8];
+	PolyVert	trans_verts[8];
+	//Vec3		axis[3];		// rotation vectors
+	Vec3		world_pos;
+	Vec3		orientation;
+	Vec3		velocity;
 };
 
-struct Pyramid_ {
-	Vec3			trans_verts[5];
-	PositionData	pos_data;
-};
-extern void InitEntities(struct Platform *pf, size_t max_entity_memory_limit);
-extern void UpdateEntities(BaseEntity *root_be);
+extern void InitEntities(struct Platform *pf, size_t max_entity_memory_limit = (MAX_PERM_MEMORY >> 1));
+extern void UpdateEntities(GameState *gs, Renderer *ren, Input *in, r32 dt, int num_frames);
+extern void RenderEntities(GameState *gs, Renderer *ren);
 #endif	// Header guard

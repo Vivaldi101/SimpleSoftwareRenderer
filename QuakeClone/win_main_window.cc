@@ -1,26 +1,27 @@
 #include "win_r.h"
 #include "renderer.h"
-#define	WINDOW_CLASS_NAME "QC"
+#define	WINDOW_CLASS_NAME "ClassEngine"
 
 
 #define	FULL_SCREEN (WS_POPUP|WS_VISIBLE|WS_SYSMENU)
-#define	WINDOWED ()
+#define	WINDOWED (WS_OVERLAPPEDWINDOW)
 b32 InitWindow(RenderTarget *rt, void *wndproc, void *hinstance) {
 	WNDCLASS wc = {};
 
 	//RECT rect;
 	//int	x, y, w, h;
 
-	int	style_bits = FULL_SCREEN;
 	int ex_style_bits = WS_EX_TOPMOST;
 
 	HDC hdc = GetDC(GetDesktopWindow());
 #ifdef PLATFORM_FULLSCREEN
 	int width = GetDeviceCaps(hdc, HORZRES);
 	int height = GetDeviceCaps(hdc, VERTRES);
+	int	style_bits = FULL_SCREEN;
 #else
 	int width = GetDeviceCaps(hdc, HORZRES) / 2;
 	int height = GetDeviceCaps(hdc, VERTRES) / 2;
+	int	style_bits = WINDOWED;
 #endif
 	ReleaseDC(GetDesktopWindow(), hdc);
 

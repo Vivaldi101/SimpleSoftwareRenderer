@@ -3,11 +3,6 @@
 
 #include "shared.h"
 
-struct Bitmap {
-	Vec2i	dim;
-	byte *	data;		
-};
-
 struct PolyVert {
 	Vec3		xyz;
 	r32			uv[2];

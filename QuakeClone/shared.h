@@ -83,7 +83,7 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 
 // FIXME: fine tune these
 // min/max values
-#define	MAX_NUM_ENTITIES	(1 << 4)
+//#define	MAX_NUM_ENTITIES	(1 << 4)
 #define	MAX_NUM_POLYS		(1 << 10)
 #define	MAX_NUM_POLY_VERTS	(1 << 12)
 #define	MAX_NUM_LIGHTS		8
@@ -110,10 +110,16 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
 #define GetAnonType(value, type, prefix) (((value)->type_enum == prefix##type) ? &(value)->type : 0)
 
+
 #ifdef PLATFORM_DEBUG
 #define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
+#define StaticAssert(cond, error) \
+do { \
+    static const char error[(cond)?1:-1];\
+} while(0)
 #else
 #define Assert(cond)
+#define StaticAssert(cond, error)
 #endif	// PLATFORM_DEBUG
 
 enum {

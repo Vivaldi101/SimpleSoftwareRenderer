@@ -24,6 +24,7 @@ void R_IssueRenderCommands(RenderTarget *rt, RenderCommands *rc) {
 	rc->used_buffer_size = 0;
 }
 
+#if 0
 void R_PushRectCmd(RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale, Vec4 color) {
 	DrawRectCmd *cmd = PushRenderCmd(rc, DrawRectCmd);
 	Assert(cmd);
@@ -49,6 +50,7 @@ void R_PushRectCmd(RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale, Vec4 c
 	cmd->dim = bm.dim;
 	cmd->color = PackRGBA(color);
 }
+#endif
 
 void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale, Vec4 color) {
 	DrawTextCmd *cmd = PushRenderCmd(rc, DrawTextCmd);

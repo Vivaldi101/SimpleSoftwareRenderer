@@ -1,8 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 #include "shared.h"		
-#include "r_types.h"
-#include "entity.h"
+//#include "r_types.h"
+//#include "entity.h"
 #include "input.h"
 
 // DebugFileIO
@@ -76,12 +76,17 @@ struct Input {
 //	} status;	
 //};
 
+struct Bitmap {
+	Vec2i	dim;
+	byte *	data;		
+};
+
 struct GameState {
 	//Entity 		entities[MAX_NUM_ENTITIES];
-	BaseEntity 		*entities;
-	int				num_entities;
+	struct BaseEntity 		*entities;
+	int						num_base_entities;
 
-	Bitmap			test_font[MAX_NUM_GLYPHS];
+	Bitmap					test_font[MAX_NUM_GLYPHS];
 };
 
 struct StackAllocator {
@@ -195,4 +200,6 @@ extern Bitmap TTF_Init(MemoryStack *ms, const FileInfo *ttf_file, int code_point
 // Misc
 extern Bitmap MakeBitmap(MemoryStack *ms, int width, int height);
 extern u32 PackRGBA(Vec4 color);
+extern u32 PackRGBA(r32 r, r32 g, r32 b, r32 a);
+extern Vec4 UnpackRGBA(u32 color);
 #endif	// Header guard

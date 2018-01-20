@@ -1,23 +1,10 @@
-﻿Build started 16/01/2018 21:06:06.
+﻿Build started 03/03/2018 16:12:19.
      1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX /MP /Od /Oi /D PLATFORM_DEBUG=1 /D _MBCS /Gm- /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt common.cc entity.cc fonts.cc input.cc lights.cc r_backend.cc r_cmds.cc r_init.cc r_main.cc win_console.cc win_main.cc win_main_window.cc win_r.cc win_wndproc.cc
-         common.cc
-         entity.cc
-         fonts.cc
-         input.cc
-         lights.cc
+         F:\programs\VS10\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX /MP /Od /Oi /Ot /D PLATFORM_DEBUG=1 /D _MBCS /Gm- /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt r_backend.cc
          r_backend.cc
-         r_cmds.cc
-         r_init.cc
-         r_main.cc
-         win_console.cc
-         win_main.cc
-         win_main_window.cc
-         win_r.cc
-         win_wndproc.cc
        Link:
          F:\programs\VS10\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\entity.obj
@@ -29,7 +16,6 @@
          x64\Debug\r_init.obj
          x64\Debug\r_main.obj
          x64\Debug\r_backend.obj
-         x64\Debug\triangle_mesh.obj
          x64\Debug\win_console.obj
          x64\Debug\win_shared.obj
          x64\Debug\win_main.obj
@@ -47,4 +33,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.87
+Time Elapsed 00:00:02.00

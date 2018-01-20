@@ -2,7 +2,7 @@
 #include "renderer.h"
 #include "lights.h"
 
-// simple flat shading
+// flat shading
 void R_CalculateLighting(const RendererBackend *rb, const Light *lights, AmbientState as, Vec3 camera_dir, Vec3 camera_pos) {
 	Vec4 base = {};
 	Vec4 total = {};
@@ -11,15 +11,12 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 	int num_lights = rb->num_lights;
 	for (int i = 0; i < num_polys; ++i) {
 		u32 color = 0;
-		if ((rb->polys[i].state & POLY_STATE_BACKFACE) || (rb->polys[i].state & POLY_STATE_LIT) || !(rb->polys[i].state & POLY_STATE_ACTIVE)) {
+		if ((rb->polys[i].state & POLY_STATE_BACKFACE) || (rb->polys[i].state & POLY_STATE_LIT)) {
 			continue;
 		}
-		rb->polys[i].state = POLY_STATE_LIT;
+		rb->polys[i].state |= POLY_STATE_LIT;
 
-		base.c.a = (r32)(((rb->polys[i].color & 0xff000000) >> 24u) / 255.0f);
-		base.c.r = (r32)(((rb->polys[i].color & 0xff0000) >> 16u) / 255.0f);
-		base.c.g = (r32)(((rb->polys[i].color & 0xff00) >> 8u) / 255.0f);
-		base.c.b = (r32)((rb->polys[i].color & 0xff >> 0u) / 255.0f);
+		base = UnpackRGBA(rb->polys[i].color);
 
 		PolyVert v0 = rb->polys[i].vertex_array[0];
 		PolyVert v1 = rb->polys[i].vertex_array[1];
@@ -82,10 +79,7 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			total.c.g = MIN(total.c.g, 1.0f);
 			total.c.b = MIN(total.c.b, 1.0f);
 
-			color += (RoundReal32ToU32(total.c.a * 255.0f) << 24 |
-					 RoundReal32ToU32(total.c.r * 255.0f) << 16 |
-					 RoundReal32ToU32(total.c.g * 255.0f) << 8  |
-					 RoundReal32ToU32(total.c.b * 255.0f));
+			color += PackRGBA(total);
 			 
 		}
 

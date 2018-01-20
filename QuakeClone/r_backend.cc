@@ -13,10 +13,6 @@
 // FIXME: these determinant predicates are here for the time being
 // ccw vertex winding order
 static inline s32 Orient2D(Point2D a, Point2D b, Point2D c) {
-	//Assert((((s64)(b.x-a.x))*((c.y-a.y))) > SINT32_MIN);	// checking for underflow
-	//Assert((((s64)(b.y-a.y))*((c.x-a.x))) > SINT32_MIN);
-	//Assert((((s64)(b.x-a.x))*((c.y-a.y))) < SINT32_MAX);	// checking for overflow
-	//Assert((((s64)(b.y-a.y))*((c.x-a.x))) < SINT32_MAX);
 	s64 tmp = ((s64)(b.x-a.x))*((s64)(c.y-a.y)) - ((s64)(b.y-a.y))*((s64)(c.x-a.x));
 	s64 result = tmp + ((tmp & SUB_PIXEL_POW2_MINUS_1) << 1);
 	return (s32)(result >> SUB_PIXEL_STEP);
@@ -200,6 +196,7 @@ static void RB_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int
 	}
 }
 
+#if 0
 // FIXME: pack the points into structures
 static void RB_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
 	r32 t = x1;
@@ -279,9 +276,10 @@ static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer
 				   width, height);
 	}
 }
+#endif
 
 // FIXME: change width and height to render_target_*
-static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
@@ -296,12 +294,15 @@ static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, in
 
 		s32 x0 = RoundReal32ToS32(v0.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y0 = RoundReal32ToS32(v0.xyz.v.y * SUB_PIXEL_POW2);
+		s32 z0 = RoundReal32ToS32(v0.xyz.v.z * SUB_PIXEL_POW2);
 
 		s32 x1 = RoundReal32ToS32(v1.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y1 = RoundReal32ToS32(v1.xyz.v.y * SUB_PIXEL_POW2);
+		s32 z1 = RoundReal32ToS32(v1.xyz.v.z * SUB_PIXEL_POW2);
 
 		s32 x2 = RoundReal32ToS32(v2.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
+		s32 z2 = RoundReal32ToS32(v2.xyz.v.z * SUB_PIXEL_POW2);
 
 		// compute triangle 2d AABB for the scaled points
 		int min_x = (MIN3(x0, x1, x2));
@@ -331,6 +332,7 @@ static void RB_DrawSolidMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, in
 		Point2D pv2 = {x2, y2};
 
 		s32 tri2d_area = Orient2D(pv0, pv1, pv2);
+		r32 one_over_tri2d_area = 1.0f / (r32)tri2d_area;
 
 		// compute biases for top-left fill convention
 		int bias0 = IsTopLeftEdge(pv1, pv2) ? 0 : -1;
@@ -424,9 +426,17 @@ static void RB_DrawFilledRect(RenderTarget *rt, Bitmap *bm, Vec2 origin, Vec2 x,
 		dst += pitch;
 	}
 }
+
+
+static const void *RB_DrawRect(RenderTarget *rt, const void *data) {
+	DrawRectCmd *cmd = (DrawRectCmd *)data;
+	//RB_DrawFilledRect(rt, &cmd->bitmap, cmd->basis.origin, cmd->basis.axis[0], cmd->basis.axis[1]);
+
+	return (const void *)(cmd + 1);
+}
 #endif
 
-static void RB_DrawChar(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
+static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	int w = bm->dim[0];
 	int h = bm->dim[1];
 	Assert(w < rt->width && h < rt->height);
@@ -440,18 +450,11 @@ static void RB_DrawChar(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	for (int i = 0; i < h; i++){
 		u32 *dst_pixel = (u32 *)dst;
 		for (int j = 0; j < w; j++) {
-			*dst_pixel++ = (*src_pixel & 0x00ff0000);
+			*dst_pixel++ = (*src_pixel);
 			++src_pixel;
 		}
 		dst += pitch;
 	}
-}
-
-static const void *RB_DrawRect(RenderTarget *rt, const void *data) {
-	DrawRectCmd *cmd = (DrawRectCmd *)data;
-	//RB_DrawFilledRect(rt, &cmd->bitmap, cmd->basis.origin, cmd->basis.axis[0], cmd->basis.axis[1]);
-
-	return (const void *)(cmd + 1);
 }
 
 static const void *RB_DrawText(RenderTarget *rt, const void *data) {
@@ -460,7 +463,7 @@ static const void *RB_DrawText(RenderTarget *rt, const void *data) {
 	for (char i = *cmd->text; i = *cmd->text; ++cmd->text) {
 		if (i != ' ') {
 			int k = (i >= 97) ? MapLowerAsciiToTTF(i) : MapHigherAsciiToTTF(i);
-			RB_DrawChar(rt, &cmd->bitmap[k], o);
+			RB_DrawRect(rt, &cmd->bitmap[k], o);
 			o[0] += cmd->bitmap[k].dim[0];
 		} else {
 			o[0] += 10.0f;
@@ -481,11 +484,11 @@ static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
 static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	DrawPolyCmd *cmd = (DrawPolyCmd *)data;
 
-	if (cmd->is_wireframe) {
-		RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
-	} else {
-		RB_DrawSolidMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
-	}
+	RB_DrawSolidMesh(cmd->polys, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+	//if (cmd->is_wireframe) {
+	//	RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+	//} else {
+	//}
 
 	return (const void *)(cmd + 1);
 }
@@ -514,7 +517,7 @@ void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data) {
 				data = RB_SwapBuffers(rt, data);
 				break;
 			case RCMD_RECT:
-				data = RB_DrawRect(rt, data);
+				//data = RB_DrawRect(rt, data);
 				break;
 			case RCMD_TEXT:
 				data = RB_DrawText(rt, data);

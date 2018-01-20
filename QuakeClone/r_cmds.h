@@ -27,14 +27,14 @@ struct RenderCommands {
 	size_t	used_buffer_size;
 };
 
-struct DrawRectCmd {
-	int				cmd_id;
-	Basis2d			basis;
-	Bitmap			bitmap;
-	//Vec2			points[4];	
-	Vec2i			dim;	
-	u32				color;		// rgba, packed
-};
+//struct DrawRectCmd {
+//	int				cmd_id;
+//	Basis2d			basis;
+//	Bitmap			bitmap;
+//	//Vec2			points[4];	
+//	Vec2i			dim;	
+//	u32				color;		// rgba, packed
+//};
 
 struct DrawTextCmd {
 	int				cmd_id;
@@ -47,11 +47,11 @@ struct DrawTextCmd {
 };
 
 struct DrawPolyCmd {
-	int			cmd_id;
-	Poly *		polys;
-	PolyVert *	poly_verts;
-	int			num_polys;
-	b32			is_wireframe;	
+	int					cmd_id;
+	struct Poly *		polys;
+	struct PolyVert *	poly_verts;
+	int					num_polys;
+	b32					is_wireframe;	
 };
 
 struct SwapBuffersCmd {

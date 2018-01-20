@@ -105,7 +105,7 @@ void Com_Allocate(Platform **pf, Renderer **ren) {
 
 	// start allocating
 	void *ptr = VirtualAlloc(0, MAX_PERM_MEMORY + MAX_TEMP_MEMORY + sizeof(Platform), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	CheckMemory(ptr);
+   memset(ptr, 0, MAX_PERM_MEMORY+MAX_TEMP_MEMORY+sizeof(Platform));
 
 	// platform
 	*pf = (Platform *)ptr;
@@ -140,7 +140,6 @@ void Com_Init(Platform **pf) {
 	(*pf)->file_ptrs.read_file = DebugReadFile;
 	(*pf)->file_ptrs.write_file = DebugWriteFile;
 
-	(*pf)->game_state->num_entities = MAX_NUM_ENTITIES;
 	FileInfo ttf_file = (*pf)->file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
 
 	for (int i = 'a'; i <= 'z'; ++i) {
@@ -157,10 +156,10 @@ void Com_LoadEntities(Platform *pf) {
 	// FIXME: testing entity stuff!!
 	size_t max_entity_memory = 1024 << 5;
 	InitEntities(pf, max_entity_memory);
-	BaseEntity common_ent = {};
+	//BaseEntity common_ent = {};
 
-	common_ent.type = Cube;
-	FileInfo cube_assets = pf->file_ptrs.read_file("cube1.plg");
+	//common_ent.type = Cube;
+	//FileInfo cube_assets = pf->file_ptrs.read_file("cube1.plg");
 
 	// FIXME: testing!!
 	// FIXME: 0 hardcoded for player for now
@@ -175,7 +174,7 @@ void Com_LoadEntities(Platform *pf) {
 	//	pf->game_state->entities[i].type_enum = EntityType_cube;
 	//}
 
-	pf->file_ptrs.free_file(&cube_assets);
+	//pf->file_ptrs.free_file(&cube_assets);
 }
 
 static void ClearRenderState(RendererBackend *rb) {
@@ -183,7 +182,7 @@ static void ClearRenderState(RendererBackend *rb) {
 	for (int j = 0; j < num_polys; ++j) {
 		rb->polys[j].state &= (~POLY_STATE_BACKFACE);
 		rb->polys[j].state &= (~POLY_STATE_LIT);
-		rb->polys[j].state &= (~CULL_OUT);
+		rb->polys[j].state &= (~POLY_STATE_CULLED);
 	}
 	rb->num_polys = 0;
 	rb->num_poly_verts = 0;
@@ -341,10 +340,8 @@ static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entiti
 }
 #endif
 
-#if 0
+#if 1
 void Com_RunFrame(Platform *pf, Renderer *ren) {
-	//Entity *entities = pf->game_state->entities;
-
 	Sys_GenerateEvents();
 	IN_GetInput(pf->input_state);
 	IN_HandleInput(pf->input_state);
@@ -380,67 +377,13 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		Sys_Sleep(0);
 	}
 
-	//Com_SimFrame((MSEC_PER_SIM / 1000.0f),
-	//			global_game_time_residual,
-	//			(num_frames_to_run > 5) ? 5 : num_frames_to_run,
-	//			pf->game_state->num_entities,
-	//			entities, pf->input_state,
-	//			&ren->front_end.current_view);
-
 	//if (ren->front_end.is_view_changed || first_run) {
-	RF_RenderView(&ren->front_end.current_view);
+	RF_UpdateView(&ren->front_end.current_view);
 	//}
 	R_BeginFrame(&ren->back_end.target, &ren->back_end.cmds);
+	UpdateEntities(pf->game_state, ren, pf->input_state, MSEC_PER_SIM / 1000.0f, num_frames_to_run);
+	RenderEntities(pf->game_state, ren);
 
-	// FIXME: move the entity stuff into entity.cc
-	PolyVert *local_verts = 0; 
-	PolyVert *trans_verts = 0;
-	Poly *polys = 0;
-	int num_entities = pf->game_state->num_entities;
-	// FIXME: rethink on this style of vert transforms
-	for (int i = 0; i < num_entities; ++i) {
-		if (auto sub_type = GetAnonType(&entities[i], player, EntityType_)) {
-			Assert(i == 0);
-			local_verts = sub_type->local_vertex_array;
-			trans_verts = sub_type->trans_vertex_array;
-
-			// hacky player third person cam test stuff
-			entities[i].status.world_pos = 
-				ren->front_end.current_view.world_orientation.origin + (ren->front_end.current_view.world_orientation.dir * 50.0f);
-			entities[i].status.world_pos[1] -= 10.0f;
-
-			// FIXME: combine these two
-			RF_TransformModelToWorld(local_verts, trans_verts, ArrayCount(sub_type->local_vertex_array), entities[i].status.world_pos, 1.5f); 
-			RF_TransformWorldToView(&ren->front_end.current_view, trans_verts, ArrayCount(sub_type->trans_vertex_array));
-			RF_AddPolys(&ren->back_end, trans_verts, sub_type->polys, ArrayCount(sub_type->polys));
-		} else {
-			int num_local_verts = 0; 
-			int num_trans_verts = 0; 
-			int num_polys = 0;
-			if (auto sub_type = GetAnonType(&entities[i], cube, EntityType_)) {
-				local_verts = sub_type->local_vertex_array;
-				trans_verts = sub_type->trans_vertex_array;
-				polys = sub_type->polys;
-
-				num_local_verts = ArrayCount(sub_type->local_vertex_array);
-				num_trans_verts = ArrayCount(sub_type->trans_vertex_array);
-				num_polys = ArrayCount(sub_type->polys);
-			} else {
-				InvalidCodePath("Unhandled entitity type!");
-			} 
-			RF_TransformModelToWorld(local_verts, trans_verts, num_local_verts, entities[i].status.world_pos, 1.2f); 
-			entities[i].status.state = (u16)RF_CullPointAndRadius(&ren->front_end.current_view, entities[i].status.world_pos);			
-			if (!(entities[i].status.state & CULL_OUT)) {
-				RF_TransformWorldToView(&ren->front_end.current_view, trans_verts, num_trans_verts);
-				RF_AddPolys(&ren->back_end, trans_verts, polys, num_polys);
-			}
-		}
-	}
-	RF_CullBackFaces(&ren->front_end.current_view, ren->back_end.polys, ren->back_end.num_polys);
-	RF_CalculateVertexNormals(ren->back_end.polys, ren->back_end.num_polys, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
-	R_CalculateLighting(&ren->back_end, ren->back_end.lights, ren->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
-	RF_TransformViewToClip(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
-	RF_TransformClipToScreen(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
 	R_PushPolysCmd(&ren->back_end.cmds,
 				  ren->back_end.polys,
 				  ren->back_end.poly_verts,
@@ -471,8 +414,8 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		ClearRenderState(&ren->back_end);
 
 		char buffer[64];
-		sprintf_s(buffer, "Frame msec %d\n", frame_msec);
-		OutputDebugStringA(buffer);
+		//sprintf_s(buffer, "Frame msec %d\n", frame_msec);
+		//OutputDebugStringA(buffer);
 	}
 }
 #endif
@@ -526,6 +469,29 @@ u32 PackRGBA(Vec4 color) {
 				  RoundReal32ToU32(color.c.r * 255.0f) << 16 |
 				  RoundReal32ToU32(color.c.g * 255.0f) << 8  |
 				  RoundReal32ToU32(color.c.b * 255.0f));
+
+	return result;
+}
+
+u32 PackRGBA(r32 r, r32 g, r32 b, r32 a) {
+	Vec4 v = {};
+	v.c.r = r;
+	v.c.g = g;
+	v.c.b = b;
+	v.c.a = a;
+
+	u32 result = PackRGBA(v);
+
+	return result;
+}
+
+Vec4 UnpackRGBA(u32 color) {
+	Vec4 result = {};
+
+	result.c.a = (r32)(((color & 0xff000000) >> 24u) / 255.0f);
+	result.c.r = (r32)(((color & 0xff0000) >> 16u) / 255.0f);
+	result.c.g = (r32)(((color & 0xff00) >> 8u) / 255.0f);
+	result.c.b = (r32)((color & 0xff >> 0u) / 255.0f);
 
 	return result;
 }
