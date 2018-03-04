@@ -109,7 +109,7 @@ int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 		Plane pl = vs->frustum[i];
 		r32 dist = Dot3(pt, pl.unit_normal) - pl.dist;
 
-		if (dist < 0.0f) {
+		if ((dist-radius) < 0.0f) {
 			//Sys_Print("Culling!!\n");
 			return CULL_OUT;
 		} 
@@ -149,11 +149,20 @@ void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 		in[2] = poly_verts[i].xyz[2];
 		in[3] = 1.0f;
 
+      if (in[2] < 0.0f) {
+         int y = 42;
+         in[2] = 0.0f;
+      }
+
 		Mat1x4Mul(out, in, m);  
 		poly_verts[i].xyz[0] = (out[0] / out[3]);
 		poly_verts[i].xyz[1] = (out[1] / out[3]);
 		poly_verts[i].xyz[2] = (out[2] / out[3]);
-	}
+
+      int y = 42;
+    }
+
+   int asd = 42;
 }
 
 void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
@@ -249,7 +258,6 @@ static void R_RotateForViewer(ViewSystem *vs) {
 
 void RF_UpdateView(ViewSystem *vs) {
 	R_RotateForViewer(vs);
-	RF_SetupProjection(vs);
 	RF_SetupFrustum(vs);					
 }
 

@@ -13,8 +13,10 @@
 // FIXME: these determinant predicates are here for the time being
 // ccw vertex winding order
 static inline s32 Orient2D(Point2D a, Point2D b, Point2D c) {
-	s64 tmp = ((s64)(b.x-a.x))*((s64)(c.y-a.y)) - ((s64)(b.y-a.y))*((s64)(c.x-a.x));
-	s64 result = tmp + ((tmp & SUB_PIXEL_POW2_MINUS_1) << 1);
+   s64 tmp = (((s64)(b.x-a.x))*((s64)(c.y-a.y))) - (((s64)(b.y-a.y))*((s64)(c.x-a.x)));
+   s64 result = (tmp + ((tmp & SUB_PIXEL_POW2_MINUS_1) << 1));
+   //Assert(result < SINT32_MAX);
+   Assert(result > SINT32_MIN);
 	return (s32)(result >> SUB_PIXEL_STEP);
 }
 
@@ -278,6 +280,12 @@ static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer
 }
 #endif
 
+static void CheckZ(r32 z) {
+   if (z < 0.0f) {
+      int x = 42;
+   }
+}
+
 // FIXME: change width and height to render_target_*
 static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
@@ -285,7 +293,9 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 			continue;
 		}
 
-		u32 color = polys[i].color;
+      Vec4 red = {1.0f,0.0f,0.0f,1.0f};
+      Vec4 green = {0.0f,1.0f,0.0f,1.0f};
+      Vec4 blue = {0.0f,0.0f,1.0f,1.0f};
 
 		// original vertices
 		PolyVert v0 = polys[i].vertex_array[0];
@@ -294,15 +304,20 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 
 		s32 x0 = RoundReal32ToS32(v0.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y0 = RoundReal32ToS32(v0.xyz.v.y * SUB_PIXEL_POW2);
-		s32 z0 = RoundReal32ToS32(v0.xyz.v.z * SUB_PIXEL_POW2);
+		r32 z0 = v0.xyz.v.z;
 
 		s32 x1 = RoundReal32ToS32(v1.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y1 = RoundReal32ToS32(v1.xyz.v.y * SUB_PIXEL_POW2);
-		s32 z1 = RoundReal32ToS32(v1.xyz.v.z * SUB_PIXEL_POW2);
+		r32 z1 = v1.xyz.v.z;
 
 		s32 x2 = RoundReal32ToS32(v2.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
-		s32 z2 = RoundReal32ToS32(v2.xyz.v.z * SUB_PIXEL_POW2);
+		r32 z2 = v2.xyz.v.z;
+
+      CheckZ(z0);
+      CheckZ(z1);
+      CheckZ(z2);
+
 
 		// compute triangle 2d AABB for the scaled points
 		int min_x = (MIN3(x0, x1, x2));
@@ -364,11 +379,23 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 			int w1_col = w1_row;
 			int w2_col = w2_row;
 			for (pt.x = min_pt.x; pt.x <= max_pt.x; pt.x++) {
+            r32 b0 = (r32)w0_col*one_over_tri2d_area;
+            r32 b1 = (r32)w1_col*one_over_tri2d_area;
+            r32 b2 = (r32)w2_col*one_over_tri2d_area;
+            r32 z = (b0*z0 + b1*z1 + b2*z2);
+            //z = min(z, 1.0f);
+
+            if (abs((s32)z>>23) == 256) {
+               int x = 4;
+            }
 				// ccw vertex winding order
-				if ((w0_col | w1_col | w2_col) >= 0) {
-					u32 *pixel = (u32 *)line;
-					pixel[pt.x] = color;
-				}
+            if (abs((s32)z>>23) != 256) {
+               if ((z > 0) && (w0_col | w1_col | w2_col) >= 0) {
+                  u32 *pixel = (u32 *)line;
+                  Vec4 c = b0*red + b1*green + b2*blue;
+                  pixel[pt.x] = PackRGBA(c);
+               } 
+            }
 				w0_col += a12;
 				w1_col += a20;
 				w2_col += a01;

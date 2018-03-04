@@ -82,6 +82,7 @@ struct Cube_ {
 	Vec3		world_pos;
 	Vec3		orientation;
 	Vec3		velocity;
+	r32      scale;
 };
 
 extern void InitEntities(struct Platform *pf, size_t max_entity_memory_limit = (MAX_PERM_MEMORY >> 1));

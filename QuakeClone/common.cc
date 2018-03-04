@@ -348,6 +348,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 
 	Com_RunEventLoop();
 
+   static bool first_run = true;
 	int num_frames_to_run = 0;
 
 	for (;;) {
@@ -377,9 +378,11 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		Sys_Sleep(0);
 	}
 
-	//if (ren->front_end.is_view_changed || first_run) {
-	RF_UpdateView(&ren->front_end.current_view);
-	//}
+	if (first_run) {
+      RF_SetupProjection(&ren->front_end.current_view);
+      first_run = false;
+	}
+   RF_UpdateView(&ren->front_end.current_view);
 	R_BeginFrame(&ren->back_end.target, &ren->back_end.cmds);
 	UpdateEntities(pf->game_state, ren, pf->input_state, MSEC_PER_SIM / 1000.0f, num_frames_to_run);
 	RenderEntities(pf->game_state, ren);
