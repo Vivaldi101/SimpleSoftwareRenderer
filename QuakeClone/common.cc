@@ -4,6 +4,9 @@
 #include "plg_loader.h"
 #include "lights.h"
 
+#define INO_BMP_STATIC
+#define INO_BMP_IMPL
+#include "ino_bmp.h"
 #include "files.cc"
 
 /*
@@ -141,6 +144,10 @@ void Com_Init(Platform **pf) {
 	(*pf)->file_ptrs.write_file = DebugWriteFile;
 
 	FileInfo ttf_file = (*pf)->file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
+	FileInfo bmp_file = (*pf)->file_ptrs.read_file("esa.bmp");  // test assets
+
+   int w, h;
+   byte *bmp_data = bmp_load(bmp_file.data, bmp_file.size, 0, &w, &h);
 
 	for (int i = 'a'; i <= 'z'; ++i) {
 		(*pf)->game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
@@ -148,7 +155,7 @@ void Com_Init(Platform **pf) {
 	for (int i = 'A'; i <= 'Z'; ++i) {
 		(*pf)->game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
 	}
-	(*pf)->file_ptrs.free_file(&ttf_file);
+   (*pf)->file_ptrs.free_file(&ttf_file);
 }
 
 void Com_LoadEntities(Platform *pf) {
@@ -393,6 +400,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 				  ren->back_end.num_polys,
 				  ren->front_end.is_wireframe);
 
+#if 0
 	// font testing
 	{
 		r32 text_pos = (r32)ren->back_end.target.height;
@@ -404,6 +412,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		R_PushTextCmd(&ren->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 		R_PushTextCmd(&ren->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 	}
+#endif
 
 	// frame timing
 	{

@@ -7,12 +7,12 @@ RenderEntity(Cube) {
 	switch (_extra_flags_) {
 		case PLAYER: {
 			// hacky player third person cam test stuff
-			entity->world_pos = _renderer_->front_end.current_view.world_orientation.origin + (_renderer_->front_end.current_view.world_orientation.dir * 50.0f);
-			entity->world_pos[1] -= 10.0f;
+			//entity->world_pos = _renderer_->front_end.current_view.world_orientation.origin + (_renderer_->front_end.current_view.world_orientation.dir * 50.0f);
+			//entity->world_pos[1] -= 10.0f;
 
-         RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
-			RF_TransformWorldToView(&_renderer_->front_end.current_view, entity->trans_verts, ArrayCount(entity->trans_verts));
-			RF_AddPolys(&_renderer_->back_end, entity->trans_verts, global_cube_model_indices, ArrayCount(global_cube_model_indices));
+   //      RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
+			//RF_TransformWorldToView(&_renderer_->front_end.current_view, entity->trans_verts, ArrayCount(entity->trans_verts));
+			//RF_AddPolys(&_renderer_->back_end, entity->trans_verts, global_cube_model_indices, ArrayCount(global_cube_model_indices));
 		} break;
 		case NPC: {
 			RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
@@ -46,7 +46,7 @@ UpdateEntity(Cube) {
 	rot_mat_z[2][2] = 1.0f;
 
 	// FIXME: just for testing!!!!!!!!
-	r32 rot_theta = DEG2RAD(-1.0f*0.0095f);
+	r32 rot_theta = DEG2RAD(-1.0f);
 	rot_mat_x[1][0] = 0.0f;
 	rot_mat_x[1][1] = cos(rot_theta);
 	rot_mat_x[1][2] = sin(rot_theta);
@@ -73,7 +73,7 @@ UpdateEntity(Cube) {
 	switch(_extra_flags_) {
 		case PLAYER: {
 			Vec3 acc = {};
-			r32 speed = 300.0f;
+			r32 speed = 30.0f;
 			// FIXME: testing
 			RotatePoints(rot_mat_x, entity->model_verts, ArrayCount(entity->model_verts)); 
 			RotatePoints(rot_mat_y, entity->model_verts, ArrayCount(entity->model_verts)); 
@@ -85,6 +85,11 @@ UpdateEntity(Cube) {
 			if (_in_->keys['S'].down) {
 				acc = Vec3Norm(_renderer_->front_end.current_view.world_orientation.dir);
 				acc = acc * (-1.0f);
+			}
+			if (_in_->keys[ENTER_KEY].down) {
+            _renderer_->front_end.current_view.world_orientation.origin[0] = 0.0f;
+            _renderer_->front_end.current_view.world_orientation.origin[1] = 0.0f;
+            _renderer_->front_end.current_view.world_orientation.origin[2] = 0.0f;
 			}
 			acc = Vec3Norm(acc);
 			acc = acc * speed;
@@ -93,28 +98,27 @@ UpdateEntity(Cube) {
 			_renderer_->front_end.current_view.velocity = acc * _dt_ + _renderer_->front_end.current_view.velocity;
 		} break; 
 		case NPC: {
-			Vec3 acc = {};
-			r32 speed = 300.0f;
-			// FIXME: testing
-			RotatePoints(rot_mat_x, entity->model_verts, ArrayCount(entity->model_verts)); 
-			RotatePoints(rot_mat_y, entity->model_verts, ArrayCount(entity->model_verts)); 
-			RotatePoints(rot_mat_z, entity->model_verts, ArrayCount(entity->model_verts)); 
-			if (_in_->keys['W'].down) {
-				acc = Vec3Norm(_renderer_->front_end.current_view.world_orientation.dir);
-				acc = acc * 1.0f;
+			if (!_in_->keys[SHIFT_KEY].down && _in_->keys['X'].down) {
+            RotatePoints(rot_mat_x, entity->model_verts, ArrayCount(entity->model_verts)); 
 			}
-			if (_in_->keys['S'].down) {
-				acc = Vec3Norm(_renderer_->front_end.current_view.world_orientation.dir);
-				acc = acc * (-1.0f);
+			if (!_in_->keys[SHIFT_KEY].down && _in_->keys['Y'].down) {
+            RotatePoints(rot_mat_y, entity->model_verts, ArrayCount(entity->model_verts)); 
 			}
-			acc = Vec3Norm(acc);
-			acc = acc * speed;
-			acc = acc + (_renderer_->front_end.current_view.velocity * -0.95f);	// hack!!!
-			_renderer_->front_end.current_view.world_orientation.origin = (acc * 0.5f * Square(_dt_)) + (_renderer_->front_end.current_view.velocity * _dt_) + _renderer_->front_end.current_view.world_orientation.origin;
-			_renderer_->front_end.current_view.velocity = acc * _dt_ + _renderer_->front_end.current_view.velocity;
-			RotatePoints(rot_mat_x, entity->model_verts, ArrayCount(entity->model_verts)); 
-			RotatePoints(rot_mat_y, entity->model_verts, ArrayCount(entity->model_verts)); 
-			RotatePoints(rot_mat_z, entity->model_verts, ArrayCount(entity->model_verts)); 
+			if (!_in_->keys[SHIFT_KEY].down && _in_->keys['Z'].down) {
+            RotatePoints(rot_mat_z, entity->model_verts, ArrayCount(entity->model_verts)); 
+			}
+			if (_in_->keys[SHIFT_KEY].down && _in_->keys['X'].down) {
+            MatTranspose(rot_mat_x);
+            RotatePoints(rot_mat_x, entity->model_verts, ArrayCount(entity->model_verts)); 
+         }
+			if (_in_->keys[SHIFT_KEY].down && _in_->keys['Y'].down) {
+            MatTranspose(rot_mat_y);
+            RotatePoints(rot_mat_y, entity->model_verts, ArrayCount(entity->model_verts)); 
+         }
+			if (_in_->keys[SHIFT_KEY].down && _in_->keys['Z'].down) {
+            MatTranspose(rot_mat_z);
+            RotatePoints(rot_mat_z, entity->model_verts, ArrayCount(entity->model_verts)); 
+         }
 		} break; 
 		default: Assert(0);
 	}
@@ -167,7 +171,6 @@ void RenderEntities(GameState *gs, Renderer *ren) {
 	}	
 #undef X
 
-	RF_CullBackFaces(&ren->front_end.current_view, ren->back_end.polys, ren->back_end.num_polys);
 	RF_CalculateVertexNormals(ren->back_end.polys, ren->back_end.num_polys, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
 	R_CalculateLighting(&ren->back_end, ren->back_end.lights, ren->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
 	RF_TransformViewToClip(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
@@ -196,10 +199,10 @@ static void AddEntities(BaseEntity *root_be, size_t *used_entity_memory, int *nu
 				p->model_verts[j] = global_cube_normalized_model_verts[j];	
 			}
 			if (extra_flags == NPC) {
-				Vec3 world_pos = {0.0f, 0.0f, 200.0f};	// random pos
+				Vec3 world_pos = {i*20.0f - 40.0f, 0.0f, 99.0f};	// random pos
 				p->world_pos = world_pos;
 			}
-         p->scale = 5.0f;
+         p->scale = 1.0f;
 			p++;
 		}
 	} else {
@@ -217,8 +220,8 @@ void InitEntities(Platform *pf, size_t max_entity_memory_limit) {
 
 	pf->game_state->entities = (BaseEntity *)GetMemStackPos(&pf->main_memory_stack.perm_data);
 	memset(pf->game_state->entities, 0, sizeof(*pf->game_state->entities));
-	//AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 1, Cube, PLAYER);
-	AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 1, Cube, NPC);
+	AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 1, Cube, PLAYER);
+	AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 5, Cube, NPC);
 
 	Assert(pf->game_state->num_base_entities == 0);
 

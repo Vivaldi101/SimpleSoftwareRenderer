@@ -183,6 +183,7 @@ MATHLIB
 
 //#define Perp(v, x, y)				{r32 t = (v)[(x)]; (v)[(x)] = -(v)[(y)], (v)[(y)] = t;}		
 #define Square(s)					((s) * (s))
+#define Floor(f)					(floor(f))
 
 union Vec2 {
 	struct {	r32 x, y;		} v;
@@ -703,7 +704,8 @@ extern void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]);
 extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[9]);
 extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
 extern void Mat1x4Mul(Vec4 *out, const Vec4 *a, const r32 b[4][4]);
-extern void MatTranspose(r32 out[9], const r32 in[9]);
+extern void MatTranspose(r32 m[3][3]);
+
 
 extern void RotatePoints(r32 rot_mat[3][3], struct PolyVert *poly_verts, int num_verts);
 

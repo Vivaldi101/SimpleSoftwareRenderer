@@ -49,6 +49,9 @@
     <ClInclude Include="lights.h">
       <Filter>headers</Filter>
     </ClInclude>
+    <ClInclude Include="ino_bmp.h">
+      <Filter>headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="common.cc">

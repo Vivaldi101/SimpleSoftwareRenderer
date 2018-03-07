@@ -3,6 +3,7 @@
 #include "plg_loader.h"
 
 void RF_SetupProjection(ViewSystem *vs) {
+	r32 projection_matrix[16];
 	r32 aspect_ratio = vs->aspect_ratio;
 	r32 fov_y = vs->fov_y;
 	r32 z_near = vs->z_near, z_far = vs->z_far;
@@ -18,7 +19,6 @@ void RF_SetupProjection(ViewSystem *vs) {
 	r32 b = -z_near * a;
 
 	r32 m00 = 1.0f / aspect_ratio;
-	r32 projection_matrix[16];
 
 	projection_matrix[0] = (2.0f * m00 * d) / (right - left);
 	projection_matrix[4] = 0.0f;
@@ -166,12 +166,18 @@ void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 }
 
 void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
-	r32 in[3];
-	s32 screen_width_factor = vs->viewport_width >> 1;
-	s32 screen_height_factor = vs->viewport_height >> 1;
+	//s32 screen_width_factor = vs->viewport_width >> 1;
+	//s32 screen_height_factor = vs->viewport_height >> 1;
+   r32 kx = (r32)(vs->viewport_width >> 1);
+   r32 ky = (r32)(vs->viewport_height >> 1);
 	for (int i = 0; i < num_verts; ++i) {
-		poly_verts[i].xyz[0] = (poly_verts[i].xyz[0] + 1) * screen_width_factor;
-		poly_verts[i].xyz[1] = (poly_verts[i].xyz[1] + 1) * screen_height_factor;
+      r32 ax = poly_verts[i].xyz[0] + 1.0f;
+      r32 ay = poly_verts[i].xyz[1] + 1.0f;
+      poly_verts[i].xyz[0] = ax*kx - kx;
+		poly_verts[i].xyz[1] = ay*ky - ky;
+
+      //poly_verts[i].xyz[0] = (poly_verts[i].xyz[0] + 1) * screen_width_factor;
+		//poly_verts[i].xyz[1] = (poly_verts[i].xyz[1] + 1) * screen_height_factor;
 	}
 }
 
@@ -212,12 +218,12 @@ void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 }
 
 static void R_RotateForViewer(ViewSystem *vs) {
-	r32		view_matrix[16];
+	r32	view_matrix[16];
 	Vec3	origin;
 
 	Vec3Copy(origin, vs->world_orientation.origin);
 
-	// compute the uvn vectors
+	// compute the uvn vectors in view space(LH)
 	Vec3 n = vs->world_orientation.dir;
 	// placeholder for v
 	Vec3 v = {0.0f, 1.0f, 0.0f};	
@@ -268,7 +274,7 @@ void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const Vec3i *index_
 	for (int i = 0; i < num_polys; ++i) {
 		Poly *poly = &rb->polys[rb->num_polys];
 		poly->num_verts = num_verts;
-		poly->color = PackRGBA(0.75f,0.75f,0.75f,1.0f);	// test color
+		poly->color = PackRGBA(0.0f,1.0f,1.0f,1.0f);	// test color
 		poly->vertex_array = &rb->poly_verts[rb->num_poly_verts];
 
 		poly->vertex_array[0] = verts[index_list[i][0]];

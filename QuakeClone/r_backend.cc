@@ -2,22 +2,57 @@
 #include "renderer.h"
 
 #define SUB_PIXEL_STEP 8
+#define SPS SUB_PIXEL_STEP
 #define SUB_PIXEL_POW2 (1<<SUB_PIXEL_STEP)
 #define SUB_PIXEL_POW2_MINUS_1 (1<<(SUB_PIXEL_STEP-1))
 #define SUB_PIXEL_OFFSET ((1<<SUB_PIXEL_STEP) >> 1)
+#define SPS_OFFSET SUB_PIXEL_OFFSET
+#define lerp(s, d, t) ((1.0f-(t))*(s) + (t)*(d))
 
+
+// Cohen-Sutherland clipping constants
+#define INSIDE	 0	
+#define LEFT	 1	
+#define RIGHT	 2	
+#define BOTTOM	 4	
+#define TOP		 8  
+static int RB_GetLineClipCode(int x, int y, int width, int height) {
+	int code = INSIDE;												
+
+	if (x < 0) {													
+		code |= LEFT;
+	} else if (x >= width) {			
+		code |= RIGHT;
+	}
+	if (y < 0) {													
+		code |= BOTTOM;
+	} else if (y >= height) {		
+		code |= TOP;
+	}
+
+	return code;
+}
 
 // FIXME: atm the drawing routines receive pitch and bpp, 
 // will remove the concept completely at some point 
-
 // FIXME: these determinant predicates are here for the time being
 // ccw vertex winding order
-static inline s32 Orient2D(Point2D a, Point2D b, Point2D c) {
-   s64 tmp = (((s64)(b.x-a.x))*((s64)(c.y-a.y))) - (((s64)(b.y-a.y))*((s64)(c.x-a.x)));
-   s64 result = (tmp + ((tmp & SUB_PIXEL_POW2_MINUS_1) << 1));
-   //Assert(result < SINT32_MAX);
-   Assert(result > SINT32_MIN);
-	return (s32)(result >> SUB_PIXEL_STEP);
+static s32 Orient2D(Point2D a, Point2D b, Point2D p) {
+   s64 result;
+   s64 ab = a.y-b.y;
+   s64 ba = b.x-a.x;
+   s64 c = (s64)((s64)a.x*(s64)b.y) - (s64)((s64)a.y*(s64)b.x);
+
+   //result = (s64)((s64)(((s64)b.x-a.x)*(s64)((s64)p.y-a.y)+128) - (s64)(((s64)b.y-a.y)*(s64)((s64)p.x-a.x))+128);
+   result = p.x*ab + p.y*ba + c;
+   result += (1<<(SPS-1));
+   return (s32)(result>>SPS);
+}
+
+static s32 Tri2Area2d(Vec2i a, Vec2i b) {
+   s64 result = (s64)((s64)a.v.x*(s64)b.v.y) - (s64)((s64)a.v.y*(s64)b.v.x);
+
+   return (s32)(result>>SPS);
 }
 
 // FIXME: these determinant predicates are here for the time being
@@ -56,235 +91,6 @@ inline static int MapHigherAsciiToTTF(char c) {
 }
 #endif
 
-// Cohen-Sutherland clipping constants
-#define INSIDE	 0	
-#define LEFT	 1	
-#define RIGHT	 2	
-#define BOTTOM	 4	
-#define TOP		 8  
-static int RB_GetLineClipCode(int x, int y, int width, int height) {
-	int code = INSIDE;												
-
-	if (x < 0) {													
-		code |= LEFT;
-	} else if (x >= width) {			
-		code |= RIGHT;
-	}
-	if (y < 0) {													
-		code |= BOTTOM;
-	} else if (y >= height) {		
-		code |= TOP;
-	}
-
-	return code;
-}
-
-// FIXME: pack the points into structures
-static void RB_DrawLine(byte *buffer, u32 pitch, int bpp, u32 color, int x0, int y0, int x1, int y1, int width, int height) {
-	int outcode0 = RB_GetLineClipCode(x0, y0, width, height);
-	int outcode1 = RB_GetLineClipCode(x1, y1, width, height);
-	b32 accept = false;
-
-	for (;;) {
-		if (!(outcode0 | outcode1)) {		// Trivially accept 
-			accept = true;
-			break;
-		} else if (outcode0 & outcode1) {	// Trivially reject 
-			break;
-		} else {
-			// Casting the operands to reals so div by zero wont cause exeption, only inf
-			r32 x = 0.0f;
-			r32 y = 0.0f;
-			r32 m = (r32)(y1 - y0) / (r32)(x1 - x0);
-
-			// Clip the line segment(s) laying outside of the screen
-			// Pick the one that is outside of the clipping rect
-			int chosen_code = outcode0 ? outcode0 : outcode1;
-
-			if (chosen_code & TOP) {           // point is above the clip rectangle
-				y = (r32)height - 1.0f;
-				x = (1.0f / m) * (y - y0) + x0;
-			} else if (chosen_code & BOTTOM) { // point is below the clip rectangle
-				y = 0.0f;
-				x = (1.0f / m) * (y - y0) + x0;
-			} else if (chosen_code & RIGHT) {  // point is to the right of clip rectangle
-				x = (r32)width - 1.0f;
-				y = m * (x - x0) + y0;
-			} else if (chosen_code & LEFT) {   // point is to the left of clip rectangle
-				x = 0.0f;
-				y = m * (x - x0) + y0;
-			}
-
-			// Now we move outside point to intersection point to clip
-			// and get ready for next pass.
-			if (chosen_code == outcode0) {
-				x0 = (int)x;
-				y0 = (int)y;
-				outcode0 = RB_GetLineClipCode(x0, y0, width, height);
-			} else {
-				x1 = (int)x;
-				y1 = (int)y;
-				outcode1 = RB_GetLineClipCode(x1, y1, width, height);
-			}
-		}
-	}
-	if (accept) {
-		// Bresenham
-		// FIXME: improve on this
-		int dx			= abs(x1 - x0);
-		int dy			= abs(y1 - y0);
-		int stride		= pitch / bpp;
-		int numerator	= 0;
-
-		int denominator;	
-		int num_pixels;
-		int add;
-
-		int x1_inc;		// If 1 increment every iteration, 0 if not
-		int x2_inc;		// Incremented only when numerator >= denominator
-
-		int y1_inc;		// If pitch increment every iteration, 0 if not
-		int y2_inc;		// Incremented only when numerator >= denominator
-
-		if (x0 <= x1) {	// left to right
-			x1_inc = 1;
-			x2_inc = 1;
-		} else {		// right to left
-			x1_inc = -1;
-			x2_inc = -1;
-		}
-		if (y0 <= y1) {	// top to bottom (in screen)
-			y1_inc = stride;
-			y2_inc = stride;
-		} else {		// bottom to top
-			y1_inc = -stride;
-			y2_inc = -stride;
-		}
-
-		// x- or y-dominate line
-		if (dx >= dy) {
-			x2_inc = 0;
-			y1_inc = 0;
-			denominator = dx;
-			num_pixels	= dx;
-			add			= dy;
-		} else {
-			x1_inc = 0;
-			y2_inc = 0;
-			denominator = dy;
-			num_pixels	= dy;
-			add			= dx;
-		}
-
-		// FIXME: stop passing bpp and pitch or make them cvars?
-		Assert(bpp == 4);
-		byte *line = (byte*)buffer;
-		line = (line + (pitch * y0)) + x0 * bpp;
-
-		for (int i = 0; i < num_pixels; i++) {
-			//for (int j = 0; j < bpp; ++j) {
-			u32 *pixel = (u32 *)line;
-			*pixel = color;
-			//}
-			numerator += add;
-			if (numerator >= denominator) {
-				numerator -= denominator;
-				line += (x2_inc * bpp);	// inc x in case of y-dominant line
-				line += (y2_inc * bpp); // inc y in case of x-dominant line
-			}
-			line += (x1_inc * bpp);
-			line += (y1_inc * bpp);
-		}
-	}
-}
-
-#if 0
-// FIXME: pack the points into structures
-static void RB_DrawFlatBottomTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
-	r32 t = x1;
-	x1 = (x1 < x2) ? x2 : x1;
-	x2 = (t < x2) ? t : x2;
-
-	int cy0 = (int)ceil(y0);
-	int cy2 = (int)(ceil(y2) - 1);
-
-	r32 dxy_left = (r32)(x2 - x0) / (r32)(y2 - y0);
-	r32 dxy_right = (r32)(x1 - x0) / (r32)(y1 - y0);
-
-	r32 xs = x0;
-	r32 xe = x0 + 1.0f;
-	xs = xs + ((cy0 - y0) * dxy_left);
-	xe = xe + ((cy0 - y0) * dxy_right);
-	for (int y = cy0; y <= cy2; y++) {
-		RB_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
-		xs += dxy_left;
-		xe += dxy_right;
-	}
-}
-
-// FIXME: pack the points into structures
-static void RB_DrawFlatTopTriangle(byte *buffer, u32 pitch, int bpp, u32 color, r32 x0, r32 y0, r32 x1, r32 y1, r32 x2, r32 y2, int width, int height) {
-	r32 t = x1;
-	x1 = (x1 < x0) ? x0 : x1;
-	x0 = (t < x0) ? t : x0;
-
-	int cy0 = (int)ceil(y0);
-	int cy2 = (int)(ceil(y2) - 1);
-
-	r32 dxy_left = (r32)(x2 - x0) / (r32)(y2 - y0);
-	r32 dxy_right = (r32)(x2 - x1) / (r32)(y2 - y1);
-
-	r32 xs = x0;
-	r32 xe = x1 + 1.0f;
-	xs = xs + ((cy0 - y0) * dxy_left);
-	xe = xe + ((cy0 - y0) * dxy_right);
-	for (int y = cy0; y <= cy2; y++) {
-		RB_DrawLine(buffer, pitch, bpp, color, (int)(xs + 0.5f), y, (int)(xe + 0.5f), y, width, height); 
-		xs += dxy_left;
-		xe += dxy_right;
-	}
-}
-
-// FIXME: change width and height to render_target_*
-static void RB_DrawWireframeMesh(Poly *polys, PolyVert *poly_verts, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
-	for (int i = 0; i < num_polys; i++) {
-		if ((polys[i].state & POLY_STATE_BACKFACE)) {
-			continue;
-		}
-
-		PolyVert v0 = polys[i].vertex_array[0];
-		PolyVert v1 = polys[i].vertex_array[1];
-		PolyVert v2 = polys[i].vertex_array[2];
-
-		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)(v0.xyz.v.x + 0.5f),
-				   (int)(v0.xyz.v.y + 0.5f),
-				   (int)(v1.xyz.v.x + 0.5f),
-				   (int)(v1.xyz.v.y + 0.5f),
-				   width, height);
-
-		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)(v1.xyz.v.x + 0.5f),
-				   (int)(v1.xyz.v.y + 0.5f),
-				   (int)(v2.xyz.v.x + 0.5f),
-				   (int)(v2.xyz.v.y + 0.5f),
-				   width, height);
-
-		RB_DrawLine(buffer, pitch, bpp, polys[i].color,
-				   (int)(v2.xyz.v.x + 0.5f),
-				   (int)(v2.xyz.v.y + 0.5f),
-				   (int)(v0.xyz.v.x + 0.5f),
-				   (int)(v0.xyz.v.y + 0.5f),
-				   width, height);
-	}
-}
-#endif
-
-static void CheckZ(r32 z) {
-   if (z < 0.0f) {
-      int x = 42;
-   }
-}
 
 // FIXME: change width and height to render_target_*
 static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
@@ -293,6 +99,7 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 			continue;
 		}
 
+      u32 poly_color = polys[i].color;
       Vec4 red = {1.0f,0.0f,0.0f,1.0f};
       Vec4 green = {0.0f,1.0f,0.0f,1.0f};
       Vec4 blue = {0.0f,0.0f,1.0f,1.0f};
@@ -314,12 +121,7 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
 		r32 z2 = v2.xyz.v.z;
 
-      CheckZ(z0);
-      CheckZ(z1);
-      CheckZ(z2);
-
-
-		// compute triangle 2d AABB for the scaled points
+      // compute triangle 2d AABB for the scaled points
 		int min_x = (MIN3(x0, x1, x2));
 		int min_y = (MIN3(y0, y1, y2));
 
@@ -335,19 +137,57 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 
 
 		// clip against the screen bounds
-		min_pt.x = MAX(min_pt.x, 0);
-		min_pt.y = MAX(min_pt.y, 0);
+		//min_pt.x = MAX(min_pt.x, 0);
+		//min_pt.y = MAX(min_pt.y, 0);
 
-		max_pt.x = MIN(max_pt.x, ((width-1)		<< SUB_PIXEL_STEP) - SUB_PIXEL_OFFSET);
-		max_pt.y = MIN(max_pt.y, ((height-1)	<< SUB_PIXEL_STEP) - SUB_PIXEL_OFFSET);
+		//max_pt.x = MIN(max_pt.x, ((((width-1))   << SPS) - SUB_PIXEL_OFFSET));
+		//max_pt.y = MIN(max_pt.y, ((((height-1))	<< SPS) - SUB_PIXEL_OFFSET));
+
+		// clip against the screen bounds
+      min_pt.x = MAX(min_pt.x, ((-width/2)<<SPS) - SPS_OFFSET);
+		min_pt.y = MAX(min_pt.y, ((-height/2)<<SPS) - SPS_OFFSET);
+
+		max_pt.x = MIN(max_pt.x, ((((width-1)/2)<<SPS) - SPS_OFFSET));
+		max_pt.y = MIN(max_pt.y, ((((height-1)/2)<<SPS) - SPS_OFFSET));
 
 		// make separate point structures for edge testing
 		Point2D pv0 = {x0, y0};
 		Point2D pv1 = {x1, y1};
 		Point2D pv2 = {x2, y2};
 
-		s32 tri2d_area = Orient2D(pv0, pv1, pv2);
-		r32 one_over_tri2d_area = 1.0f / (r32)tri2d_area;
+		//s32 tri2d_area = Orient2D(pv0, pv1, pv2);
+      Vec2i a = {pv1.x-pv0.x, pv1.y-pv0.y};
+      Vec2i b = {pv2.x-pv0.x, pv2.y-pv0.y};
+      s32 tri2d_area = Tri2Area2d(a, b);
+      if (tri2d_area <= 0) {                          // degenerate or back-facing triangle
+         continue;
+      }
+      //if (z0 < 0.0f && z1 < 0.0f && z2 < 0.0f) {      // FIXME: is this needed?
+      //   continue;
+      //}
+
+      // FIXME: macro for constants
+      if (x0 > (1043<<SPS) || y0 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         continue;
+      }
+      if (x1 > (1043<<SPS) || y1 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         continue;
+      }
+      if (x2 > (1043<<SPS) || y2 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         continue;
+      }
+
+      if (x0 < (-1024<<SPS) || y0 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         continue;
+      }
+      if (x1 < (-1024<<SPS) || y1 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         continue;
+      }
+      if (x2 < (-1024<<SPS) || y2 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         continue;
+      }
+
+      r32 one_over_tri2d_area = 1.0f / (r32)tri2d_area;
 
 		// compute biases for top-left fill convention
 		int bias0 = IsTopLeftEdge(pv1, pv2) ? 0 : -1;
@@ -360,9 +200,12 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 		s32 w2_row = (Orient2D(pv0, pv1, min_pt)) + bias2;
 
 		// compute delta terms for the edge functions for the scaled points
-		s32 a01 = (y0 - y1), b01 = (x1 - x0); 
-		s32 a12 = (y1 - y2), b12 = (x2 - x1);
-		s32 a20 = (y2 - y0), b20 = (x0 - x2);
+		s32 a01 = ((y0 - y1)), b01 = ((x1 - x0)); 
+		s32 a12 = ((y1 - y2)), b12 = ((x2 - x1));
+		s32 a20 = ((y2 - y0)), b20 = ((x0 - x2));
+
+		r32 dz10 = z1-z0;
+      r32 dz20 = z2-z0;
 
 		// point to test against the triangle
 		Point2D pt;
@@ -373,28 +216,31 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 		max_pt.y = ((max_pt.y+(1<<SUB_PIXEL_STEP)) >> SUB_PIXEL_STEP); 
 
 
-		byte *line = buffer + (min_pt.y * pitch);
+      min_pt.x += (width>>1);
+      min_pt.y += (height>>1);
+      max_pt.x += (width>>1);
+      max_pt.y += (height>>1);
+      byte *line = buffer + (min_pt.y * pitch);
+
 		for (pt.y = min_pt.y; pt.y <= max_pt.y; pt.y++) {
 			int w0_col = w0_row;
 			int w1_col = w1_row;
 			int w2_col = w2_row;
 			for (pt.x = min_pt.x; pt.x <= max_pt.x; pt.x++) {
-            r32 b0 = (r32)w0_col*one_over_tri2d_area;
-            r32 b1 = (r32)w1_col*one_over_tri2d_area;
-            r32 b2 = (r32)w2_col*one_over_tri2d_area;
-            r32 z = (b0*z0 + b1*z1 + b2*z2);
-            //z = min(z, 1.0f);
-
-            if (abs((s32)z>>23) == 256) {
-               int x = 4;
-            }
-				// ccw vertex winding order
-            if (abs((s32)z>>23) != 256) {
-               if ((z > 0) && (w0_col | w1_col | w2_col) >= 0) {
+            // ccw vertex winding order
+            if ((w0_col | w1_col | w2_col) >= 0) {
+               r32 b0 = (r32)(w0_col)*one_over_tri2d_area;
+               r32 b1 = (r32)(w1_col)*one_over_tri2d_area;
+               r32 b2 = (r32)(w2_col)*one_over_tri2d_area;
+               r32 z = (z0 + b1*(dz10) + b2*(dz20));
+               if (z >= 0.0f && z <= 1.0f) {
                   u32 *pixel = (u32 *)line;
                   Vec4 c = b0*red + b1*green + b2*blue;
+                  //pixel[pt.x] = PackRGBA(c);
+                  //Vec4 l = lerp(UnpackRGBA(poly_color), MakeVec4(0.0f, 0.0f, 0.0f, 1.0f), (Square(z*z*z)));    // fog testing
                   pixel[pt.x] = PackRGBA(c);
-               } 
+                  //pixel[pt.x] = poly_color;
+               }
             }
 				w0_col += a12;
 				w1_col += a20;
@@ -411,57 +257,6 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 // FIXME: change width and height to render_target_*
 
 
-#if 0
-static void RB_DrawFilledRect(RenderTarget *rt, Bitmap *bm, Vec2 origin, Vec2 x, Vec2 y) {
-	Vec2 points[4] = {origin, origin + x, origin + y, origin + x + y};
-	s32 min_x = SINT32_MAX, min_y = SINT32_MAX, max_x = SINT32_MIN, max_y = SINT32_MIN;
-	int pitch = rt->pitch;
-	byte *src = bm->data, *dst = 0;
-	u32 *src_pixel = (u32 *)src;
-
-	for (int i = 0; i < 4; ++i) {
-		s32 floor_x = (s32)floor(points[i][0]);
-		s32 floor_y = (s32)floor(points[i][1]);
-		s32 ceil_x = (s32)ceil(points[i][0]);
-		s32 ceil_y = (s32)ceil(points[i][1]);
-
-		min_x = (min_x > floor_x) ? floor_x : min_x;
-		min_y = (min_y > floor_y) ? floor_y : min_y;
-
-		max_x = (max_x < ceil_x) ? ceil_x : max_x;
-		max_y = (max_y < ceil_y) ? ceil_y : max_y;
-	}
-	Assert(min_x >= 0 && min_y >= 0 && max_x <= rt->width && max_y <= rt->height);
-	dst = rt->buffer + (pitch * min_y) + (min_x * rt->bpp);	
-
-	for (int i = min_y; i < max_y; ++i){
-		u32 *dst_pixel = (u32 *)dst;
-		for (int j = min_x; j < max_x; ++j) {
-			Vec2 p = {(r32)j, (r32)i};
-			r32 edge0 = Dot2(-Perp(x), p - origin);
-			r32 edge1 = Dot2(Perp(y), p - (origin + y));
-			r32 edge2 = Dot2(Perp(x), p - (origin + x + y));
-			r32 edge3 = Dot2(-Perp(y), p - (origin + x));
-
-			if (edge0 <= 0.0f && edge1 <= 0.0f && edge2 <= 0.0f && edge3 <= 0.0f) {
-				*dst_pixel = 255 << 8;
-			} else {
-				//*dst_pixel = 255 << 0;
-			}
-			++dst_pixel;
-		}
-		dst += pitch;
-	}
-}
-
-
-static const void *RB_DrawRect(RenderTarget *rt, const void *data) {
-	DrawRectCmd *cmd = (DrawRectCmd *)data;
-	//RB_DrawFilledRect(rt, &cmd->bitmap, cmd->basis.origin, cmd->basis.axis[0], cmd->basis.axis[1]);
-
-	return (const void *)(cmd + 1);
-}
-#endif
 
 static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	int w = bm->dim[0];
