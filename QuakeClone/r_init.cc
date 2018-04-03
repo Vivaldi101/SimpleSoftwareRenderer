@@ -38,7 +38,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 	(*ren)->front_end.current_view.viewplane_width = 2;	
 	(*ren)->front_end.current_view.viewplane_height = 2;
 
-	(*ren)->front_end.current_view.fov_y = 60.0f;
+	(*ren)->front_end.current_view.fov_y = 90.0f;
 
 	(*ren)->front_end.current_view.z_near = 1.0f;
 	(*ren)->front_end.current_view.z_far = 1000.0f;

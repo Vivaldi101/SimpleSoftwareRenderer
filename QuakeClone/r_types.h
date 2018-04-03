@@ -5,10 +5,10 @@
 
 struct PolyVert {
 	Vec3		xyz;
-	r32			uv[2];
-	//r32			lightmap[2];
+	r32		w;
+	r32		uv[2];
 	Vec3		normal;
-	byte		color[4];
+	//byte		color[4];
 };
 
 struct Poly {

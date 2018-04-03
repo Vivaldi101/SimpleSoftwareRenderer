@@ -77,13 +77,13 @@ struct Input {
 //};
 
 struct Bitmap {
-	Vec2i	dim;
+	Vec2i    dim;
 	byte *	data;		
 };
 
 struct GameState {
 	//Entity 		entities[MAX_NUM_ENTITIES];
-	struct BaseEntity 		*entities;
+	struct BaseEntity 	*entities;
 	int						num_base_entities;
 
 	Bitmap					test_font[MAX_NUM_GLYPHS];
@@ -103,7 +103,7 @@ struct FileIO {
 };
 
 struct Platform {
-	StackAllocator 		main_memory_stack;
+	StackAllocator 	main_memory_stack;
 	Input *				input_state;
 	GameState *			game_state;
 	FileIO				file_ptrs;
@@ -178,6 +178,7 @@ extern int Sys_GetMilliseconds();
 extern void Com_Allocate(Platform **pf, struct Renderer **ren);
 extern void Com_Init(Platform **pf);
 extern void Com_LoadEntities(Platform *pf);
+extern void Com_LoadTextures(Platform *pf, Renderer *r);
 extern void Com_RunFrame(Platform *pf, struct Renderer *ren);
 extern void Com_Quit();
 

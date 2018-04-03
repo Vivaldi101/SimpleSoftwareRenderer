@@ -93,33 +93,53 @@ inline static int MapHigherAsciiToTTF(char c) {
 
 
 // FIXME: change width and height to render_target_*
-static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int width, int height, int num_polys) {
+static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pitch, int bpp, int width, int height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
 		if ((polys[i].state & POLY_STATE_BACKFACE)) {
 			continue;
 		}
 
-      u32 poly_color = polys[i].color;
+      //u32 poly_color = polys[i].color;
       Vec4 red = {1.0f,0.0f,0.0f,1.0f};
       Vec4 green = {0.0f,1.0f,0.0f,1.0f};
       Vec4 blue = {0.0f,0.0f,1.0f,1.0f};
+
 
 		// original vertices
 		PolyVert v0 = polys[i].vertex_array[0];
 		PolyVert v1 = polys[i].vertex_array[1];
 		PolyVert v2 = polys[i].vertex_array[2];
 
-		s32 x0 = RoundReal32ToS32(v0.xyz.v.x * SUB_PIXEL_POW2);
+      Vec2 uv_v0;
+		Vec2 uv_v1;
+		Vec2 uv_v2;
+
+      uv_v0[0] = v0.uv[0];
+      uv_v0[1] = v0.uv[1];
+
+      uv_v1[0] = v1.uv[0];
+      uv_v1[1] = v1.uv[1];
+
+      uv_v2[0] = v2.uv[0];
+      uv_v2[1] = v2.uv[1];
+
+      s32 tex_width = texture->dim[0];
+      s32 tex_height = texture->dim[1];
+
+      s32 x0 = RoundReal32ToS32(v0.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y0 = RoundReal32ToS32(v0.xyz.v.y * SUB_PIXEL_POW2);
 		r32 z0 = v0.xyz.v.z;
+		r32 w0 = v0.w;
 
 		s32 x1 = RoundReal32ToS32(v1.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y1 = RoundReal32ToS32(v1.xyz.v.y * SUB_PIXEL_POW2);
 		r32 z1 = v1.xyz.v.z;
+		r32 w1 = v1.w;
 
 		s32 x2 = RoundReal32ToS32(v2.xyz.v.x * SUB_PIXEL_POW2);
 		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
 		r32 z2 = v2.xyz.v.z;
+		r32 w2 = v2.w;
 
       // compute triangle 2d AABB for the scaled points
 		int min_x = (MIN3(x0, x1, x2));
@@ -150,6 +170,59 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
 		max_pt.x = MIN(max_pt.x, ((((width-1)/2)<<SPS) - SPS_OFFSET));
 		max_pt.y = MIN(max_pt.y, ((((height-1)/2)<<SPS) - SPS_OFFSET));
 
+      // FIXME: macro for constants
+      if (x0 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         //x0 = 1043<<SPS;
+         continue;
+      }
+      if (x1 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         //x1 = 1043<<SPS;
+         continue;
+      }
+      if (x2 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         //x2 = 1043<<SPS;
+         continue;
+      }
+
+      if (y0 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         //y0 = 1043<<SPS;
+         continue;
+      }
+      if (y1 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         //y1 = 1043<<SPS;
+         continue;
+      }
+      if (y2 > (1043<<SPS)) {     // FIXME: guard band clip region needed
+         //y2 = 1043<<SPS;
+         continue;
+      }
+
+      if (x0 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         //x0 = -1024<<SPS;
+         continue;
+      }
+      if (x1 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         //x1 = -1024<<SPS;
+         continue;
+      }
+      if (x2 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         //x2 = -1024<<SPS;
+         continue;
+      }
+
+      if (y0 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         //y0 = -1024<<SPS;
+         continue;
+      }
+      if (y1 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         //y1 = -1024<<SPS;
+         continue;
+      }
+      if (y2 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
+         //y2 = -1024<<SPS;
+         continue;
+      }
+
 		// make separate point structures for edge testing
 		Point2D pv0 = {x0, y0};
 		Point2D pv1 = {x1, y1};
@@ -165,27 +238,6 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
       //if (z0 < 0.0f && z1 < 0.0f && z2 < 0.0f) {      // FIXME: is this needed?
       //   continue;
       //}
-
-      // FIXME: macro for constants
-      if (x0 > (1043<<SPS) || y0 > (1043<<SPS)) {     // FIXME: guard band clip region needed
-         continue;
-      }
-      if (x1 > (1043<<SPS) || y1 > (1043<<SPS)) {     // FIXME: guard band clip region needed
-         continue;
-      }
-      if (x2 > (1043<<SPS) || y2 > (1043<<SPS)) {     // FIXME: guard band clip region needed
-         continue;
-      }
-
-      if (x0 < (-1024<<SPS) || y0 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
-         continue;
-      }
-      if (x1 < (-1024<<SPS) || y1 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
-         continue;
-      }
-      if (x2 < (-1024<<SPS) || y2 < (-1024<<SPS)) {     // FIXME: guard band clip region needed
-         continue;
-      }
 
       r32 one_over_tri2d_area = 1.0f / (r32)tri2d_area;
 
@@ -220,6 +272,20 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
       min_pt.y += (height>>1);
       max_pt.x += (width>>1);
       max_pt.y += (height>>1);
+
+      uv_v0[0] /= w0;
+      uv_v0[1] /= w0;
+
+      uv_v1[0] /= w1;
+      uv_v1[1] /= w1;
+
+      uv_v2[0] /= w2;
+      uv_v2[1] /= w2;
+
+      w0 = 1.0f / w0;
+      w1 = 1.0f / w1;
+      w2 = 1.0f / w2;
+
       byte *line = buffer + (min_pt.y * pitch);
 
 		for (pt.y = min_pt.y; pt.y <= max_pt.y; pt.y++) {
@@ -233,13 +299,23 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, int pitch, int bpp, int 
                r32 b1 = (r32)(w1_col)*one_over_tri2d_area;
                r32 b2 = (r32)(w2_col)*one_over_tri2d_area;
                r32 z = (z0 + b1*(dz10) + b2*(dz20));
-               if (z >= 0.0f && z <= 1.0f) {
+               r32 w = 1.0f / (b0*w0 + b1*w1 + b2*w2);
+               //r32 z = b0*z0 + b1*z1 + b2*z2;
+               if (z >= 0.0f && w > 0.0f) {
                   u32 *pixel = (u32 *)line;
-                  Vec4 c = b0*red + b1*green + b2*blue;
-                  //pixel[pt.x] = PackRGBA(c);
-                  //Vec4 l = lerp(UnpackRGBA(poly_color), MakeVec4(0.0f, 0.0f, 0.0f, 1.0f), (Square(z*z*z)));    // fog testing
-                  pixel[pt.x] = PackRGBA(c);
-                  //pixel[pt.x] = poly_color;
+                  r32 u = b0*uv_v0[0] + b1*uv_v1[0] + b2*uv_v2[0];
+                  r32 v = b0*uv_v0[1] + b1*uv_v1[1] + b2*uv_v2[1];
+                  u *= w;
+                  v *= w;
+                  //u = MIN(1, u);
+                  //v = MIN(1, v);
+                  //u = MAX(0, u);
+                  //v = MAX(0, v);
+
+                  s32 nu = (s32)(u*(tex_width-1) + 0.5f);
+                  s32 nv = (s32)(v*(tex_height-1) + 0.5f);
+                  u32 *t = (u32 *)texture->data + (nv*tex_width) + nu;
+                  pixel[pt.x] = *t;
                }
             }
 				w0_col += a12;
@@ -306,7 +382,7 @@ static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
 static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	DrawPolyCmd *cmd = (DrawPolyCmd *)data;
 
-	RB_DrawSolidMesh(cmd->polys, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+	RB_DrawSolidMesh(cmd->polys, rt->buffer, &cmd->texture, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	//if (cmd->is_wireframe) {
 	//	RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	//} else {

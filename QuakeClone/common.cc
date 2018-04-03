@@ -9,14 +9,6 @@
 #include "ino_bmp.h"
 #include "files.cc"
 
-/*
-==============================================================
-
-MEMORY MANAGEMENT
-
-==============================================================
-*/
-
 static inline u32 NextPO2(u32 v) {
 	v--;	// handle the zero case
 	v |= v >> 1;
@@ -28,6 +20,15 @@ static inline u32 NextPO2(u32 v) {
 
 	return v;
 }
+
+/*
+==============================================================
+
+MEMORY MANAGEMENT
+
+==============================================================
+*/
+
 
 //
 // stack based allocator
@@ -144,10 +145,17 @@ void Com_Init(Platform **pf) {
 	(*pf)->file_ptrs.write_file = DebugWriteFile;
 
 	FileInfo ttf_file = (*pf)->file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
-	FileInfo bmp_file = (*pf)->file_ptrs.read_file("esa.bmp");  // test assets
+	//FileInfo test_texture = (*pf)->file_ptrs.read_file("check.bmp");  // test assets
 
-   int w, h;
-   byte *bmp_data = bmp_load(bmp_file.data, bmp_file.size, 0, &w, &h);
+ //  int w, h;
+ //  Bitmap test_bmp;
+ //  byte *bmp_data = bmp_load(test_texture.data, test_texture.size, 0, &w, &h);
+ //  test_bmp.data = bmp_data;
+ //  test_bmp.dim.v.x = w;
+ //  test_bmp.dim.v.y = h;
+
+ //  (*pf)->game_state->test_texture = test_bmp;
+
 
 	for (int i = 'a'; i <= 'z'; ++i) {
 		(*pf)->game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
@@ -159,29 +167,22 @@ void Com_Init(Platform **pf) {
 }
 
 void Com_LoadEntities(Platform *pf) {
-
 	// FIXME: testing entity stuff!!
 	size_t max_entity_memory = 1024 << 5;
 	InitEntities(pf, max_entity_memory);
-	//BaseEntity common_ent = {};
+}
 
-	//common_ent.type = Cube;
-	//FileInfo cube_assets = pf->file_ptrs.read_file("cube1.plg");
+void Com_LoadTextures(Platform *pf, Renderer *r) {
+	FileInfo fi = pf->file_ptrs.read_file("check2.bmp");
 
-	// FIXME: testing!!
-	// FIXME: 0 hardcoded for player for now
-	//Assert(PLG_LoadMesh(&common_ent, cube_assets.data, cube_assets.size));
-	//memcpy(&pf->game_state->entities[0], &common_ent, sizeof(Entity));
-	//pf->game_state->entities[0].type_enum = EntityType_player;
+   int w, h;
+   Bitmap test_texture;
+   byte *bmp_data = bmp_load(fi.data, fi.size, 0, &w, &h);
+   test_texture.data = bmp_data;
+   test_texture.dim.v.x = w;
+   test_texture.dim.v.y = h;
 
-	//for (int i = 1; i < num_entities; ++i) {
-	//	Vec3 world_pos = {-100.0f + (20.0f * i), 0.0f, 200.0f};
-	//	memcpy(&pf->game_state->entities[i], &common_ent, sizeof(Entity));
-	//	pf->game_state->entities[i].status.world_pos = world_pos;
-	//	pf->game_state->entities[i].type_enum = EntityType_cube;
-	//}
-
-	//pf->file_ptrs.free_file(&cube_assets);
+   r->back_end.test_texture = test_texture;
 }
 
 static void ClearRenderState(RendererBackend *rb) {
@@ -222,132 +223,6 @@ static void Com_RunEventLoop() {
 	}
 }
 
-#if 0
-static void Com_SimFrame(r32 dt, r32 dt_residual, int num_frames, int num_entities, Entity *ents, Input *in, ViewSystem *current_view) {
-	// test stuff
-	static r32 rot_mat_y[3][3];
-	static r32 sim_dt = 0.0f;
-	sim_dt += dt;
-	// FIXME: add matrix returning routines
-	rot_mat_y[1][0] = 0.0f;
-	rot_mat_y[1][1] = 1.0f;
-	rot_mat_y[1][2] = 0.0f;
-
-	r32 speed = 30.0f;
-	// FIXME: add matrix returning routines
-	r32 rot_mat_x[3][3];
-	rot_mat_x[0][0] = 1.0f;
-	rot_mat_x[0][1] = 0.0f;
-	rot_mat_x[0][2] = 0.0f;
-
-	r32 rot_mat_z[3][3];
-	rot_mat_z[2][0] = 0.0f;
-	rot_mat_z[2][1] = 0.0f;
-	rot_mat_z[2][2] = 1.0f;
-
-	// FIXME: just for testing!!!!!!!!
-	r32 rot_theta = DEG2RAD(-1.0f*0.1f);
-	rot_mat_x[1][0] = 0.0f;
-	rot_mat_x[1][1] = cos(rot_theta);
-	rot_mat_x[1][2] = sin(rot_theta);
-
-	rot_mat_x[2][0] = 0.0f;
-	rot_mat_x[2][1] = -rot_mat_x[1][2];
-	rot_mat_x[2][2] = rot_mat_x[1][1];
-
-	rot_mat_z[0][0] = cos(rot_theta);
-	rot_mat_z[0][1] = sin(rot_theta);
-	rot_mat_z[0][2] = 0.0f;
-
-	rot_mat_z[1][0] = -rot_mat_z[0][1];
-	rot_mat_z[1][1] = rot_mat_z[0][0];
-	rot_mat_z[1][2] = 0.0f;
-
-	for (int i = 0; i < num_frames; ++i) {
-		for (int j = 0; j < num_entities; ++j) {
-			if (auto player = GetAnonType(&ents[j], player, EntityType_)) {
-				PolyVert *verts = player->local_vertex_array;
-				int num_local_verts = ArrayCount(player->local_vertex_array);
-				RotatePoints(rot_mat_z, verts, num_local_verts); 
-				RotatePoints(rot_mat_x, verts, num_local_verts); 
-				Vec3 acc = {};
-				if (in->keys['W'].down) {
-					acc = Vec3Norm(current_view->world_orientation.dir);
-					acc = acc * 1.0f;
-				}
-				if (in->keys['A'].down) {
-					// FIXME: add matrix returning routines
-					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
-					rot_mat_y[0][2] = sin(DEG2RAD(3.0f));
-
-					rot_mat_y[2][0] = -rot_mat_y[0][2];
-					rot_mat_y[2][2] = rot_mat_y[0][0];
-
-					if (sim_dt > (1.0f / 60.0f)) {
-						yaw -= 3.0f;
-						current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-						current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-						for (int i = 0; i < ents[0].status.num_verts; ++i) {
-							Mat1x3Mul(&verts[i].xyz, &verts[i].xyz, rot_mat_y);
-						}
-					}
-				}
-				if (in->keys['S'].down) {
-					acc = Vec3Norm(current_view->world_orientation.dir);
-					acc = acc * (-1.0f);
-				}
-				if (in->keys['D'].down) {
-					// FIXME: add matrix returning routines
-					rot_mat_y[0][0] = cos(DEG2RAD(3.0f));
-					rot_mat_y[0][2] = -sin(DEG2RAD(3.0f));
-
-					rot_mat_y[2][0] = -rot_mat_y[0][2];
-					rot_mat_y[2][2] = rot_mat_y[0][0];
-
-					if (sim_dt > (1.0f / 60.0f)) {
-						yaw += 3.0f;
-						current_view->world_orientation.dir[0] = sinf(DEG2RAD(yaw));
-						current_view->world_orientation.dir[2] = cosf(DEG2RAD(yaw));
-						for (int i = 0; i < ents[0].status.num_verts; ++i) {
-							Mat1x3Mul(&verts[i].xyz, &verts[i].xyz, rot_mat_y);
-						}
-					}
-				}
-				if (in->keys[ENTER_KEY].released) {
-					Vec3Init(current_view->world_orientation.dir, 0.0f, 0.0f, 1.0f);
-					Vec3Init(current_view->world_orientation.origin, 0.0f, 0.0f, 0.0f);
-					
-					rot_mat_y[0][0] = cos(DEG2RAD(yaw));
-					rot_mat_y[0][2] = sin(DEG2RAD(yaw));
-
-					rot_mat_y[2][0] = -rot_mat_y[0][2];
-					rot_mat_y[2][2] = rot_mat_y[0][0];
-
-					// reset player yaw angle and position
-					if (yaw != 0.0f) {
-						for (int i = 0; i < ents[0].status.num_verts; ++i) {
-							Mat1x3Mul(&verts[i].xyz, &verts[i].xyz, rot_mat_y);
-						}
-					}
-
-					yaw = 0.0f;
-				}
-
-				acc = Vec3Norm(acc);
-				acc = acc * speed;
-				acc = acc + (current_view->velocity * -0.95f);	// hack!!!
-				current_view->world_orientation.origin = (acc * 0.5f * Square(dt)) + (current_view->velocity * dt) + current_view->world_orientation.origin;
-				current_view->velocity = acc * dt + current_view->velocity;
-			} 
-		}
-	}
-	if (sim_dt > (1.0f / 60.0f)) {
-		sim_dt -= (1.0f / 60.0f);
-	}
-}
-#endif
-
-#if 1
 void Com_RunFrame(Platform *pf, Renderer *ren) {
 	Sys_GenerateEvents();
 	IN_GetInput(pf->input_state);
@@ -394,21 +269,16 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	UpdateEntities(pf->game_state, ren, pf->input_state, MSEC_PER_SIM / 1000.0f, num_frames_to_run);
 	RenderEntities(pf->game_state, ren);
 
-	R_PushPolysCmd(&ren->back_end.cmds,
-				  ren->back_end.polys,
-				  ren->back_end.poly_verts,
-				  ren->back_end.num_polys,
-				  ren->front_end.is_wireframe);
 
-#if 0
+#if 1
 	// font testing
 	{
 		r32 text_pos = (r32)ren->back_end.target.height;
-		r32 line_gap = 20.0f;
+		const r32 line_gap = 20.0f;
 		R_PushTextCmd(&ren->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press space to toggle wireframe mode", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press enter to center the player", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press l to toggle ambient lighting", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press enter to center the camera", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Press x y z to pitch yaw and roll the cube", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "Hold shift and press x y z to reverse pitch yaw and roll the cube", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 		R_PushTextCmd(&ren->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 		R_PushTextCmd(&ren->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 	}
@@ -430,7 +300,6 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		//OutputDebugStringA(buffer);
 	}
 }
-#endif
 
 void Com_Quit() {
 	Sys_Quit();

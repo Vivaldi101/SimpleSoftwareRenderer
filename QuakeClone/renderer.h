@@ -94,12 +94,13 @@ struct RendererBackend {
 
 	//struct BaseEntity *		entities;
 
+   Bitmap               test_texture;     // FIXME: remove
 	Light *					lights;
 	int						num_lights;
 
 	Poly *					polys;			
 	PolyVert *				poly_verts;		
-	int						num_polys;			// num polys in visible in a frame
+	int						num_polys;			   // num polys in visible in a frame
 	int						num_poly_verts;		// num verts in visible in a frame
 };
 
@@ -113,7 +114,7 @@ extern void RF_UpdateView(ViewSystem *vs);
 extern void RF_SetupFrustum(ViewSystem *vs);
 extern void RF_SetupProjection(ViewSystem *vs);
 
-extern void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const Vec3i *index_list, int num_polys);
+extern void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys);
 
 extern void RF_TransformModelToWorld(const PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale);
 extern void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts);

@@ -98,9 +98,12 @@ void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts
 	}
 }
 
-void RF_TransformModelToWorld(const PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
+void RF_TransformModelToWorld(const PolyVert *model_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale) {
 	for (int i = 0; i < num_verts; ++i) {
-		trans_poly_verts[i].xyz = (local_poly_verts[i].xyz * world_scale) + world_pos;
+      //trans_poly_verts[i].uv[0] = model_poly_verts[i].uv[0];
+      //trans_poly_verts[i].uv[1] = model_poly_verts[i].uv[1];
+      trans_poly_verts[i] = model_poly_verts[i];
+		trans_poly_verts[i].xyz = trans_poly_verts[i].xyz*world_scale + world_pos;
 	}
 }
 
@@ -149,20 +152,14 @@ void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 		in[2] = poly_verts[i].xyz[2];
 		in[3] = 1.0f;
 
-      if (in[2] < 0.0f) {
-         int y = 42;
-         in[2] = 0.0f;
+      Mat1x4Mul(out, in, m);  
+      if (out[3] > 0.0f) {
+         poly_verts[i].xyz[0] = (out[0] / out[3]);
+         poly_verts[i].xyz[1] = (out[1] / out[3]);
+         poly_verts[i].xyz[2] = (out[2] / out[3]);
+         poly_verts[i].w = out[3];
       }
-
-		Mat1x4Mul(out, in, m);  
-		poly_verts[i].xyz[0] = (out[0] / out[3]);
-		poly_verts[i].xyz[1] = (out[1] / out[3]);
-		poly_verts[i].xyz[2] = (out[2] / out[3]);
-
-      int y = 42;
     }
-
-   int asd = 42;
 }
 
 void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
@@ -267,22 +264,46 @@ void RF_UpdateView(ViewSystem *vs) {
 	RF_SetupFrustum(vs);					
 }
 
-void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const Vec3i *index_list, int num_polys) {
-	int num_verts = 3;	// triangle
+// FIXME: pass num_verts for arbitarly polys
+void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys) {
+	const int num_verts = 3;	// triangle
 	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
 
-	for (int i = 0; i < num_polys; ++i) {
-		Poly *poly = &rb->polys[rb->num_polys];
-		poly->num_verts = num_verts;
-		poly->color = PackRGBA(0.0f,1.0f,1.0f,1.0f);	// test color
-		poly->vertex_array = &rb->poly_verts[rb->num_poly_verts];
+	for (int i = 0; i < num_polys; i += 2) {
+		Poly *poly1 = &rb->polys[rb->num_polys];
+		Poly *poly2 = &rb->polys[rb->num_polys+1];
 
-		poly->vertex_array[0] = verts[index_list[i][0]];
-		poly->vertex_array[1] = verts[index_list[i][1]];
-		poly->vertex_array[2] = verts[index_list[i][2]];
+		poly1->num_verts = num_verts;
+		poly1->vertex_array = &rb->poly_verts[rb->num_poly_verts];
+		rb->num_poly_verts += 3;
 
-		++rb->num_polys; 
-		rb->num_poly_verts += num_verts;
+		poly2->num_verts = num_verts;
+		poly2->vertex_array = &rb->poly_verts[rb->num_poly_verts];
+		rb->num_poly_verts += 3;
+
+		poly1->vertex_array[0] = verts[index_list[i][0]];
+		poly1->vertex_array[1] = verts[index_list[i][1]];
+		poly1->vertex_array[2] = verts[index_list[i][2]];
+
+		poly2->vertex_array[0] = verts[index_list[i+1][0]];
+		poly2->vertex_array[1] = verts[index_list[i+1][1]];
+		poly2->vertex_array[2] = verts[index_list[i+1][2]];
+
+		poly1->vertex_array[0].uv[0] = 0.0f;
+		poly1->vertex_array[0].uv[1] = 0.0f;
+		poly1->vertex_array[1].uv[0] = 1.0f;
+		poly1->vertex_array[1].uv[1] = 0.0f;
+		poly1->vertex_array[2].uv[0] = 1.0f;
+		poly1->vertex_array[2].uv[1] = 1.0f;
+
+		poly2->vertex_array[0].uv[0] = 0.0f;
+		poly2->vertex_array[0].uv[1] = 0.0f;
+		poly2->vertex_array[1].uv[0] = 1.0f;
+		poly2->vertex_array[1].uv[1] = 1.0f;
+		poly2->vertex_array[2].uv[0] = 0.0f;
+		poly2->vertex_array[2].uv[1] = 1.0f;
+
+		rb->num_polys += 2; 
 	}
 }
 

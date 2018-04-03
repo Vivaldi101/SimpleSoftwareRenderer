@@ -27,6 +27,30 @@ typedef float	r32;
 typedef double	r64;
 
 
+// windows specific
+#ifdef _WIN32
+#include <Windows.h>
+#ifdef PLATFORM_DEBUG
+#define Assert(cond) do { if (!(cond)) DebugBreak(); } while(0)
+#define StaticAssert(cond, error) \
+do { \
+    static const char error[(cond)?1:-1];\
+} while(0)
+#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); DebugBreak(); } while(0)
+#define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); DebugBreak(); } } while(0)
+#define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
+#else
+#define InvalidCodePath(m) 
+#define CheckMemory(cond) 
+#define EventOverflow 
+#endif
+
+//#define memset ZeroMemory
+#else
+#define InvalidCodePath do { Assert(0); } while(0)
+#define OutOfMemory do { Assert(0); } while(0)
+#define EventOverflow do {  Assert(0); } while(0)
+#endif	// _WIN32
 #define MAX_UPS (60)
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
@@ -112,11 +136,11 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 
 
 #ifdef PLATFORM_DEBUG
-#define Assert(cond) do { if (!(cond)) __debugbreak(); } while(0)
-#define StaticAssert(cond, error) \
-do { \
-    static const char error[(cond)?1:-1];\
-} while(0)
+//#define Assert(cond) do { if (!(cond)) DebugBreak(); } while(0)
+//#define StaticAssert(cond, error) \
+//do { \
+//    static const char error[(cond)?1:-1];\
+//} while(0)
 #else
 #define Assert(cond)
 #define StaticAssert(cond, error)
@@ -761,23 +785,5 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 //#define PushBytes(stack, count) ((type *)_Push_(stack, (count) * sizeof(byte)))
 
 
-// windows specific
-#ifdef _WIN32
-#include <Windows.h>
-#ifdef PLATFORM_DEBUG
-#define InvalidCodePath(m) do { MessageBoxA(0, "Invalid code path: " ##m, 0, 0); __debugbreak(); } while(0)
-#define CheckMemory(cond) do { if (!(cond)) { MessageBoxA(0, "Out of memory in: "##__FILE__, 0, 0); __debugbreak(); } } while(0)
-#define EventOverflow do { MessageBoxA(0, "Event overflow", 0, 0); Assert(0); } while(0)
-#else
-#define InvalidCodePath(m) 
-#define CheckMemory(cond) 
-#define EventOverflow 
-#endif
-//#define memset ZeroMemory
-#else
-#define InvalidCodePath do { Assert(0); } while(0)
-#define OutOfMemory do { Assert(0); } while(0)
-#define EventOverflow do {  Assert(0); } while(0)
-#endif	// _WIN32
 
 #endif	// Header guard

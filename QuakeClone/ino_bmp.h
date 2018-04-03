@@ -152,7 +152,8 @@ INO_BMP_DEF byte *bmp_load(const void *memory, int file_size, void *(allocator)(
 
    *width = ic.width;
    *height = ic.height = abs(ic.height);
-   img_size_in_bytes = ic.width * ic.height * bytes_per_pixel;    
+   //img_size_in_bytes = ic.width * ic.height * bytes_per_pixel;    
+   img_size_in_bytes = ic.width * ic.height * 4;    
 
    if (allocator == NULL) {
       result = (byte *)malloc(img_size_in_bytes);   
@@ -169,7 +170,8 @@ INO_BMP_DEF byte *bmp_load(const void *memory, int file_size, void *(allocator)(
             result[z+0] = bmp_get8_bits(&ic);   // blue
             result[z+1] = bmp_get8_bits(&ic);   // green
             result[z+2] = bmp_get8_bits(&ic);   // red
-            z += 3;
+            result[z+3] = 255;                  // alpha
+            z += 4;
          }
          ic.buffer += scan_line_pad;
       }
