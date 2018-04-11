@@ -57,7 +57,7 @@ void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin
 	Assert(cmd);
 
 	cmd->cmd_id = RCMD_TEXT;
-	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f) * scale;	// FIXME: 3d homogeneous matrix
+	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f) * scale;
 	cmd->basis.axis[1] = MakeVec2(0.0f, 1.0f) * scale;
 	cmd->basis.origin = origin;
 	cmd->bitmap = bm;
@@ -66,7 +66,7 @@ void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin
 	cmd->color = PackRGBA(color);
 }
 
-void R_PushPolysCmd(RenderCommands *rc, Poly *polys, PolyVert *poly_verts, Bitmap texture, int num_polys, b32 is_wireframe) {
+void R_PushPolysCmd(RenderCommands *rc, Poly *polys, PolyVert *poly_verts, Bitmap texture, int num_polys) {
 	DrawPolyCmd *cmd = PushRenderCmd(rc, DrawPolyCmd);
 	Assert(cmd);
 
@@ -75,7 +75,6 @@ void R_PushPolysCmd(RenderCommands *rc, Poly *polys, PolyVert *poly_verts, Bitma
 	cmd->poly_verts = poly_verts;
 	cmd->texture = texture;
 	cmd->num_polys = num_polys;
-	cmd->is_wireframe = is_wireframe;
 }
 
 void R_BeginFrame(RenderTarget *rt, RenderCommands *rc) {

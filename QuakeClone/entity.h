@@ -2,15 +2,15 @@
 #define ENTITY_H
 #include "shared.h"
 
-static const Vec3 global_cube_norm_vertex_array[8] = {
-	{1, 1, 1},
-	{-1, 1, 1},
-	{-1, 1, -1},
-	{1, 1, -1},
-	{1, -1, 1},
-	{-1, -1, 1},
-	{-1, -1, -1},
-	{1, -1, -1}
+static const PolyVert global_cube_norm_vertex_array[8] = {
+	{1, 1, 1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{-1, 1, 1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{-1, 1, -1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{1, 1, -1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{1, -1, 1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{-1, -1, 1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{-1, -1, -1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+	{1, -1, -1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
 };
 
 static u16 global_cube_index_array[12][3] = {

@@ -16,11 +16,11 @@ struct Poly {
 	u16			vert_indices[3];
 	int			num_verts;
 	int			state;
-	u32			color;	// rgba, packed
+	Vec4 			color;
 };
 
 struct Point2D {
-	int	x, y;
+	s32	x, y;
 };
 
 

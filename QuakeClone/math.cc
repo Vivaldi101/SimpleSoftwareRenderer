@@ -169,7 +169,7 @@ void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]) {
 //	}
 //}
 
-void MatTranspose(r32 m[3][3]) {
+void Mat3x3Transpose(r32 m[3][3]) {
    for(int i = 0; i < 3; i++ ) {
       for(int j = 0; j < i; j++ ) {
          r32 t = m[i][j];

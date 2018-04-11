@@ -10,13 +10,13 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 	int num_polys = rb->num_polys;
 	int num_lights = rb->num_lights;
 	for (int i = 0; i < num_polys; ++i) {
-		u32 color = 0;
+      Vec4 color = {};
 		if ((rb->polys[i].state & POLY_STATE_BACKFACE) || (rb->polys[i].state & POLY_STATE_LIT)) {
 			continue;
 		}
 		rb->polys[i].state |= POLY_STATE_LIT;
 
-		base = UnpackRGBA(rb->polys[i].color);
+		base = rb->polys[i].color;
 
 		PolyVert v0 = rb->polys[i].vertex_array[0];
 		PolyVert v1 = rb->polys[i].vertex_array[1];
@@ -79,8 +79,12 @@ void R_CalculateLighting(const RendererBackend *rb, const Light *lights, Ambient
 			total.c.g = MIN(total.c.g, 1.0f);
 			total.c.b = MIN(total.c.b, 1.0f);
 
-			color += PackRGBA(total);
-			 
+			color = color + total;
+
+			color.c.a = MIN(color.c.a, 1.0f);
+			color.c.r = MIN(color.c.r, 1.0f);
+			color.c.g = MIN(color.c.g, 1.0f);
+			color.c.b = MIN(color.c.b, 1.0f);
 		}
 
 		rb->polys[i].color = color;

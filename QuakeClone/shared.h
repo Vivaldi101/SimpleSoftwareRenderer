@@ -32,6 +32,7 @@ typedef double	r64;
 #include <Windows.h>
 #ifdef PLATFORM_DEBUG
 #define Assert(cond) do { if (!(cond)) DebugBreak(); } while(0)
+#define ExitIf(cond) do { if (!(cond)) Com_Quit(); } while(0)
 #define StaticAssert(cond, error) \
 do { \
     static const char error[(cond)?1:-1];\
@@ -51,7 +52,7 @@ do { \
 #define OutOfMemory do { Assert(0); } while(0)
 #define EventOverflow do {  Assert(0); } while(0)
 #endif	// _WIN32
-#define MAX_UPS (60)
+#define MAX_UPS (120)
 #define MSEC_PER_SIM (1000 / MAX_UPS)
 
 #undef MAX_PERM_MEMORY
@@ -728,10 +729,17 @@ extern void Mat4x4Mul(r32 out[4][4], const r32 a[4][4], const r32 b[4][4]);
 extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[9]);
 extern void Mat1x3Mul(Vec3 *out, const Vec3 *a, const r32 b[3][3]);
 extern void Mat1x4Mul(Vec4 *out, const Vec4 *a, const r32 b[4][4]);
-extern void MatTranspose(r32 m[3][3]);
+extern void Mat3x3Transpose(r32 m[3][3]);
 
 
-extern void RotatePoints(r32 rot_mat[3][3], struct PolyVert *poly_verts, int num_verts);
+extern void RotateAroundX(r32 deg, Vec3 *points, int num_points);
+extern void RotateAroundY(r32 deg, Vec3 *points, int num_points);
+extern void RotateAroundZ(r32 deg, Vec3 *points, int num_points);
+
+struct PolyVert;
+extern void RotateAroundX(r32 deg, PolyVert *points, int num_points);
+extern void RotateAroundY(r32 deg, PolyVert *points, int num_points);
+extern void RotateAroundZ(r32 deg, PolyVert *points, int num_points);
 
 struct Orientation {
 	Vec3	origin;			// in world coordinates

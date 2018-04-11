@@ -6,15 +6,15 @@
 void R_Init(Renderer **ren, void *hinstance, void *wndproc) { 
 	// init some test lights
 	Light l = {};
-	l.ambient = MakeVec4(1.0f, 1.0f, 1.0f, 1.0f); 
-	l.diffuse  = MakeVec4(1.0f, 1.0f, 1.0f, 1.0f); 
-	l.specular = MakeVec4(1.0f, 1.0f, 1.0f, 1.0f); 
-	l.radius = 10.0f;
+	l.ambient = MV4(0.20f, 0.20f, 0.20f, 1.0f); 
+	l.diffuse  = MV4(0.25f, 0.0f, 0.0f, 1.0f); 
+	l.specular = MV4(0.0f, 0.0f, 0.5f, 0.0f); 
+	l.radius = 1.0f;
 	l.kc = 0.0f; 
-	l.kl = 0.0155f;
+	l.kl = 0.05005f;
 	l.kq = 0.0f;
 	l.is_active = true;
-	l.flags |= (CAMERA_LIGHT|SPOT_LIGHT);
+	l.flags |= (CAMERA_LIGHT|POINT_LIGHT);
 	R_AddLight(&(*ren)->back_end, &l);
 
 	if (!InitWindow(&(*ren)->back_end.target, wndproc, hinstance)) {
@@ -40,7 +40,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 
 	(*ren)->front_end.current_view.fov_y = 90.0f;
 
-	(*ren)->front_end.current_view.z_near = 1.0f;
+	(*ren)->front_end.current_view.z_near = 0.1f;
 	(*ren)->front_end.current_view.z_far = 1000.0f;
 
 	(*ren)->front_end.current_view.viewport_width = (*ren)->back_end.target.width;		

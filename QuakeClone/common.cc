@@ -270,12 +270,12 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	RenderEntities(pf->game_state, ren);
 
 
-#if 1
+#if 0
 	// font testing
 	{
 		r32 text_pos = (r32)ren->back_end.target.height;
 		const r32 line_gap = 20.0f;
-		R_PushTextCmd(&ren->back_end.cmds, "WASD to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		R_PushTextCmd(&ren->back_end.cmds, "wasd to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 		R_PushTextCmd(&ren->back_end.cmds, "Press enter to center the camera", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 		R_PushTextCmd(&ren->back_end.cmds, "Press x y z to pitch yaw and roll the cube", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
 		R_PushTextCmd(&ren->back_end.cmds, "Hold shift and press x y z to reverse pitch yaw and roll the cube", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
@@ -284,20 +284,17 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	}
 #endif
 
-	// frame timing
+	// render frame timing
 	{
-		static int last_time = Sys_GetMilliseconds();
-		int	now_time = Sys_GetMilliseconds();
-		int	frame_msec = now_time - last_time;
-		last_time = now_time;
-
+		int last_render_time = Sys_GetMilliseconds();
 		R_EndFrame(&ren->back_end.target, &ren->back_end.cmds);
-
+		int	now_render_time = Sys_GetMilliseconds();
+		int	render_frame_msec = now_render_time - last_render_time;
 		ClearRenderState(&ren->back_end);
 
 		char buffer[64];
-		//sprintf_s(buffer, "Frame msec %d\n", frame_msec);
-		//OutputDebugStringA(buffer);
+		sprintf_s(buffer, "Render time: %d ms\n", render_frame_msec);
+		OutputDebugStringA(buffer);
 	}
 }
 

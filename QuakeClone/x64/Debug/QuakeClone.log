@@ -1,29 +1,13 @@
-﻿Build started 03/04/2018 17:28:39.
-     1>Project "F:\code\QuakeClone\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (Rebuild target(s)).
-     1>_PrepareForClean:
-         Deleting file "x64\Debug\QuakeClone.tlog\QuakeClone.lastbuildstate".
-       InitializeBuildStatus:
-         Creating "x64\Debug\QuakeClone.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+﻿Build started 23/04/2018 23:39:23.
+     1>Project "F:\QuakeClone\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
+       Project file contains ToolsVersion="12.0". This toolset may be unknown or missing, in which case you may be able to resolve this by installing the appropriate version of MSBuild, or the build may have been forced to a particular ToolsVersion for policy reasons. Treating the project as if it had ToolsVersion="4.0". For more information, please see http://go.microsoft.com/fwlink/?LinkId=291333.
+     1>InitializeBuildStatus:
+         Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\programs\VS13\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX /MP /O2 /Oi /Ot /D PLATFORM_DEBUG=1 /D _MBCS /Gm- /MTd /GS /fp:precise /fp:except /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt common.cc entity.cc fonts.cc input.cc lights.cc math.cc r_cmds.cc r_init.cc r_main.cc r_backend.cc win_console.cc win_shared.cc win_main.cc win_main_window.cc win_r.cc win_wndproc.cc
-         common.cc
-         entity.cc
-         fonts.cc
-         input.cc
-         lights.cc
-         math.cc
-         r_cmds.cc
-         r_init.cc
-         r_main.cc
-         r_backend.cc
-         win_console.cc
-         win_shared.cc
-         win_main.cc
-         win_main_window.cc
+         F:\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX /MP /O2 /Oi /Ot /D PLATFORM_DEBUG=1 /D _MBCS /Gm- /MTd /GS /fp:precise /fp:except /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt win_r.cc
          win_r.cc
-         win_wndproc.cc
        Link:
-         F:\programs\VS13\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe" /INCREMENTAL /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
+         F:\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\entity.obj
          x64\Debug\fonts.obj
          x64\Debug\input.obj
@@ -39,12 +23,15 @@
          x64\Debug\win_main_window.obj
          x64\Debug\win_r.obj
          x64\Debug\win_wndproc.obj
-         QuakeClone.vcxproj -> F:\code\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe
+         LINK : F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe not found or not built by the last incremental link; performing full link
+         QuakeClone.vcxproj -> F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe;#1" /manifest x64\Debug\QuakeClone.exe.intermediate.manifest
        FinalizeBuildStatus:
-         Deleting file "x64\Debug\QuakeClone.tlog\unsuccessfulbuild".
-         Touching "x64\Debug\QuakeClone.tlog\QuakeClone.lastbuildstate".
-     1>Done Building Project "F:\code\QuakeClone\QuakeClone\QuakeClone\QuakeClone.vcxproj" (Rebuild target(s)).
+         Deleting file "x64\Debug\QuakeClone.unsuccessfulbuild".
+         Touching "x64\Debug\QuakeClone.lastbuildstate".
+     1>Done Building Project "F:\QuakeClone\QuakeClone\QuakeClone\QuakeClone.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:02.37
+Time Elapsed 00:00:00.89

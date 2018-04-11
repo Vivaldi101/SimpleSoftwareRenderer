@@ -11,24 +11,12 @@
 //#define PLATFORM_FULLSCREEN
 #define BYTES_PER_PIXEL 4	
 
-// FIXME: put into enums
-#define POLY_STATE_CULLED	0x0001
-#define POLY_STATE_CLIPPED	0x0002
-#define POLY_STATE_BACKFACE	0x0004
-#define POLY_STATE_LIT		0x0008
-
-// FIXME: put into enums
-#define POLY_ATTR_2SIDED		0x0001
-#define POLY_ATTR_TRANSPARENT	0x0002
-#define POLY_ATTR_8BITCOLOR		0x0004
-#define POLY_ATTR_RGB16			0x0008
-#define POLY_ATTR_RGB24			0x0010
-
-// FIXME: put into enums
-#define POLY_ATTR_SHADE_MODE_PURE		0x0020
-#define POLY_ATTR_SHADE_MODE_FLAT		0x0040
-#define POLY_ATTR_SHADE_MODE_GOURAUD	0x0080
-#define POLY_ATTR_SHADE_MODE_PHONG		0x0100
+enum {
+	POLY_STATE_CULLED = 1,		
+	POLY_STATE_CLIPPED = 1 << 1,		
+	POLY_STATE_BACKFACE = 1 << 2,	
+	POLY_STATE_LIT = 1 << 3		
+};
 
 enum {
 	CULL_IN,		// completely unclipped
@@ -83,8 +71,8 @@ struct ViewSystem {
 
 struct RendererFrontend {
 	ViewSystem		current_view;	
-	b32				is_wireframe;
-	// for fun
+	//b32				is_wireframe;
+	//b32				is_bifilter;
 	AmbientState	is_ambient;
 };
 
@@ -92,9 +80,7 @@ struct RendererBackend {
 	RenderCommands			cmds;
 	RenderTarget 			target;		
 
-	//struct BaseEntity *		entities;
-
-   Bitmap               test_texture;     // FIXME: remove
+	Bitmap               test_texture;     // FIXME: remove
 	Light *					lights;
 	int						num_lights;
 
@@ -114,6 +100,7 @@ extern void RF_UpdateView(ViewSystem *vs);
 extern void RF_SetupFrustum(ViewSystem *vs);
 extern void RF_SetupProjection(ViewSystem *vs);
 
+extern void RF_AddCubePolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys, r32 texture_scale);
 extern void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys);
 
 extern void RF_TransformModelToWorld(const PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale);

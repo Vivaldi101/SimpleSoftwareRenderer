@@ -124,11 +124,11 @@ int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 
 void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	r32 (*m)[4] = vs->projection_matrix;
-	r32 one_over_ar = 1.0f / vs->aspect_ratio;
-   Vec3 q = {0.0f, 0.0f, 1.0f};
-   Vec3 e = {0.0f, 0.0f, 0.0f};
-   Vec3 n = {0.0f, 0.0f, 1.0f};
-   r32 a = Dot3(q, n);
+	//r32 one_over_ar = 1.0f / vs->aspect_ratio;
+   //Vec3 q = {0.0f, 0.0f, 1.0f};
+   //Vec3 e = {0.0f, 0.0f, 0.0f};
+   //Vec3 n = {0.0f, 0.0f, 1.0f};
+   //r32 a = Dot3(q, n);
 
 	for (int i = 0; i < num_verts; ++i) {
       //Vec3 p, pn;
@@ -165,20 +165,20 @@ void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	//s32 screen_width_factor = vs->viewport_width >> 1;
 	//s32 screen_height_factor = vs->viewport_height >> 1;
-   r32 kx = (r32)(vs->viewport_width >> 1);
-   r32 ky = (r32)(vs->viewport_height >> 1);
+   r32 kx = (r32)((vs->viewport_width-1) >> 1);
+   r32 ky = (r32)((vs->viewport_height-1) >> 1);
 	for (int i = 0; i < num_verts; ++i) {
-      r32 ax = poly_verts[i].xyz[0] + 1.0f;
-      r32 ay = poly_verts[i].xyz[1] + 1.0f;
-      poly_verts[i].xyz[0] = ax*kx - kx;
-		poly_verts[i].xyz[1] = ay*ky - ky;
+      r32 px = poly_verts[i].xyz[0] + 1.0f;
+      r32 py = poly_verts[i].xyz[1] + 1.0f;
+      poly_verts[i].xyz[0] = px*kx - kx;
+		poly_verts[i].xyz[1] = py*ky - ky;
 
       //poly_verts[i].xyz[0] = (poly_verts[i].xyz[0] + 1) * screen_width_factor;
 		//poly_verts[i].xyz[1] = (poly_verts[i].xyz[1] + 1) * screen_height_factor;
 	}
 }
 
-void RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
+void Rotate(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
 		r32 x = Dot3(rot_mat[0], poly_verts[i].xyz);
 		r32 y = Dot3(rot_mat[1], poly_verts[i].xyz);
@@ -187,6 +187,108 @@ void RotatePoints(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
 		poly_verts[i].xyz[0] = x;
 		poly_verts[i].xyz[1] = y;
 		poly_verts[i].xyz[2] = z;
+	}
+}
+
+void RotateAroundX(r32 deg, Vec3 *points, int num_points) {
+	r32 rad = DEG2RAD(-deg);
+   r32 m[2][3] = 
+   {
+      { 0.0f, cos(rad), sin(rad) }, 
+      { 0.0f, -m[0][2], m[0][1]  }
+   };
+
+	for (int i = 0; i < num_points; ++i) {
+		r32 y = Dot3(m[0], points[i]);
+		r32 z = Dot3(m[1], points[i]);
+
+		points[i][1] = y;
+		points[i][2] = z;
+	}
+}
+
+void RotateAroundX(r32 deg, PolyVert *points, int num_points) {
+	r32 rad = DEG2RAD(-deg);
+   r32 m[2][3] = 
+   {
+      { 0.0f, cos(rad), sin(rad) }, 
+      { 0.0f, -m[0][2], m[0][1]  }
+   };
+
+	for (int i = 0; i < num_points; ++i) {
+		r32 y = Dot3(m[0], points[i].xyz);
+		r32 z = Dot3(m[1], points[i].xyz);
+
+		points[i].xyz[1] = y;
+		points[i].xyz[2] = z;
+	}
+}
+
+void RotateAroundY(r32 deg, Vec3 *points, int num_points) {
+	r32 rad = DEG2RAD(-deg);
+   r32 m[2][3] = 
+   {
+      { cos(rad), 0.0f, -sin(rad) }, 
+      { -m[0][2], 0.0f,  m[0][0] }
+   };
+
+	for (int i = 0; i < num_points; ++i) {
+		r32 x = Dot3(m[0], points[i]);
+		r32 z = Dot3(m[1], points[i]);
+
+		points[i][0] = x;
+		points[i][2] = z;
+	}
+}
+
+void RotateAroundY(r32 deg, PolyVert *points, int num_points) {
+	r32 rad = DEG2RAD(-deg);
+   r32 m[2][3] = 
+   {
+      { cos(rad), 0.0f, -sin(rad) }, 
+      { -m[0][2], 0.0f,  m[0][0] }
+   };
+
+	for (int i = 0; i < num_points; ++i) {
+		r32 x = Dot3(m[0], points[i].xyz);
+		r32 z = Dot3(m[1], points[i].xyz);
+
+		points[i].xyz[0] = x;
+		points[i].xyz[2] = z;
+	}
+}
+
+void RotateAroundZ(r32 deg, Vec3 *points, int num_points) {
+	r32 rad = DEG2RAD(-deg);
+   r32 m[2][3] = 
+   {
+      { cos(rad), sin(rad), 0.0f }, 
+      { -m[0][1], m[0][0],  0.0f }
+   };
+
+	for (int i = 0; i < num_points; ++i) {
+		r32 x = Dot3(m[0], points[i]);
+		r32 y = Dot3(m[1], points[i]);
+
+		points[i][0] = x;
+		points[i][1] = y;
+	}
+}
+
+void RotateAroundZ(r32 deg, PolyVert *points, int num_points) {
+	r32 rad = DEG2RAD(-deg);
+   r32 m[2][3] = 
+   {
+      { cos(rad), sin(rad), 0.0f }, 
+      { -m[0][1], m[0][0],  0.0f }
+   };
+
+	for (int i = 0; i < num_points; ++i) {
+		r32 x = Dot3(m[0], points[i].xyz);
+		r32 y = Dot3(m[1], points[i].xyz);
+
+		points[i].xyz[0] = x;
+		points[i].xyz[1] = y;
 	}
 }
 
@@ -264,19 +366,40 @@ void RF_UpdateView(ViewSystem *vs) {
 	RF_SetupFrustum(vs);					
 }
 
-// FIXME: pass num_verts for arbitarly polys
 void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys) {
 	const int num_verts = 3;	// triangle
 	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
+
+	for (int i = 0; i < num_polys; i++) {
+		Poly *poly = &rb->polys[rb->num_polys];
+
+		poly->num_verts = num_verts;
+		poly->vertex_array = &rb->poly_verts[rb->num_poly_verts];
+
+		poly->vertex_array[0] = verts[index_list[i][0]];
+		poly->vertex_array[1] = verts[index_list[i][1]];
+		poly->vertex_array[2] = verts[index_list[i][2]];
+
+		rb->num_polys++; 
+		rb->num_poly_verts += 3;
+	}
+}
+
+void RF_AddCubePolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys, r32 texture_scale) {
+	const s32 num_verts = 3;	// triangle
+	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
+	Assert(texture_scale > 0.0f && texture_scale <= 1.0f);
 
 	for (int i = 0; i < num_polys; i += 2) {
 		Poly *poly1 = &rb->polys[rb->num_polys];
 		Poly *poly2 = &rb->polys[rb->num_polys+1];
 
+      poly1->color = MV4(1.0f, 1.0f, 1.0f, 1.0f);     // test color
 		poly1->num_verts = num_verts;
 		poly1->vertex_array = &rb->poly_verts[rb->num_poly_verts];
 		rb->num_poly_verts += 3;
 
+      poly2->color = MV4(1.0f, 1.0f, 1.0f, 1.0f);     // test color
 		poly2->num_verts = num_verts;
 		poly2->vertex_array = &rb->poly_verts[rb->num_poly_verts];
 		rb->num_poly_verts += 3;
@@ -289,19 +412,19 @@ void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_l
 		poly2->vertex_array[1] = verts[index_list[i+1][1]];
 		poly2->vertex_array[2] = verts[index_list[i+1][2]];
 
-		poly1->vertex_array[0].uv[0] = 0.0f;
-		poly1->vertex_array[0].uv[1] = 0.0f;
-		poly1->vertex_array[1].uv[0] = 1.0f;
-		poly1->vertex_array[1].uv[1] = 0.0f;
-		poly1->vertex_array[2].uv[0] = 1.0f;
-		poly1->vertex_array[2].uv[1] = 1.0f;
+		poly1->vertex_array[0].uv[0] = 0.0f*texture_scale;
+		poly1->vertex_array[0].uv[1] = 0.0f*texture_scale;
+		poly1->vertex_array[1].uv[0] = 1.0f*texture_scale;
+		poly1->vertex_array[1].uv[1] = 0.0f*texture_scale;
+		poly1->vertex_array[2].uv[0] = 1.0f*texture_scale;
+		poly1->vertex_array[2].uv[1] = 1.0f*texture_scale;
 
-		poly2->vertex_array[0].uv[0] = 0.0f;
-		poly2->vertex_array[0].uv[1] = 0.0f;
-		poly2->vertex_array[1].uv[0] = 1.0f;
-		poly2->vertex_array[1].uv[1] = 1.0f;
-		poly2->vertex_array[2].uv[0] = 0.0f;
-		poly2->vertex_array[2].uv[1] = 1.0f;
+		poly2->vertex_array[0].uv[0] = 0.0f*texture_scale;
+		poly2->vertex_array[0].uv[1] = 0.0f*texture_scale;
+		poly2->vertex_array[1].uv[0] = 1.0f*texture_scale;
+		poly2->vertex_array[1].uv[1] = 1.0f*texture_scale;
+		poly2->vertex_array[2].uv[0] = 0.0f*texture_scale;
+		poly2->vertex_array[2].uv[1] = 1.0f*texture_scale;
 
 		rb->num_polys += 2; 
 	}

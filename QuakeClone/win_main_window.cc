@@ -19,8 +19,10 @@ b32 InitWindow(RenderTarget *rt, void *wndproc, void *hinstance) {
 	int height = GetDeviceCaps(hdc, VERTRES);
 	int	style_bits = FULL_SCREEN;
 #else
-	int width = GetDeviceCaps(hdc, HORZRES) / 2;
-	int height = GetDeviceCaps(hdc, VERTRES) / 2;
+	//int width = GetDeviceCaps(hdc, HORZRES) / 2;
+	//int height = GetDeviceCaps(hdc, VERTRES) / 2;
+	int width = 800;
+	int height = 600;
 	int	style_bits = WINDOWED;
 #endif
 	ReleaseDC(GetDesktopWindow(), hdc);

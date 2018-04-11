@@ -76,7 +76,7 @@ b32 InitDIB(RenderTarget *rt) {
 
 	win_dib_info->bmiHeader.biSize          = sizeof(BITMAPINFOHEADER);
 	win_dib_info->bmiHeader.biWidth         = rt->width;		
-	win_dib_info->bmiHeader.biHeight        = rt->height; 
+	win_dib_info->bmiHeader.biHeight        = rt->height;    // NOTE: y-up in screen space
 	win_dib_info->bmiHeader.biPlanes        = 1;
 	win_dib_info->bmiHeader.biBitCount      = (WORD)(rt->bpp * 8);
 	win_dib_info->bmiHeader.biCompression   = BI_RGB;
