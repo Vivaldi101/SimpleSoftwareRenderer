@@ -12,15 +12,15 @@
 #define BYTES_PER_PIXEL 4	
 
 enum {
-	POLY_STATE_CULLED = 1,		
-	POLY_STATE_CLIPPED = 1 << 1,		
-	POLY_STATE_BACKFACE = 1 << 2,	
-	POLY_STATE_LIT = 1 << 3		
+	//POLY_STATE_CULLED = 1,		
+	POLY_STATE_CLIPPED = 1,		
+	POLY_STATE_LIT = 1 << 1,		
+	POLY_STATE_BACKFACE = 1 << 2		
 };
 
 enum {
 	CULL_IN,		// completely unclipped
-	CULL_CLIP,		// clipped by one or more planes
+	CULL_CLIP,	// clipped by one or more planes
 	CULL_OUT		// completely outside the clipping planes
 };
 
@@ -62,7 +62,9 @@ struct ViewSystem {
 	r32				fov_x, fov_y;
 	r32				view_dist;	
 
-	Plane			frustum[NUM_FRUSTUM_PLANES];			// order of left, right, top, bottom, near z
+	Plane			   frustum[NUM_FRUSTUM_PLANES];			// world space order of left, right, top, bottom, near z
+	Plane			   view_planes[NUM_FRUSTUM_PLANES];    // view space order of left, right, top, bottom, near z
+	//Plane			   clip_planes[NUM_FRUSTUM_PLANES];    // clip space order of left, right, top, bottom, near z
 	r32				z_near, z_far;
 
 	r32				aspect_ratio;
@@ -98,9 +100,10 @@ struct Renderer {
 extern void R_Init(Renderer **ren, void *hinstance, void *wndproc); 
 extern void RF_UpdateView(ViewSystem *vs);
 extern void RF_SetupFrustum(ViewSystem *vs);
+extern void RF_ExtractViewPlanes(ViewSystem *vs);
 extern void RF_SetupProjection(ViewSystem *vs);
 
-extern void RF_AddCubePolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys, r32 texture_scale);
+extern void RF_AddCubePolys(RendererBackend *rb, ViewSystem *vs, const PolyVert *verts, const u16 (*index_list)[3], int num_polys, r32 texture_scale);
 extern void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys);
 
 extern void RF_TransformModelToWorld(const PolyVert *local_poly_verts, PolyVert *trans_poly_verts, int num_verts, Vec3 world_pos, r32 world_scale);
@@ -108,7 +111,8 @@ extern void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int nu
 extern void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 extern void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_verts);
 
-extern int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius = 1.0f);
+extern int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius);
+extern int RF_CullPoly(ViewSystem *vs, Poly *poly);
 extern void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys);
 
 extern void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts, int num_poly_verts);

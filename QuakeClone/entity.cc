@@ -11,16 +11,12 @@ RenderEntity(Cube) {
 
          RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
 			RF_TransformWorldToView(&_renderer_->front_end.current_view, entity->trans_verts, ArrayCount(entity->trans_verts));
-			RF_AddCubePolys(&_renderer_->back_end, entity->trans_verts, global_cube_index_array, ArrayCount(global_cube_index_array), 0.25f);
+         RF_AddCubePolys(&_renderer_->back_end, &_renderer_->front_end.current_view, entity->trans_verts, global_cube_index_array, ArrayCount(global_cube_index_array), 0.25f);
 		} break;
 		case NPC: {
 			RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
-
-			int clip_code = RF_CullPointAndRadius(&_renderer_->front_end.current_view, entity->world_pos);			
-			if (clip_code == CULL_IN) {
-				RF_TransformWorldToView(&_renderer_->front_end.current_view, entity->trans_verts, ArrayCount(entity->trans_verts));
-				RF_AddCubePolys(&_renderer_->back_end, entity->trans_verts, global_cube_index_array, ArrayCount(global_cube_index_array), 1.0f);
-         } 
+			RF_TransformWorldToView(&_renderer_->front_end.current_view, entity->trans_verts, ArrayCount(entity->trans_verts));
+         RF_AddCubePolys(&_renderer_->back_end, &_renderer_->front_end.current_view, entity->trans_verts, global_cube_index_array, ArrayCount(global_cube_index_array), 1.0f);
 		} break;
 		default: Assert(0);
 	}
@@ -34,8 +30,8 @@ UpdateEntity(Cube) {
 			Vec3 acc = {};
 			r32 speed = 30.0f;
 
-			RotateAroundX(0.5f, entity->model_verts, ArrayCount(entity->model_verts)); 
-         RotateAroundY(0.5f, entity->model_verts, ArrayCount(entity->model_verts)); 
+			RotateAroundX(0.125f*0.25f, entity->model_verts, ArrayCount(entity->model_verts)); 
+         RotateAroundY(0.125f*0.25f, entity->model_verts, ArrayCount(entity->model_verts)); 
 			if (_in_->keys['W'].down) {
 				acc = Vec3Norm(_renderer_->front_end.current_view.world_orientation.dir);
 				acc = acc * 1.0f;
@@ -50,15 +46,6 @@ UpdateEntity(Cube) {
 			if (_in_->keys['D'].down) {
             RotateAroundY(1.0f, &_renderer_->front_end.current_view.world_orientation.dir, 3);
 			}
-			if (_in_->keys[ENTER_KEY].down) {
-            _renderer_->front_end.current_view.world_orientation.origin[0] = 0.0f;
-            _renderer_->front_end.current_view.world_orientation.origin[1] = 0.0f;
-            _renderer_->front_end.current_view.world_orientation.origin[2] = 0.0f;
-
-            _renderer_->front_end.current_view.world_orientation.dir[0] = 0.0f;
-            _renderer_->front_end.current_view.world_orientation.dir[1] = 0.0f;
-            _renderer_->front_end.current_view.world_orientation.dir[2] = 1.0f;
-			}
 			acc = Vec3Norm(acc);
 			acc = acc * speed;
 			acc = acc + (_renderer_->front_end.current_view.velocity * -0.95f);	// hack!!!
@@ -66,13 +53,11 @@ UpdateEntity(Cube) {
 			_renderer_->front_end.current_view.velocity = acc * _dt_ + _renderer_->front_end.current_view.velocity;
 		} break; 
 		case NPC: {
-			//RotateAroundX(0.5f, entity->model_verts, ArrayCount(entity->model_verts)); 
-         //RotateAroundZ(0.5f, entity->model_verts, ArrayCount(entity->model_verts)); 
-			if (!_in_->keys[SHIFT_KEY].down && _in_->keys['X'].down) {
-            //Rotate(rot_mat_x, entity->model_verts, ArrayCount(entity->model_verts)); 
+			if (_in_->keys['X'].down) {
+            RotateAroundX(1.0f, entity->model_verts, ArrayCount(entity->model_verts)); 
 			}
-			if (!_in_->keys[SHIFT_KEY].down && _in_->keys['Y'].down) {
-            //Rotate(rot_mat_y, entity->model_verts, ArrayCount(entity->model_verts)); 
+			if (_in_->keys['Y'].down) {
+            RotateAroundY(1.0f, entity->model_verts, ArrayCount(entity->model_verts)); 
 			}
 			if (!_in_->keys[SHIFT_KEY].down && _in_->keys['Z'].down) {
             //Rotate(rot_mat_z, entity->model_verts, ArrayCount(entity->model_verts)); 
@@ -143,7 +128,8 @@ void RenderEntities(GameState *gs, Renderer *ren) {
 #undef X
 
 	//RF_CalculateVertexNormals(ren->back_end.polys, ren->back_end.num_polys, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
-	R_CalculateLighting(&ren->back_end, ren->back_end.lights, ren->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
+   RF_CullBackFaces(&ren->front_end.current_view, ren->back_end.polys, ren->back_end.num_polys);
+	R_CalculateLighting(&ren->back_end, ren->front_end.is_ambient, MV3(0.0f, 0.0f, 1.0f), MV3(0.0f, 0.0f, 0.0f));
 	RF_TransformViewToClip(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
 	RF_TransformClipToScreen(&ren->front_end.current_view, ren->back_end.poly_verts, ren->back_end.num_poly_verts);
 	R_PushPolysCmd(&ren->back_end.cmds,
@@ -153,11 +139,11 @@ void RenderEntities(GameState *gs, Renderer *ren) {
 				  ren->back_end.num_polys);
 }
 
-static void AddEntities(BaseEntity *root_be, size_t *used_entity_memory, int *num_added_base_entities, int num_entities, Vec3 world_pos, r32 scale, EntityEnum ee, u8 extra_flags) {
+static void AddEntities(GameState *gs, size_t *used_memory, int num_entities, Vec3 world_pos, r32 scale, EntityEnum ee, u8 extra_flags) {
 	BaseEntity *new_be;
 	byte *curr_pos;
 
-	curr_pos = (byte *)root_be;
+   curr_pos = (byte *)gs->entities;
 	while (((BaseEntity *)curr_pos)->type != Invalid) {
 		curr_pos += (sizeof(BaseEntity) + (GetEntitySize(((BaseEntity *)curr_pos)->type) * ((BaseEntity *)curr_pos)->num_entities));
 	}
@@ -185,23 +171,20 @@ static void AddEntities(BaseEntity *root_be, size_t *used_entity_memory, int *nu
 		Assert(0);
 	}
 
-	*used_entity_memory += (num_entities * GetEntitySize(ee));
-	(*num_added_base_entities)++;
+	*used_memory += (num_entities * GetEntitySize(ee));
+   gs->num_base_entities++;
 }
 
 
-void InitEntities(Platform *pf, size_t max_entity_memory_limit) {
+void InitEntities(Platform *pf) {
 	Assert(pf->game_state->num_base_entities == 0);
-	int num_added_base_entities = 0;
-	size_t used_entity_memory = 0;
+	size_t used_memory = 0;
 
 	pf->game_state->entities = (BaseEntity *)GetMemStackPos(&pf->main_memory_stack.perm_data);
 	memset(pf->game_state->entities, 0, sizeof(*pf->game_state->entities));
-   AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 1, MV3(0.0f, 0.0f, 0.0f), 3.0f, Cube, PLAYER);
-	AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 1, MV3(0.0f, 0.0f, 10.0f), 1.0f, Cube, NPC);
-	AddEntities(pf->game_state->entities, &used_entity_memory, &num_added_base_entities, 1, MV3(10.0f, 0.0f, 10.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 0.0f), 3.0f, Cube, PLAYER);
+	AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 10.0f), 1.0f, Cube, NPC);
 
 
-	PushArray(&pf->main_memory_stack.perm_data, used_entity_memory, byte);	
-	pf->game_state->num_base_entities = num_added_base_entities;
+	PushArray(&pf->main_memory_stack.perm_data, used_memory, byte);	
 }

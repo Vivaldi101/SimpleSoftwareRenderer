@@ -44,48 +44,133 @@ void RF_SetupProjection(ViewSystem *vs) {
 	memcpy(vs->projection_matrix, projection_matrix, sizeof(projection_matrix));
 }
 
-// Gribb & Hartmann method
 void RF_SetupFrustum(ViewSystem *vs) {
-	Plane frustum[NUM_FRUSTUM_PLANES];
+	Plane wps[NUM_FRUSTUM_PLANES];
 	r32	combo_matrix[4][4];
 	Mat4x4Mul(combo_matrix, vs->view_matrix, vs->projection_matrix);
 
 	// exctract the planes in world space
-	frustum[FRUSTUM_PLANE_LEFT].unit_normal[0] = combo_matrix[0][0] + combo_matrix[0][3];
-	frustum[FRUSTUM_PLANE_LEFT].unit_normal[1] = combo_matrix[1][0] + combo_matrix[1][3];
-	frustum[FRUSTUM_PLANE_LEFT].unit_normal[2] = combo_matrix[2][0] + combo_matrix[2][3];
-	frustum[FRUSTUM_PLANE_LEFT].dist = combo_matrix[3][0] + combo_matrix[3][3];
+	wps[FRUSTUM_PLANE_LEFT].unit_normal[0] = combo_matrix[0][0] + combo_matrix[0][3];
+	wps[FRUSTUM_PLANE_LEFT].unit_normal[1] = combo_matrix[1][0] + combo_matrix[1][3];
+	wps[FRUSTUM_PLANE_LEFT].unit_normal[2] = combo_matrix[2][0] + combo_matrix[2][3];
+	wps[FRUSTUM_PLANE_LEFT].dist = combo_matrix[3][0] + combo_matrix[3][3];
 
-	frustum[FRUSTUM_PLANE_RIGHT].unit_normal[0] = -combo_matrix[0][0] + combo_matrix[0][3];
-	frustum[FRUSTUM_PLANE_RIGHT].unit_normal[1] = -combo_matrix[1][0] + combo_matrix[1][3];
-	frustum[FRUSTUM_PLANE_RIGHT].unit_normal[2] = -combo_matrix[2][0] + combo_matrix[2][3];
-	frustum[FRUSTUM_PLANE_RIGHT].dist = -combo_matrix[3][0] - combo_matrix[3][3];
+	wps[FRUSTUM_PLANE_RIGHT].unit_normal[0] = -combo_matrix[0][0] + combo_matrix[0][3];
+	wps[FRUSTUM_PLANE_RIGHT].unit_normal[1] = -combo_matrix[1][0] + combo_matrix[1][3];
+	wps[FRUSTUM_PLANE_RIGHT].unit_normal[2] = -combo_matrix[2][0] + combo_matrix[2][3];
+	wps[FRUSTUM_PLANE_RIGHT].dist = -combo_matrix[3][0] - combo_matrix[3][3];
 
-	frustum[FRUSTUM_PLANE_TOP].unit_normal[0] = -combo_matrix[0][1] + combo_matrix[0][3];
-	frustum[FRUSTUM_PLANE_TOP].unit_normal[1] = -combo_matrix[1][1] + combo_matrix[1][3];
-	frustum[FRUSTUM_PLANE_TOP].unit_normal[2] = -combo_matrix[2][1] + combo_matrix[2][3];
-	frustum[FRUSTUM_PLANE_TOP].dist = -combo_matrix[3][1] - combo_matrix[3][3];
+	wps[FRUSTUM_PLANE_TOP].unit_normal[0] = -combo_matrix[0][1] + combo_matrix[0][3];
+	wps[FRUSTUM_PLANE_TOP].unit_normal[1] = -combo_matrix[1][1] + combo_matrix[1][3];
+	wps[FRUSTUM_PLANE_TOP].unit_normal[2] = -combo_matrix[2][1] + combo_matrix[2][3];
+	wps[FRUSTUM_PLANE_TOP].dist = -combo_matrix[3][1] - combo_matrix[3][3];
 
-	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[0] = combo_matrix[0][1] + combo_matrix[0][3];
-	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[1] = combo_matrix[1][1] + combo_matrix[1][3];
-	frustum[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = combo_matrix[2][1] + combo_matrix[2][3];
-	frustum[FRUSTUM_PLANE_BOTTOM].dist = combo_matrix[3][1] - combo_matrix[3][3];
+	wps[FRUSTUM_PLANE_BOTTOM].unit_normal[0] = combo_matrix[0][1] + combo_matrix[0][3];
+	wps[FRUSTUM_PLANE_BOTTOM].unit_normal[1] = combo_matrix[1][1] + combo_matrix[1][3];
+	wps[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = combo_matrix[2][1] + combo_matrix[2][3];
+	wps[FRUSTUM_PLANE_BOTTOM].dist = combo_matrix[3][1] - combo_matrix[3][3];
 
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal[0] = combo_matrix[0][2];
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal[1] = combo_matrix[1][2];
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal[2] = combo_matrix[2][2];
-	frustum[FRUSTUM_PLANE_NEAR].dist = combo_matrix[3][2];
+	wps[FRUSTUM_PLANE_NEAR].unit_normal[0] = combo_matrix[0][2];
+	wps[FRUSTUM_PLANE_NEAR].unit_normal[1] = combo_matrix[1][2];
+	wps[FRUSTUM_PLANE_NEAR].unit_normal[2] = combo_matrix[2][2];
+	wps[FRUSTUM_PLANE_NEAR].dist = combo_matrix[3][2];
 
 	// normalize
 	for (int i = 0; i < NUM_FRUSTUM_PLANES - 1; ++i) {
-		frustum[i].unit_normal = Vec3Norm(frustum[i].unit_normal);
-		frustum[i].dist = Dot3(frustum[i].unit_normal, vs->world_orientation.origin);
+		wps[i].unit_normal = Vec3Norm(wps[i].unit_normal);
+		wps[i].dist = Dot3(wps[i].unit_normal, vs->world_orientation.origin);
 	}
-	frustum[FRUSTUM_PLANE_NEAR].unit_normal = Vec3Norm(frustum[FRUSTUM_PLANE_NEAR].unit_normal);
-	frustum[FRUSTUM_PLANE_NEAR].dist = Dot3(frustum[FRUSTUM_PLANE_NEAR].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
+	wps[FRUSTUM_PLANE_NEAR].unit_normal = Vec3Norm(wps[FRUSTUM_PLANE_NEAR].unit_normal);
+	wps[FRUSTUM_PLANE_NEAR].dist = Dot3(wps[FRUSTUM_PLANE_NEAR].unit_normal, vs->world_orientation.origin + (vs->world_orientation.dir * vs->z_near));
 
-	memcpy(&vs->frustum, &frustum, sizeof(frustum));
+	memcpy(&vs->frustum, &wps, sizeof(wps));
 }
+
+void RF_ExtractViewPlanes(ViewSystem *vs) {
+	Plane vps[NUM_FRUSTUM_PLANES];
+	r32	pm[4][4];
+	memcpy(&pm, vs->projection_matrix, sizeof(pm));
+
+	// exctract the planes in view space
+	vps[FRUSTUM_PLANE_LEFT].unit_normal[0] = pm[0][0] + pm[0][3];
+	vps[FRUSTUM_PLANE_LEFT].unit_normal[1] = pm[1][0] + pm[1][3];
+	vps[FRUSTUM_PLANE_LEFT].unit_normal[2] = pm[2][0] + pm[2][3];
+	vps[FRUSTUM_PLANE_LEFT].dist = pm[3][0] + pm[3][3];
+
+	vps[FRUSTUM_PLANE_RIGHT].unit_normal[0] = -pm[0][0] + pm[0][3];
+	vps[FRUSTUM_PLANE_RIGHT].unit_normal[1] = -pm[1][0] + pm[1][3];
+	vps[FRUSTUM_PLANE_RIGHT].unit_normal[2] = -pm[2][0] + pm[2][3];
+	vps[FRUSTUM_PLANE_RIGHT].dist = -pm[3][0] - pm[3][3];
+
+	vps[FRUSTUM_PLANE_TOP].unit_normal[0] = -pm[0][1] + pm[0][3];
+	vps[FRUSTUM_PLANE_TOP].unit_normal[1] = -pm[1][1] + pm[1][3];
+	vps[FRUSTUM_PLANE_TOP].unit_normal[2] = -pm[2][1] + pm[2][3];
+	vps[FRUSTUM_PLANE_TOP].dist = -pm[3][1] - pm[3][3];
+
+	vps[FRUSTUM_PLANE_BOTTOM].unit_normal[0] = pm[0][1] + pm[0][3];
+	vps[FRUSTUM_PLANE_BOTTOM].unit_normal[1] = pm[1][1] + pm[1][3];
+	vps[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = pm[2][1] + pm[2][3];
+	vps[FRUSTUM_PLANE_BOTTOM].dist = pm[3][1] - pm[3][3];
+
+	vps[FRUSTUM_PLANE_NEAR].unit_normal[0] = pm[0][2];
+	vps[FRUSTUM_PLANE_NEAR].unit_normal[1] = pm[1][2];
+	vps[FRUSTUM_PLANE_NEAR].unit_normal[2] = pm[2][2];
+	vps[FRUSTUM_PLANE_NEAR].dist = pm[3][2];
+
+	// normalize
+	for (int i = 0; i < NUM_FRUSTUM_PLANES-1; ++i) {
+		vps[i].unit_normal = Vec3Norm(vps[i].unit_normal);
+		vps[i].dist = Dot3(vps[i].unit_normal, MV3(0.0f, 0.0f, 0.0f));
+	}
+	vps[FRUSTUM_PLANE_NEAR].unit_normal = Vec3Norm(vps[FRUSTUM_PLANE_NEAR].unit_normal);
+	vps[FRUSTUM_PLANE_NEAR].dist = Dot3(vps[FRUSTUM_PLANE_NEAR].unit_normal, MV3(0.0f, 0.0f, 1.0f * vs->z_near));
+
+   memcpy(&vs->view_planes, vps, sizeof(vs->view_planes));
+}
+
+#if 0
+void RF_ExtractClipPlanes(ViewSystem *vs) {
+	Plane cps[NUM_FRUSTUM_PLANES];
+	r32	pm[4][4];
+	memcpy(&pm, vs->projection_matrix, sizeof(pm));
+
+	// exctract the planes in clip space
+	cps[FRUSTUM_PLANE_LEFT].unit_normal[0] = pm[0][0] + pm[0][3];
+	cps[FRUSTUM_PLANE_LEFT].unit_normal[1] = pm[1][0] + pm[1][3];
+	cps[FRUSTUM_PLANE_LEFT].unit_normal[2] = pm[2][0] + pm[2][3];
+	cps[FRUSTUM_PLANE_LEFT].dist = pm[3][0] + pm[3][3];
+
+	cps[FRUSTUM_PLANE_RIGHT].unit_normal[0] = -pm[0][0] + pm[0][3];
+	cps[FRUSTUM_PLANE_RIGHT].unit_normal[1] = -pm[1][0] + pm[1][3];
+	cps[FRUSTUM_PLANE_RIGHT].unit_normal[2] = -pm[2][0] + pm[2][3];
+	cps[FRUSTUM_PLANE_RIGHT].dist = -pm[3][0] - pm[3][3];
+
+	cps[FRUSTUM_PLANE_TOP].unit_normal[0] = -pm[0][1] + pm[0][3];
+	cps[FRUSTUM_PLANE_TOP].unit_normal[1] = -pm[1][1] + pm[1][3];
+	cps[FRUSTUM_PLANE_TOP].unit_normal[2] = -pm[2][1] + pm[2][3];
+	cps[FRUSTUM_PLANE_TOP].dist = -pm[3][1] - pm[3][3];
+
+	cps[FRUSTUM_PLANE_BOTTOM].unit_normal[0] = pm[0][1] + pm[0][3];
+	cps[FRUSTUM_PLANE_BOTTOM].unit_normal[1] = pm[1][1] + pm[1][3];
+	cps[FRUSTUM_PLANE_BOTTOM].unit_normal[2] = pm[2][1] + pm[2][3];
+	cps[FRUSTUM_PLANE_BOTTOM].dist = pm[3][1] - pm[3][3];
+
+	cps[FRUSTUM_PLANE_NEAR].unit_normal[0] = pm[0][2];
+	cps[FRUSTUM_PLANE_NEAR].unit_normal[1] = pm[1][2];
+	cps[FRUSTUM_PLANE_NEAR].unit_normal[2] = pm[2][2];
+	cps[FRUSTUM_PLANE_NEAR].dist = pm[3][2];
+
+	// normalize
+	for (int i = 0; i < NUM_FRUSTUM_PLANES-1; ++i) {
+		vps[i].unit_normal = Vec3Norm(vps[i].unit_normal);
+		vps[i].dist = Dot3(vps[i].unit_normal, MV3(0.0f, 0.0f, 0.0f));
+	}
+	vps[FRUSTUM_PLANE_NEAR].unit_normal = Vec3Norm(vps[FRUSTUM_PLANE_NEAR].unit_normal);
+	vps[FRUSTUM_PLANE_NEAR].dist = Dot3(vps[FRUSTUM_PLANE_NEAR].unit_normal, MV3(0.0f, 0.0f, 1.0f * vs->z_near));
+
+   memcpy(&vs->view_planes, vps, sizeof(vs->view_planes));
+}
+#endif
 
 void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
@@ -95,6 +180,7 @@ void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts
 
 		Mat1x4Mul(&p, &p, vs->view_matrix);  
 		Vec3Copy(poly_verts[i].xyz, p);
+      //RF_Clip(vs, out, ArrayCount(out));
 	}
 }
 
@@ -107,6 +193,7 @@ void RF_TransformModelToWorld(const PolyVert *model_poly_verts, PolyVert *trans_
 	}
 }
 
+#if 0
 int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = vs->frustum[i];
@@ -121,9 +208,33 @@ int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	//Sys_Print("NO culling!!\n");
 	return CULL_IN;
 }
+#endif
+
+// culling in viewspace
+int RF_CullPoly(ViewSystem *vs, Poly *poly) {
+	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
+      Plane pl = vs->view_planes[i];
+      Vec3 p0 = poly->vertex_array[0].xyz;
+      Vec3 p1 = poly->vertex_array[1].xyz;
+      Vec3 p2 = poly->vertex_array[2].xyz;
+      r32 dist0 = Dot3(p0, pl.unit_normal) - pl.dist;
+      r32 dist1 = Dot3(p1, pl.unit_normal) - pl.dist;
+      r32 dist2 = Dot3(p2, pl.unit_normal) - pl.dist;
+
+      if (dist0 < 0.0f && dist1 < 0.0f && dist2 < 0.0f) {
+         Sys_Print("Culling!!\n");
+         return CULL_OUT;
+      } 
+	}
+
+   return CULL_IN;
+}
+
+static void RF_Clip(ViewSystem *vs, r32 *out, int num_verts) {
+}
 
 void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
-	r32 (*m)[4] = vs->projection_matrix;
+	r32 (*pm)[4] = vs->projection_matrix;
 	//r32 one_over_ar = 1.0f / vs->aspect_ratio;
    //Vec3 q = {0.0f, 0.0f, 1.0f};
    //Vec3 e = {0.0f, 0.0f, 0.0f};
@@ -152,7 +263,7 @@ void RF_TransformViewToClip(ViewSystem *vs, PolyVert *poly_verts, int num_verts)
 		in[2] = poly_verts[i].xyz[2];
 		in[3] = 1.0f;
 
-      Mat1x4Mul(out, in, m);  
+      Mat1x4Mul(out, in, pm);  
       if (out[3] > 0.0f) {
          poly_verts[i].xyz[0] = (out[0] / out[3]);
          poly_verts[i].xyz[1] = (out[1] / out[3]);
@@ -175,18 +286,6 @@ void RF_TransformClipToScreen(ViewSystem *vs, PolyVert *poly_verts, int num_vert
 
       //poly_verts[i].xyz[0] = (poly_verts[i].xyz[0] + 1) * screen_width_factor;
 		//poly_verts[i].xyz[1] = (poly_verts[i].xyz[1] + 1) * screen_height_factor;
-	}
-}
-
-void Rotate(r32 rot_mat[3][3], PolyVert *poly_verts, int num_verts) {
-	for (int i = 0; i < num_verts; ++i) {
-		r32 x = Dot3(rot_mat[0], poly_verts[i].xyz);
-		r32 y = Dot3(rot_mat[1], poly_verts[i].xyz);
-		r32 z = Dot3(rot_mat[2], poly_verts[i].xyz);
-
-		poly_verts[i].xyz[0] = x;
-		poly_verts[i].xyz[1] = y;
-		poly_verts[i].xyz[2] = z;
 	}
 }
 
@@ -292,6 +391,7 @@ void RotateAroundZ(r32 deg, PolyVert *points, int num_points) {
 	}
 }
 
+#if 1
 // culling in view space
 void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 	Vec3 p = {0.0f, 0.0f, 0.0f};
@@ -315,6 +415,7 @@ void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 		}
 	}
 }
+#endif
 
 static void R_RotateForViewer(ViewSystem *vs) {
 	r32	view_matrix[16];
@@ -364,6 +465,7 @@ static void R_RotateForViewer(ViewSystem *vs) {
 void RF_UpdateView(ViewSystem *vs) {
 	R_RotateForViewer(vs);
 	RF_SetupFrustum(vs);					
+   RF_ExtractViewPlanes(vs);
 }
 
 void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys) {
@@ -385,48 +487,70 @@ void RF_AddPolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_l
 	}
 }
 
-void RF_AddCubePolys(RendererBackend *rb, const PolyVert *verts, const u16 (*index_list)[3], int num_polys, r32 texture_scale) {
+void RF_AddCubePolys(RendererBackend *rb, ViewSystem *vs, const PolyVert *verts, const u16 (*index_list)[3], int num_polys, r32 texture_scale) {
 	const s32 num_verts = 3;	// triangle
 	Assert(rb->num_polys + num_polys <= MAX_NUM_POLYS);
 	Assert(texture_scale > 0.0f && texture_scale <= 1.0f);
 
 	for (int i = 0; i < num_polys; i += 2) {
-		Poly *poly1 = &rb->polys[rb->num_polys];
-		Poly *poly2 = &rb->polys[rb->num_polys+1];
+		Poly *poly1;
+		Poly *poly2;
+      Poly tmp1 = {};
+		Poly tmp2 = {};
+      PolyVert pv_buf[6];
 
-      poly1->color = MV4(1.0f, 1.0f, 1.0f, 1.0f);     // test color
-		poly1->num_verts = num_verts;
-		poly1->vertex_array = &rb->poly_verts[rb->num_poly_verts];
-		rb->num_poly_verts += 3;
+      tmp1.color = MV4(1.0f, 1.0f, 1.0f, 1.0f);     // test color
+		tmp1.num_verts = num_verts;
+		tmp1.vertex_array = &pv_buf[0];
 
-      poly2->color = MV4(1.0f, 1.0f, 1.0f, 1.0f);     // test color
-		poly2->num_verts = num_verts;
-		poly2->vertex_array = &rb->poly_verts[rb->num_poly_verts];
-		rb->num_poly_verts += 3;
+      tmp2.color = MV4(1.0f, 1.0f, 1.0f, 1.0f);     // test color
+		tmp2.num_verts = num_verts;
+		tmp2.vertex_array = &pv_buf[num_verts];
 
-		poly1->vertex_array[0] = verts[index_list[i][0]];
-		poly1->vertex_array[1] = verts[index_list[i][1]];
-		poly1->vertex_array[2] = verts[index_list[i][2]];
+		tmp1.vertex_array[0] = verts[index_list[i][0]];
+		tmp1.vertex_array[1] = verts[index_list[i][1]];
+		tmp1.vertex_array[2] = verts[index_list[i][2]];
 
-		poly2->vertex_array[0] = verts[index_list[i+1][0]];
-		poly2->vertex_array[1] = verts[index_list[i+1][1]];
-		poly2->vertex_array[2] = verts[index_list[i+1][2]];
+		tmp2.vertex_array[0] = verts[index_list[i+1][0]];
+		tmp2.vertex_array[1] = verts[index_list[i+1][1]];
+		tmp2.vertex_array[2] = verts[index_list[i+1][2]];
 
-		poly1->vertex_array[0].uv[0] = 0.0f*texture_scale;
-		poly1->vertex_array[0].uv[1] = 0.0f*texture_scale;
-		poly1->vertex_array[1].uv[0] = 1.0f*texture_scale;
-		poly1->vertex_array[1].uv[1] = 0.0f*texture_scale;
-		poly1->vertex_array[2].uv[0] = 1.0f*texture_scale;
-		poly1->vertex_array[2].uv[1] = 1.0f*texture_scale;
+		tmp1.vertex_array[0].uv[0] = 0.0f*texture_scale;
+		tmp1.vertex_array[0].uv[1] = 0.0f*texture_scale;
+		tmp1.vertex_array[1].uv[0] = 1.0f*texture_scale;
+		tmp1.vertex_array[1].uv[1] = 0.0f*texture_scale;
+		tmp1.vertex_array[2].uv[0] = 1.0f*texture_scale;
+		tmp1.vertex_array[2].uv[1] = 1.0f*texture_scale;
 
-		poly2->vertex_array[0].uv[0] = 0.0f*texture_scale;
-		poly2->vertex_array[0].uv[1] = 0.0f*texture_scale;
-		poly2->vertex_array[1].uv[0] = 1.0f*texture_scale;
-		poly2->vertex_array[1].uv[1] = 1.0f*texture_scale;
-		poly2->vertex_array[2].uv[0] = 0.0f*texture_scale;
-		poly2->vertex_array[2].uv[1] = 1.0f*texture_scale;
+		tmp2.vertex_array[0].uv[0] = 0.0f*texture_scale;
+		tmp2.vertex_array[0].uv[1] = 0.0f*texture_scale;
+		tmp2.vertex_array[1].uv[0] = 1.0f*texture_scale;
+		tmp2.vertex_array[1].uv[1] = 1.0f*texture_scale;
+		tmp2.vertex_array[2].uv[0] = 0.0f*texture_scale;
+		tmp2.vertex_array[2].uv[1] = 1.0f*texture_scale;
 
-		rb->num_polys += 2; 
+      if (RF_CullPoly(vs, &tmp1) == CULL_IN) {
+		   poly1 = &rb->polys[rb->num_polys];
+         poly1->color = tmp1.color;
+         poly1->num_verts = tmp1.num_verts;
+         poly1->vertex_array = &rb->poly_verts[rb->num_poly_verts];
+         poly1->vertex_array[0] = tmp1.vertex_array[0];
+         poly1->vertex_array[1] = tmp1.vertex_array[1];
+         poly1->vertex_array[2] = tmp1.vertex_array[2];
+         rb->num_polys++;
+         rb->num_poly_verts += num_verts;
+      }
+      if (RF_CullPoly(vs, &tmp2) == CULL_IN) {
+		   poly2 = &rb->polys[rb->num_polys];
+         poly2->color = tmp2.color;
+         poly2->num_verts = tmp2.num_verts;
+         poly2->vertex_array = &rb->poly_verts[rb->num_poly_verts];
+         poly2->vertex_array[0] = tmp2.vertex_array[0];
+         poly2->vertex_array[1] = tmp2.vertex_array[1];
+         poly2->vertex_array[2] = tmp2.vertex_array[2];
+         rb->num_polys++;
+         rb->num_poly_verts += num_verts;
+      }
 	}
 }
 
@@ -438,9 +562,6 @@ void RF_CalculateVertexNormals(Poly *polys, int num_polys, PolyVert *poly_verts,
 	}
 	// FIXME: function to compute poly normals
 	for (int i = 0; i < num_polys; i++) {
-		if (polys[i].state & POLY_STATE_BACKFACE) {
-			continue;
-		}
 		PolyVert v0 = polys[i].vertex_array[0];
 		PolyVert v1 = polys[i].vertex_array[1];
 		PolyVert v2 = polys[i].vertex_array[2];

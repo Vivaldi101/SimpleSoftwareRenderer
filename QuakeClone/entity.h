@@ -93,7 +93,7 @@ struct Cube_ {
 	r32      scale;
 };
 
-extern void InitEntities(struct Platform *pf, size_t max_entity_memory_limit = (MAX_PERM_MEMORY >> 1));
+extern void InitEntities(Platform *pf);
 extern void UpdateEntities(GameState *gs, Renderer *ren, Input *in, r32 dt, int num_frames);
 extern void RenderEntities(GameState *gs, Renderer *ren);
 #endif	// Header guard

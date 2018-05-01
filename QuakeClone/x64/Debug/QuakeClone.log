@@ -1,11 +1,27 @@
-﻿Build started 23/04/2018 23:39:23.
+﻿Build started 03/05/2018 00:49:52.
      1>Project "F:\QuakeClone\QuakeClone\QuakeClone\QuakeClone.vcxproj" on node 2 (build target(s)).
        Project file contains ToolsVersion="12.0". This toolset may be unknown or missing, in which case you may be able to resolve this by installing the appropriate version of MSBuild, or the build may have been forced to a particular ToolsVersion for policy reasons. Treating the project as if it had ToolsVersion="4.0". For more information, please see http://go.microsoft.com/fwlink/?LinkId=291333.
      1>InitializeBuildStatus:
          Creating "x64\Debug\QuakeClone.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         F:\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX /MP /O2 /Oi /Ot /D PLATFORM_DEBUG=1 /D _MBCS /Gm- /MTd /GS /fp:precise /fp:except /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt win_r.cc
+         All outputs are up-to-date.
+         F:\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W4 /WX- /MP /O2 /Oi /Ot /D PLATFORM_DEBUG=1 /D _MBCS /Gm- /MTd /GS /fp:precise /fp:except /Zc:wchar_t /Zc:forScope /GR- /Fo"x64\Debug\\" /Fd"x64\Debug\vc100.pdb" /Gd /TP /wd4100 /wd4101 /wd4706 /wd4201 /wd4127 /wd4482 /wd4505 /wd4189 /errorReport:prompt common.cc entity.cc fonts.cc input.cc lights.cc math.cc r_cmds.cc r_init.cc r_main.cc r_backend.cc win_console.cc win_shared.cc win_main.cc win_main_window.cc win_r.cc win_wndproc.cc
+         common.cc
+         entity.cc
+         fonts.cc
+         input.cc
+         lights.cc
+         math.cc
+         r_cmds.cc
+         r_init.cc
+         r_main.cc
+         r_backend.cc
+         win_console.cc
+         win_shared.cc
+         win_main.cc
+         win_main_window.cc
          win_r.cc
+         win_wndproc.cc
        Link:
          F:\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.exe" /NOLOGO winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"x64\Debug\QuakeClone.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\QuakeClone\QuakeClone\x64\Debug\QuakeClone.lib" /MACHINE:X64 x64\Debug\common.obj
          x64\Debug\entity.obj
@@ -34,4 +50,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.89
+Time Elapsed 00:00:02.25

@@ -168,8 +168,7 @@ void Com_Init(Platform **pf) {
 
 void Com_LoadEntities(Platform *pf) {
 	// FIXME: testing entity stuff!!
-	size_t max_entity_memory = 1024 << 5;
-	InitEntities(pf, max_entity_memory);
+	InitEntities(pf);
 }
 
 void Com_LoadTextures(Platform *pf, Renderer *r) {
@@ -185,13 +184,11 @@ void Com_LoadTextures(Platform *pf, Renderer *r) {
    r->back_end.test_texture = test_texture;
 }
 
-static void ClearRenderState(RendererBackend *rb) {
+static void FlushPolys(RendererBackend *rb) {
 	int num_polys = rb->num_polys;
-	for (int j = 0; j < num_polys; ++j) {
-		rb->polys[j].state &= (~POLY_STATE_BACKFACE);
-		rb->polys[j].state &= (~POLY_STATE_LIT);
-		rb->polys[j].state &= (~POLY_STATE_CULLED);
-	}
+   int num_poly_verts = rb->num_poly_verts;
+   memset(rb->polys, 0, num_polys*sizeof(*rb->polys));
+   memset(rb->poly_verts, 0, num_poly_verts*sizeof(*rb->poly_verts));
 	rb->num_polys = 0;
 	rb->num_poly_verts = 0;
 }
@@ -284,13 +281,12 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	}
 #endif
 
-	// render frame timing
 	{
 		int last_render_time = Sys_GetMilliseconds();
 		R_EndFrame(&ren->back_end.target, &ren->back_end.cmds);
 		int	now_render_time = Sys_GetMilliseconds();
 		int	render_frame_msec = now_render_time - last_render_time;
-		ClearRenderState(&ren->back_end);
+		FlushPolys(&ren->back_end);
 
 		char buffer[64];
 		sprintf_s(buffer, "Render time: %d ms\n", render_frame_msec);

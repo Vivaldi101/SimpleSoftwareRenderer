@@ -2,6 +2,8 @@
 #include "renderer.h"
 
 // 24.8 fixed-point format
+#define MIN_CLIP (-1<<18)
+#define MAX_CLIP ((1<<18) - 1) 
 #define SUB_PIXEL_STEP 8
 #define SPS SUB_PIXEL_STEP
 #define SUB_PIXEL_POW2 (1<<SUB_PIXEL_STEP)
@@ -9,6 +11,7 @@
 #define SUB_PIXEL_OFFSET ((1<<SUB_PIXEL_STEP) >> 1)
 #define SPS_OFFSET SUB_PIXEL_OFFSET
 #define Lerp(s, d, t) ((1.0f-(t))*(s) + (t)*(d))
+#define ONE_OVER_SPS_POW2 (1.0f / SUB_PIXEL_POW2)
 #define BILINEAR_FILTER
 
 static inline Vec4 Modulate(Vec4 a, Vec4 b) {
@@ -22,34 +25,59 @@ static inline Vec4 Modulate(Vec4 a, Vec4 b) {
    return result;
 }
 
+static inline r32 ClipX(r32 x) {
+   r32 cx = x;
+   if (x < (MIN_CLIP>>SPS)) {
+      cx = (MIN_CLIP>>SPS);
+   } else if (x > (MAX_CLIP>>SPS)) {
+      cx = (MAX_CLIP>>SPS);
+   }
+
+   return cx;
+}
+static inline r32 ClipY(r32 y) {
+   r32 cy = y;
+   if (y < (MIN_CLIP>>SPS)) {
+      cy = (MIN_CLIP>>SPS);
+   } else if (y > (MAX_CLIP>>SPS)) {
+      cy = (MAX_CLIP>>SPS);
+   }
+
+   return cy;
+}
 
 #if 1
+struct ClipEdge {
+   s32 x0, y0;
+   s32 x1, y1;
+};
 // Cohen-Sutherland clipping constants
 #define INSIDE	 0	
 #define LEFT	 1	
 #define RIGHT	 2	
 #define BOTTOM	 4	
 #define TOP		 8  
-static int RB_GetClipCode(s32 px, s32 py, s32 render_target_width, s32 render_target_height) {
+static int RB_FindClipCode(r32 px, r32 py, s32 xmin, s32 ymin, s32 xmax, s32 ymax) {
 	s32 code = INSIDE;												
 
-	if (px < 0) {													
+	if (px < xmin) {													
 		code |= LEFT;
-	} else if (px >= render_target_width) {			
+	} else if (px > xmax) {			
 		code |= RIGHT;
 	}
-	if (py < 0) {													
+	if (py < ymin) {													
 		code |= BOTTOM;
-	} else if (py >= render_target_height) {		
+	} else if (py > ymax) {		
 		code |= TOP;
 	}
 
 	return code;
 }
 
-static void RB_ClipTestEdge(s32 x0, s32 y0, s32 x1, s32 y1, int render_target_width, int render_target_height) {
-	int outcode0 = RB_GetClipCode(x0, y0, render_target_width, render_target_height);
-	int outcode1 = RB_GetClipCode(x1, y1, render_target_width, render_target_height);
+static ClipEdge RB_ClipTestEdge(r32 x0, r32 y0, r32 x1, r32 y1, s32 xmin, s32 ymin, s32 xmax, s32 ymax) {
+   ClipEdge ce = {};
+	int outcode0 = RB_FindClipCode(x0, y0, xmin, ymin, xmax, ymax);
+	int outcode1 = RB_FindClipCode(x1, y1, xmin, ymin, xmax, ymax);
 	b32 accept = false;
 
    for (;;) {
@@ -59,8 +87,48 @@ static void RB_ClipTestEdge(s32 x0, s32 y0, s32 x1, s32 y1, int render_target_wi
       } else if (outcode0 & outcode1) {	// trivially reject 
          break;
       } else {
+			r32 x = 0.0f;
+			r32 y = 0.0f;
+			r32 m = (r32)(y1 - y0) / (r32)(x1 - x0);
+
+			// pick the one that is outside of the clipping rect
+			int chosen_code = outcode0 ? outcode0 : outcode1;
+
+			if (chosen_code & TOP) {           
+				y = (r32)ymax;
+				x = (1.0f / m) * (y - y0) + x0;
+			} else if (chosen_code & BOTTOM) { 
+				y = (r32)ymin;
+				x = (1.0f / m) * (y - y0) + x0;
+			} else if (chosen_code & RIGHT) {  
+				x = (r32)xmax;
+				y = m * (x - x0) + y0;
+			} else if (chosen_code & LEFT) {   
+				x = (r32)xmin;
+				y = m * (x - x0) + y0;
+			}
+
+			// now we move outside point to intersection point to clip
+			// and get ready for next pass.
+			if (chosen_code == outcode0) {
+				x0 = x;
+				y0 = y;
+				outcode0 = RB_FindClipCode(x0, y0, xmin, ymin, xmax, ymax);
+			} else {
+				x1 = x;
+				y1 = y;
+				outcode1 = RB_FindClipCode(x1, y1, xmin, ymin, xmax, ymax);
+			}
       }
    }
+   if (accept) {
+      ce.x0 = RoundReal32ToS32(x0*ONE_OVER_SPS_POW2);
+      ce.y0 = RoundReal32ToS32(y0*ONE_OVER_SPS_POW2);
+      ce.x1 = RoundReal32ToS32(x1*ONE_OVER_SPS_POW2);
+      ce.y1 = RoundReal32ToS32(y1*ONE_OVER_SPS_POW2);
+   } 
+
+   return ce;
 }
 #endif
 
@@ -73,8 +141,9 @@ static s32 Orient2D(Point2D a, Point2D b, Point2D p) {
    s64 c = (s64)((s64)a.x*(s64)b.y) - (s64)((s64)a.y*(s64)b.x);
 
    result = p.x*ab + p.y*ba + c;
-   ExitIf(result < (1ll<<39)-1);
-   ExitIf(result > (-1ll<<39));
+   Assert(result < (1ll<<39)-1);
+   Assert(result > (-1ll<<39));
+
    result += (1<<(SPS-1));
    return (s32)(result>>SPS);
 }
@@ -82,20 +151,20 @@ static s32 Orient2D(Point2D a, Point2D b, Point2D p) {
 static s32 Tri2Area2d(Vec2i a, Vec2i b) {
    s64 result = (s64)((s64)a.v.x*(s64)b.v.y) - (s64)((s64)a.v.y*(s64)b.v.x);
 
-   ExitIf(result < (1ll<<39)-1);
-   ExitIf(result > (-1ll<<39));
+   Assert(result < (1ll<<39)-1);
+   Assert(result > (-1ll<<39));
    result += (1<<(SPS-1));
    return (s32)(result>>SPS);
 }
 
 // FIXME: these determinant predicates are here for the time being
 // ccw vertex winding order
-static inline s32 Orient2D(s32 ax, s32 ay, s32 bx, s32 by, s32 cx, s32 cy) {
-	Point2D a = {ax, ay};
-	Point2D b = {bx, by};
-	Point2D c = {cx, cy};
-	return Orient2D(a, b, c);
-}
+//static inline s32 Orient2D(s32 ax, s32 ay, s32 bx, s32 by, s32 cx, s32 cy) {
+//	Point2D a = {ax, ay};
+//	Point2D b = {bx, by};
+//	Point2D c = {cx, cy};
+//	return Orient2D(a, b, c);
+//}
 
 // ccw vertex winding order
 static inline b32 IsTopLeftEdge(Point2D a, Point2D b) {
@@ -107,26 +176,13 @@ static inline b32 IsTopLeftEdge(Point2D a, Point2D b) {
 	return false;
 }
 
-inline static int MapLowerAsciiToTTF(char c) {
-	int result = c - 97;
-	Assert(result >= 0 && result <= 25);
-
-	return result;
-}
-inline static int MapHigherAsciiToTTF(char c) {
-	int result = c - 65;
-	Assert(result >= 0 && result <= 25);
-
-	return result + 26;
-}
 
 // FIXME: change width and height to render_target_*
 static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pitch, int bpp, int screen_width, int screen_height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
-		if ((polys[i].state & POLY_STATE_BACKFACE)) {
+		if (polys[i].state & POLY_STATE_BACKFACE) {
 			continue;
 		}
-
       Vec4 poly_color = polys[i].color;
 
       // original vertices
@@ -150,18 +206,18 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
       s32 tex_width = texture->dim[0];
       s32 tex_height = texture->dim[1];
 
-      s32 x0 = RoundReal32ToS32(v0.xyz.v.x * SUB_PIXEL_POW2);
-		s32 y0 = RoundReal32ToS32(v0.xyz.v.y * SUB_PIXEL_POW2);
+      s32 x0 = RoundReal32ToS32(ClipX(v0.xyz.v.x) * SUB_PIXEL_POW2);
+		s32 y0 = RoundReal32ToS32(ClipY(v0.xyz.v.y) * SUB_PIXEL_POW2);
 		r32 z0 = v0.xyz.v.z;
 		r32 w0 = v0.w;
 
-		s32 x1 = RoundReal32ToS32(v1.xyz.v.x * SUB_PIXEL_POW2);
-		s32 y1 = RoundReal32ToS32(v1.xyz.v.y * SUB_PIXEL_POW2);
+		s32 x1 = RoundReal32ToS32(ClipX(v1.xyz.v.x) * SUB_PIXEL_POW2);
+		s32 y1 = RoundReal32ToS32(ClipY(v1.xyz.v.y) * SUB_PIXEL_POW2);
 		r32 z1 = v1.xyz.v.z;
 		r32 w1 = v1.w;
 
-		s32 x2 = RoundReal32ToS32(v2.xyz.v.x * SUB_PIXEL_POW2);
-		s32 y2 = RoundReal32ToS32(v2.xyz.v.y * SUB_PIXEL_POW2);
+		s32 x2 = RoundReal32ToS32(ClipX(v2.xyz.v.x) * SUB_PIXEL_POW2);
+		s32 y2 = RoundReal32ToS32(ClipY(v2.xyz.v.y) * SUB_PIXEL_POW2);
 		r32 z2 = v2.xyz.v.z;
 		r32 w2 = v2.w;
 
@@ -179,13 +235,7 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
 		max_pt.x = max_pt.x + SUB_PIXEL_OFFSET; 
 		max_pt.y = max_pt.y + SUB_PIXEL_OFFSET;
 
-      // FIXME: guard band clipping
-      //if (min_pt.x < (-1<<18)) { continue; }
-      //if (max_pt.x > ((1<<18)-1)) { continue; }
-      //if (min_pt.y < (-1<<18)) { continue; }
-      //if (max_pt.y > ((1<<18)-1)) { continue; }
-
-		// clip against the screen
+      // clip against the screen
       min_pt.x = MAX(min_pt.x, ((-screen_width/2)<<SPS) + SPS_OFFSET);
 		min_pt.y = MAX(min_pt.y, ((-screen_height/2)<<SPS) + SPS_OFFSET);
 
@@ -197,24 +247,24 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
 		Point2D pv1 = {x1, y1};
 		Point2D pv2 = {x2, y2};
 
-		//s32 tri2d_area = Orient2D(pv0, pv1, pv2);
-      Vec2i a = {pv1.x-pv0.x, pv1.y-pv0.y};
-      Vec2i b = {pv2.x-pv0.x, pv2.y-pv0.y};
-      s32 tri2d_area = Tri2Area2d(a, b);
-      if (tri2d_area <= 0) {                          // degenerate or back-facing triangle
-         continue;
-      }
-      r32 one_over_tri2d_area = 1.0f / (r32)tri2d_area;
-
 		// compute biases for top-left fill convention
 		s32 bias0 = IsTopLeftEdge(pv1, pv2) ? 0 : -1;
 		s32 bias1 = IsTopLeftEdge(pv2, pv0) ? 0 : -1;
 		s32 bias2 = IsTopLeftEdge(pv0, pv1) ? 0 : -1;
 
 		// positive edge test if pt is to the left of the directed line segment
-		s32 w0_row = (Orient2D(pv1, pv2, min_pt)) + bias0;
+      s32 w0_row = (Orient2D(pv1, pv2, min_pt)) + bias0;
 		s32 w1_row = (Orient2D(pv2, pv0, min_pt)) + bias1;
 		s32 w2_row = (Orient2D(pv0, pv1, min_pt)) + bias2;
+
+      Vec2i a = {pv1.x-pv0.x, pv1.y-pv0.y};
+      Vec2i b = {pv2.x-pv0.x, pv2.y-pv0.y};
+		s32 tri2d_area = Tri2Area2d(a, b);
+      if (tri2d_area <= 0) {                          // degenerate or back-facing triangle
+         continue;
+      }
+		//s32 tri2d_area = Orient2D(pv0, pv1, pv2);
+      r32 one_over_tri2d_area = 1.0f / (r32)tri2d_area;
 
 		// compute delta terms for the edge functions for the scaled points
 		s32 a01 = ((y0 - y1)), b01 = ((x1 - x0)); 
@@ -289,8 +339,8 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
                   Vec4 a = Lerp(UnpackRGBA(*c0), UnpackRGBA(*c1), du);
                   Vec4 b = Lerp(UnpackRGBA(*c2), UnpackRGBA(*c3), du);
                   Vec4 c = Lerp(a, b, dv);
-                  pixel[(pt.x>>SPS)] = PackRGBA(Modulate(c, poly_color));
-                  //pixel[(pt.x>>SPS)] = PackRGBA(poly_color);
+                  //pixel[(pt.x>>SPS)] = PackRGBA(Modulate(c, poly_color));
+                  pixel[(pt.x>>SPS)] = PackRGBA(poly_color);
 #endif
                }
             }
@@ -305,6 +355,21 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
 		}
 	}
 }
+
+#if 1
+inline static int MapLowerAsciiToTTF(char c) {
+	int result = c - 97;
+	Assert(result >= 0 && result <= 25);
+
+	return result;
+}
+inline static int MapHigherAsciiToTTF(char c) {
+	int result = c - 65;
+	Assert(result >= 0 && result <= 25);
+
+	return result + 26;
+}
+#endif
 
 static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	int w = bm->dim[0];

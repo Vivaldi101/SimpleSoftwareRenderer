@@ -3,15 +3,15 @@
 #include "lights.h"
 
 // flat shading
-void R_CalculateLighting(const RendererBackend *rb, const Light *lights, AmbientState as, Vec3 camera_dir, Vec3 camera_pos) {
+void R_CalculateLighting(const RendererBackend *rb, AmbientState as, Vec3 camera_dir, Vec3 camera_pos) {
 	Vec4 base = {};
 	Vec4 total = {};
-
 	int num_polys = rb->num_polys;
 	int num_lights = rb->num_lights;
+   Light *lights = rb->lights;
 	for (int i = 0; i < num_polys; ++i) {
       Vec4 color = {};
-		if ((rb->polys[i].state & POLY_STATE_BACKFACE) || (rb->polys[i].state & POLY_STATE_LIT)) {
+		if ((rb->polys[i].state & POLY_STATE_LIT)) {
 			continue;
 		}
 		rb->polys[i].state |= POLY_STATE_LIT;

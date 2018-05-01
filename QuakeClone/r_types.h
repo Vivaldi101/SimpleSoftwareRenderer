@@ -23,6 +23,14 @@ struct Point2D {
 	s32	x, y;
 };
 
+static Point2D Makepoint2D(s32 x, s32 y) {
+   Point2D p;
+   p.x = x;
+   p.y = y;
+
+   return p;
+}
+
 
 
 //struct DrawVert {

@@ -32,7 +32,7 @@ struct Light {
 
 struct RendererBackend;
 struct ViewSystem;
-extern void R_CalculateLighting(const RendererBackend *rb, const Light *lights, AmbientState as, Vec3 camera_dir, Vec3 camera_pos);
+extern void R_CalculateLighting(const RendererBackend *rb, AmbientState as, Vec3 camera_dir, Vec3 camera_pos);
 extern void R_AddLight(RendererBackend *rb, Vec4 ambient, Vec4 diffuse, Vec4 specular, Vec3 pos, r32 radius, r32 kc, r32 kl, r32 kq, LightTypeFlags sf);
 extern void R_AddLight(RendererBackend *rb, const Light *l);
 #endif	// header guard

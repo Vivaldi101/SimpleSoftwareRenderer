@@ -246,7 +246,7 @@ static inline Vec2 MV2(r32 x, r32 y) {
 }
 
 static inline Vec2 MakeVec2(Vec2 p0, Vec2 p1) {
-	Vec2 v = {};
+	Vec2 v;
 
 	v[0] = p1[0] - p0[0];
 	v[1] = p1[1] - p0[1];
@@ -272,11 +272,11 @@ static inline Vec2i MakeVec2i(s32 x, s32 y) {
 	return v;
 }
 
-static inline Vec2i MV2i(s32 x, s32 y) {
+static inline Vec2i MV2i(s32 dx, s32 dy) {
 	Vec2i v;
 
-	v[0] = x;
-	v[1] = y;
+	v[0] = dx;
+	v[1] = dy;
 
 	return v;
 }
@@ -749,9 +749,7 @@ struct Orientation {
 
 struct Plane {
 	Vec3	unit_normal;
-	r32		dist;
-	//byte	type;			// for fast side tests: 0,1,2 = axial, 3 = nonaxial
-	//byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
+	r32	dist;
 };
 
 struct Dim2d {

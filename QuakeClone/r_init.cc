@@ -40,7 +40,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 
 	(*ren)->front_end.current_view.fov_y = 90.0f;
 
-	(*ren)->front_end.current_view.z_near = 0.1f;
+	(*ren)->front_end.current_view.z_near = 0.01f;
 	(*ren)->front_end.current_view.z_far = 1000.0f;
 
 	(*ren)->front_end.current_view.viewport_width = (*ren)->back_end.target.width;		

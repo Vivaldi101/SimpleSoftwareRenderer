@@ -88,7 +88,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <MinimalRebuild>false</MinimalRebuild>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PreprocessorDefinitions>PLATFORM_DEBUG=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
