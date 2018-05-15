@@ -1,0 +1,12 @@
+ipch/
+testi/
+SR/x64/Release/
+.vs/
+*.iobj
+*.ipdb
+*.sdf
+*.suo
+*.pdb
+*.user
+*.filters
+*.obj

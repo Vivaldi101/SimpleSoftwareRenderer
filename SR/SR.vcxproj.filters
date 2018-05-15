@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="headers">
+      <UniqueIdentifier>{03a94e9e-4ba4-4fb4-92ad-76e5d316fc2e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="keycodes.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="shared.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="win_local.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="win_shared.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="plg_loader.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="r_types.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="win_r.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="r_cmds.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="entity.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="input.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="lights.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ino_bmp.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="common.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_console.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_main.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_shared.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_wndproc.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="input.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_main_window.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="math.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="r_cmds.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="r_init.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="r_main.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win_r.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="r_backend.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="entity.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="files.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="misc.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="lights.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="fonts.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ino_stretchy_buffer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
