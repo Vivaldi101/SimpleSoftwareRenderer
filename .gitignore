@@ -1,6 +1,6 @@
 ipch/
-testi/
-SR/x64/Release/
+x64/
+SR/x64/
 .vs/
 *.iobj
 *.ipdb
