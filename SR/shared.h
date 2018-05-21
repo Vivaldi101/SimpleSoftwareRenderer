@@ -789,11 +789,4 @@ extern void _Pop_(MemoryStack *ms, size_t num_bytes);
 #define PushArray(stack, count, type) ((type *)_Push_(stack, (count) * sizeof(type)))
 #define PopArray(stack, count, type) (_Pop_(stack, (count) * sizeof(type)))  
 
-//
-// stretchy buffer
-//
-
-#include "ino_stretchy_buffer.c"
-
-
 #endif	// Header guard

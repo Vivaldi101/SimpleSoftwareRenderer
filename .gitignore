@@ -1,7 +1,7 @@
 ipch/
+.vs/
 x64/
 SR/x64/
-.vs/
 *.iobj
 *.ipdb
 *.sdf
