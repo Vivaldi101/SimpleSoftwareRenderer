@@ -148,7 +148,7 @@ static void AddEntities(GameState *gs, size_t *used_memory, int num_entities, Ve
 			p++;
 		}
 	} else {
-		Assert(0);
+		InvalidCodePath("Invalid entity type!");
 	}
 
 	*used_memory += (num_entities * GetEntitySize(ee));
@@ -163,7 +163,10 @@ void InitEntities(Platform *pf) {
 	pf->game_state->entities = (BaseEntity *)GetMemStackPos(&pf->main_memory_stack.perm_data);
 	memset(pf->game_state->entities, 0, sizeof(*pf->game_state->entities));
    AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 0.0f), 3.0f, Cube, PLAYER);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 10.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 20.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 10.0f, 20.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(10.0f, -10.0f, 20.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(-10.0f, -10.0f, 20.0f), 1.0f, Cube, NPC);
 
 
 	PushArray(&pf->main_memory_stack.perm_data, used_memory, byte);	

@@ -121,11 +121,13 @@ extern int Sys_GetMilliseconds();
 //static inline int Com_ModifyFrameMsec(int frame_msec);
 
 // Common
-extern void Com_Allocate(Platform **pf, struct Renderer **ren);
-extern void Com_Init(Platform **pf);
+struct Renderer;
+extern void Com_Allocate(Platform **pf, Renderer **ren);
+extern void Com_SetupIO(Platform **pf);
 extern void Com_LoadEntities(Platform *pf);
 extern void Com_LoadTextures(Platform *pf, Renderer *r);
-extern void Com_RunFrame(Platform *pf, struct Renderer *ren);
+extern void Com_LoadFonts(Platform *pf, Renderer *r);
+extern void Com_RunFrame(Platform *pf, Renderer *ren);
 extern void Com_Quit();
 
 // Events
@@ -142,7 +144,7 @@ extern void IN_ClearKeys(Input *in);
 extern int StrCmp(const char* a, const char* b);
 
 // Fonts
-extern Bitmap TTF_Init(MemoryStack *ms, const FileInfo *ttf_file, int code_point);
+extern Bitmap TTF_LoadGlyph(MemoryStack *ms, const FileInfo *ttf_file, int code_point);
 
 // Misc
 extern Bitmap MakeBitmap(MemoryStack *ms, int width, int height);

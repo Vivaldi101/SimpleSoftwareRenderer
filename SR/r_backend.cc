@@ -374,7 +374,7 @@ static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	int w = bm->dim[0];
 	int h = bm->dim[1];
 	Assert(w < rt->width && h < rt->height);
-	Assert(origin[0] >= 0 && origin[1] >= 0 && (origin[0] + w) < rt->width && (origin[1] + h) < rt->height);
+	//Assert(origin[0] >= 0 && origin[1] >= 0 && (origin[0] + w) < rt->width && (origin[1] + h) < rt->height);
 
 	int pitch = rt->pitch;
 	byte *src = bm->data;
@@ -384,7 +384,7 @@ static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	for (int i = 0; i < h; i++){
 		u32 *dst_pixel = (u32 *)dst;
 		for (int j = 0; j < w; j++) {
-			*dst_pixel++ = (*src_pixel);
+			*dst_pixel++ = *src_pixel;
 			++src_pixel;
 		}
 		dst += pitch;

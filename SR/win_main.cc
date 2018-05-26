@@ -127,8 +127,9 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Sys_GetMilliseconds();
 
 	Com_Allocate(&pf, &ren);
-	Com_Init(&pf);
+	Com_SetupIO(&pf);
 	Com_LoadTextures(pf, ren);
+	Com_LoadFonts(pf, ren);
 	R_Init(&ren, hinstance, MainWndProc);
 
 	Com_LoadEntities(pf);

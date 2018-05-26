@@ -1,6 +1,5 @@
 ipch/
 .vs/
-x64/
 SR/x64/
 *.iobj
 *.ipdb

@@ -140,32 +140,11 @@ void Com_Allocate(Platform **pf, Renderer **ren) {
 	//(*ren)->back_end.entities = (*pf)->game_state->entities;
 }
 
-void Com_Init(Platform **pf) {
+void Com_SetupIO(Platform **pf) {
 	Assert(*pf);
 	(*pf)->file_ptrs.free_file = DebugFreeFile;
 	(*pf)->file_ptrs.read_file = DebugReadFile;
 	(*pf)->file_ptrs.write_file = DebugWriteFile;
-
-	//FileInfo ttf_file = (*pf)->file_ptrs.read_file("C:/Windows/Fonts/cambriai.ttf");
-	//FileInfo test_texture = (*pf)->file_ptrs.read_file("check.bmp");  // test assets
-
- //  int w, h;
- //  Bitmap test_bmp;
- //  byte *bmp_data = bmp_load(test_texture.data, test_texture.size, 0, &w, &h);
- //  test_bmp.data = bmp_data;
- //  test_bmp.dim.v.x = w;
- //  test_bmp.dim.v.y = h;
-
- //  (*pf)->game_state->test_texture = test_bmp;
-
-
-	/*for (int i = 'a'; i <= 'z'; ++i) {
-		(*pf)->game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
-	}
-	for (int i = 'A'; i <= 'Z'; ++i) {
-		(*pf)->game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_Init(&(*pf)->main_memory_stack.temp_data, &ttf_file, i);
-	}
-   (*pf)->file_ptrs.free_file(&ttf_file);*/
 }
 
 void Com_LoadEntities(Platform *pf) {
@@ -184,6 +163,18 @@ void Com_LoadTextures(Platform *pf, Renderer *r) {
    test_texture.dim.v.y = h;
 
    r->back_end.test_texture = test_texture;
+}
+
+void Com_LoadFonts(Platform *pf, Renderer *r) {
+	FileInfo ttf_file = pf->file_ptrs.read_file("C:/Windows/Fonts/tahoma.ttf");
+
+   for (int i = 'a'; i <= 'z'; ++i) {
+		pf->game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_LoadGlyph(&pf->main_memory_stack.temp_data, &ttf_file, i);
+	}
+	for (int i = 'A'; i <= 'Z'; ++i) {
+		pf->game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_LoadGlyph(&pf->main_memory_stack.temp_data, &ttf_file, i);
+	}
+   pf->file_ptrs.free_file(&ttf_file);
 }
 
 static void FlushPolys(RendererBackend *rb) {
@@ -275,7 +266,7 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	RenderEntities(pf->game_state, ren);
 
 
-#if 0
+#if 1
 	// font testing
 	{
 		r32 text_pos = (r32)ren->back_end.target.height;
