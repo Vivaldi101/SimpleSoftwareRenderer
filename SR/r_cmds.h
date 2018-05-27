@@ -28,14 +28,20 @@ struct RenderCommands {
 };
 
 struct DrawTextCmd {
-	int				cmd_id;
-	Basis2d			basis;
-	Bitmap *		bitmap;
-	Vec2i			dim;	
-	const char *	text;
-	int				gap;
-	u32				color;		// rgba, packed
+	int	 cmd_id;
+	Bitmap bitmap;
+	Vec2i	 origin;
 };
+
+//struct DrawTextCmd {
+//	int				cmd_id;
+//	Basis2d			basis;
+//	Bitmap *		bitmap;
+//	Vec2i			dim;	
+//	const char *	text;
+//	int				gap;
+//	u32				color;		// rgba, packed
+//};
 
 struct DrawPolyCmd {
 	int					cmd_id;
@@ -62,6 +68,6 @@ extern void R_IssueRenderCommands(RenderTarget *rt, RenderCommands *rc);
 extern void R_BeginFrame(RenderTarget *rt, RenderCommands *rc);
 extern void R_EndFrame(RenderTarget *rt, RenderCommands *rc);
 extern void R_PushRectCmd(RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale = 1.0f, Vec4 color = MakeVec4(1.0f,1.0f,1.0f,1.0f));
-extern void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale = 1.0f, Vec4 color = MakeVec4(1.0f,1.0f,1.0f,1.0f));
+extern void R_PushTextCmd(RenderCommands *rc, Bitmap bm, Vec2i origin);
 extern void R_PushPolysCmd(RenderCommands *rc, Poly *polys, PolyVert *poly_verts, Bitmap texture, int num_polys);
 #endif	// Header guard

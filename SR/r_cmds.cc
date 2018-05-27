@@ -52,19 +52,28 @@ void R_PushRectCmd(RenderCommands *rc, Bitmap bm, Vec2 origin, r32 scale, Vec4 c
 }
 #endif
 
-void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale, Vec4 color) {
+void R_PushTextCmd(RenderCommands *rc, Bitmap bm, Vec2i origin) {
 	DrawTextCmd *cmd = PushRenderCmd(rc, DrawTextCmd);
 	Assert(cmd);
 
 	cmd->cmd_id = RCMD_TEXT;
-	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f) * scale;
-	cmd->basis.axis[1] = MakeVec2(0.0f, 1.0f) * scale;
-	cmd->basis.origin = origin;
 	cmd->bitmap = bm;
-	cmd->dim = bm->dim;
-	cmd->text = text;
-	cmd->color = PackRGBA(color);
+	cmd->origin = origin;
 }
+
+//void R_PushTextCmd(RenderCommands *rc, const char *text, Bitmap *bm, Vec2 origin, r32 scale, Vec4 color) {
+//	DrawTextCmd *cmd = PushRenderCmd(rc, DrawTextCmd);
+//	Assert(cmd);
+//
+//	cmd->cmd_id = RCMD_TEXT;
+//	cmd->basis.axis[0] = MakeVec2(1.0f, 0.0f) * scale;
+//	cmd->basis.axis[1] = MakeVec2(0.0f, 1.0f) * scale;
+//	cmd->basis.origin = origin;
+//	cmd->bitmap = bm;
+//	cmd->dim = bm->dim;
+//	cmd->text = text;
+//	cmd->color = PackRGBA(color);
+//}
 
 void R_PushPolysCmd(RenderCommands *rc, Poly *polys, PolyVert *poly_verts, Bitmap texture, int num_polys) {
 	DrawPolyCmd *cmd = PushRenderCmd(rc, DrawPolyCmd);

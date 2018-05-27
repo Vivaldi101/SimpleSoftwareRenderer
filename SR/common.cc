@@ -166,14 +166,10 @@ void Com_LoadTextures(Platform *pf, Renderer *r) {
 }
 
 void Com_LoadFonts(Platform *pf, Renderer *r) {
-	FileInfo ttf_file = pf->file_ptrs.read_file("C:/Windows/Fonts/tahoma.ttf");
+	FileInfo ttf_file = pf->file_ptrs.read_file("C:/Windows/Fonts/arial.ttf");
 
-   for (int i = 'a'; i <= 'z'; ++i) {
-		pf->game_state->test_font[MapLowerAsciiToTTF((char)i)] = TTF_LoadGlyph(&pf->main_memory_stack.temp_data, &ttf_file, i);
-	}
-	for (int i = 'A'; i <= 'Z'; ++i) {
-		pf->game_state->test_font[MapHigherAsciiToTTF((char)i)] = TTF_LoadGlyph(&pf->main_memory_stack.temp_data, &ttf_file, i);
-	}
+   pf->game_state->texts[pf->game_state->num_texts++] = TTF_LoadString(&pf->main_memory_stack.temp_data, &ttf_file, "wasd to move");
+   pf->game_state->texts[pf->game_state->num_texts++] = TTF_LoadString(&pf->main_memory_stack.temp_data, &ttf_file, "esc to quit");
    pf->file_ptrs.free_file(&ttf_file);
 }
 
@@ -269,14 +265,11 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 #if 1
 	// font testing
 	{
-		r32 text_pos = (r32)ren->back_end.target.height;
-		const r32 line_gap = 20.0f;
-		R_PushTextCmd(&ren->back_end.cmds, "wasd to move", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press enter to center the camera", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press x y z to pitch yaw and roll the cube", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Hold shift and press x y z to reverse pitch yaw and roll the cube", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press c to toggle console", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
-		R_PushTextCmd(&ren->back_end.cmds, "Press esc to exit", pf->game_state->test_font, MV2(10.0f, text_pos -= line_gap));
+		r32 text_pos = (r32)ren->back_end.target.height - 5;
+      for (int i = 0; i < pf->game_state->num_texts; i++) {
+         r32 line_gap = pf->game_state->texts[i].h;
+         R_PushTextCmd(&ren->back_end.cmds, pf->game_state->texts[i], MV2i(5.0f, text_pos -= line_gap));
+      }
 	}
 #endif
 

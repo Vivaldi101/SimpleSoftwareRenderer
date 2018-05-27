@@ -370,15 +370,16 @@ inline static int MapHigherAsciiToTTF(char c) {
 }
 #endif
 
-static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
+static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2i origin) {
 	int w = bm->dim[0];
 	int h = bm->dim[1];
+	Assert(w > 0 && h > 0);
 	Assert(w < rt->width && h < rt->height);
-	//Assert(origin[0] >= 0 && origin[1] >= 0 && (origin[0] + w) < rt->width && (origin[1] + h) < rt->height);
+	Assert(origin[0] >= 0 && origin[1] >= 0 && (origin[0] + w) < rt->width && (origin[1] + h) < rt->height);
 
 	int pitch = rt->pitch;
 	byte *src = bm->data;
-	byte *dst = rt->buffer + (pitch * (int)(origin[1] + 0.5f)) + ((int)(origin[0] + 0.5f) * rt->bpp);	
+	byte *dst = rt->buffer + (pitch * origin[1]) + (origin[0] * rt->bpp);	
 	u32 *src_pixel = (u32 *)src;
 
 	for (int i = 0; i < h; i++){
@@ -391,21 +392,14 @@ static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2 origin) {
 	}
 }
 
+#if 1
 static const void *RB_DrawText(RenderTarget *rt, const void *data) {
 	DrawTextCmd *cmd = (DrawTextCmd *)data;
-	Vec2 o = cmd->basis.origin;
-	for (char i = *cmd->text; i = *cmd->text; ++cmd->text) {
-		if (i != ' ') {
-			int k = (i >= 97) ? MapLowerAsciiToTTF(i) : MapHigherAsciiToTTF(i);
-			RB_DrawRect(rt, &cmd->bitmap[k], o);
-			o[0] += cmd->bitmap[k].dim[0];
-		} else {
-			o[0] += 10.0f;
-		}
-	}
+	RB_DrawRect(rt, &cmd->bitmap, cmd->origin);
 
 	return (const void *)(cmd + 1);
 }
+#endif
 
 static void RB_ClearMemset(void *buffer, size_t size) {
 	memset(buffer, 0, size);

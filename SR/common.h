@@ -24,7 +24,12 @@ struct Input {
 };
 
 struct Bitmap {
-	Vec2i    dim;
+   union {
+      Vec2i dim;
+      struct {
+         s32 w, h;
+      };
+   };
 	byte *	data;		
 };
 
@@ -32,7 +37,8 @@ struct GameState {
 	struct BaseEntity 	*entities;
 	int						num_base_entities;
 
-	Bitmap					test_font[MAX_NUM_GLYPHS];
+	Bitmap					texts[32];
+	int						num_texts;
 };
 
 struct StackAllocator {
@@ -145,6 +151,7 @@ extern int StrCmp(const char* a, const char* b);
 
 // Fonts
 extern Bitmap TTF_LoadGlyph(MemoryStack *ms, const FileInfo *ttf_file, int code_point);
+extern Bitmap TTF_LoadString(MemoryStack *ms, const FileInfo *ttf_file, const char *str);
 
 // Misc
 extern Bitmap MakeBitmap(MemoryStack *ms, int width, int height);
