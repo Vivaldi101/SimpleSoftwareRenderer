@@ -6,12 +6,14 @@ RenderEntity(Cube) {
 	Cube_ *entity = (Cube_ *)_raw_entity_data_;
 	switch (_extra_flags_) {
 		case PLAYER: {
+#if 0
 			entity->world_pos = _renderer_->front_end.current_view.world_orientation.origin + (_renderer_->front_end.current_view.world_orientation.dir * 20.0f);
 			entity->world_pos[1] -= 10.0f;
 
          RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
 			RF_TransformWorldToView(&_renderer_->front_end.current_view, entity->trans_verts, ArrayCount(entity->trans_verts));
          RF_AddCubePolys(&_renderer_->back_end, &_renderer_->front_end.current_view, entity->trans_verts, global_cube_index_array, ArrayCount(global_cube_index_array), 0.25f);
+#endif
 		} break;
 		case NPC: {
 			RF_TransformModelToWorld(entity->model_verts, entity->trans_verts, ArrayCount(entity->model_verts), entity->world_pos, entity->scale); 
@@ -162,11 +164,11 @@ void InitEntities(Platform *pf) {
 
 	pf->game_state->entities = (BaseEntity *)GetMemStackPos(&pf->main_memory_stack.perm_data);
 	memset(pf->game_state->entities, 0, sizeof(*pf->game_state->entities));
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 0.0f), 3.0f, Cube, PLAYER);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 0.0f), 1.0f, Cube, PLAYER);
    AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 20.0f), 1.0f, Cube, NPC);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 10.0f, 20.0f), 1.0f, Cube, NPC);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(10.0f, -10.0f, 20.0f), 1.0f, Cube, NPC);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(-10.0f, -10.0f, 20.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 30.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 40.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 50.0f), 1.0f, Cube, NPC);
 
 
 	PushArray(&pf->main_memory_stack.perm_data, used_memory, byte);	

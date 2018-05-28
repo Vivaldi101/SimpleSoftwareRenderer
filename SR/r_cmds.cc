@@ -91,7 +91,6 @@ void R_BeginFrame(RenderTarget *rt, RenderCommands *rc) {
 	Assert(cmd);
 
 	cmd->cmd_id = RCMD_CLEAR;
-	cmd->size = rt->pitch * rt->height;
 }
 
 void R_EndFrame(RenderTarget *rt, RenderCommands *rc) {

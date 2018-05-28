@@ -3,7 +3,7 @@
 #include "renderer.h"
 #include "r_cmds.h"
 
-void R_Init(Renderer **ren, void *hinstance, void *wndproc) { 
+void R_Init(Renderer **ren, MemoryStack *ms, void *hinstance, void *wndproc) { 
 	// init some test lights
 	Light l = {};
 	l.ambient = MV4(0.20f, 0.20f, 0.20f, 1.0f); 
@@ -11,7 +11,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 	l.specular = MV4(0.0f, 0.0f, 0.5f, 0.0f); 
 	l.radius = 1.0f;
 	l.kc = 0.0f; 
-	l.kl = 0.05005f;
+	l.kl = 0.02000f;
 	l.kq = 0.0f;
 	l.is_active = true;
 	l.flags |= (CAMERA_LIGHT|POINT_LIGHT);
@@ -22,7 +22,7 @@ void R_Init(Renderer **ren, void *hinstance, void *wndproc) {
 		Com_Quit();
 	}	
 
-	if (!InitDIB(&(*ren)->back_end.target)) {
+	if (!InitDIB(&(*ren)->back_end.target, ms)) {
 		Sys_Print("Error while initializing the DIB\n");
 		Com_Quit();
 	}

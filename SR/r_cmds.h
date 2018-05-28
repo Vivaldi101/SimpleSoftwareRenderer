@@ -60,7 +60,7 @@ struct SwapBuffersCmd {
 
 struct ClearBufferCmd {
 	int		cmd_id;
-	size_t	size;
+	//size_t	size;
 };
 
 struct RenderTarget;

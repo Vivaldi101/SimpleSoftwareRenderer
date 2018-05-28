@@ -8,8 +8,9 @@
 #include "r_cmds.h"
 #include "lights.h"
 
-#define PLATFORM_FULLSCREEN
+//#define PLATFORM_FULLSCREEN
 #define BYTES_PER_PIXEL 4	
+#define DEPTH_BUFFER_DIM 2048
 
 enum {
 	POLY_STATE_CULLED = 0,		
@@ -35,7 +36,8 @@ enum {
 };
 
 struct RenderTarget {
-	byte *			buffer;		
+	byte *			frame_buffer;		
+	r32 		      depth_buffer[DEPTH_BUFFER_DIM][DEPTH_BUFFER_DIM];  // FIXME: variable size?
 	int				pitch;		
 	int				width;          
 	int				height;
@@ -97,7 +99,7 @@ struct Renderer {
 	RendererBackend		back_end;
 };
 
-extern void R_Init(Renderer **ren, void *hinstance, void *wndproc); 
+extern void R_Init(Renderer **ren, MemoryStack *ms, void *hinstance, void *wndproc); 
 extern void RF_UpdateView(ViewSystem *vs);
 extern void RF_ExtractWorldPlanes(ViewSystem *vs);
 extern void RF_ExtractViewPlanes(ViewSystem *vs);

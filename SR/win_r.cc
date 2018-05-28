@@ -58,7 +58,7 @@ struct DibData {
 	RGBQUAD				colors[256];	
 };
 
-b32 InitDIB(RenderTarget *rt) {
+b32 InitDIB(RenderTarget *rt, MemoryStack *ms) {
 
 	DibData dib;
 	BITMAPINFO *win_dib_info = (BITMAPINFO *)&dib;
@@ -89,7 +89,7 @@ b32 InitDIB(RenderTarget *rt) {
 	rt->win_handles.dib_section = CreateDIBSection(rt->win_handles.hdc,
 														win_dib_info,
 											 			DIB_RGB_COLORS,
-														(void **)&rt->buffer,
+														(void **)&rt->frame_buffer,
 											 			0,
 											 			0);
 
@@ -99,8 +99,7 @@ b32 InitDIB(RenderTarget *rt) {
 	}
 
 	rt->pitch = rt->width * BYTES_PER_PIXEL;
-
-	memset(rt->buffer, 0, rt->pitch * rt->height);
+	memset(rt->frame_buffer, 0, rt->pitch * rt->height);
 
 	if (!(rt->win_handles.hdc_dib_section = CreateCompatibleDC(rt->win_handles.hdc))) {
 		Sys_Print("\nDIB_Init() - CreateCompatibleDC failed\n");

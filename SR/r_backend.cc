@@ -178,7 +178,7 @@ static inline b32 IsTopLeftEdge(Point2D a, Point2D b) {
 
 
 // FIXME: change width and height to render_target_*
-static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pitch, int bpp, int screen_width, int screen_height, int num_polys) {
+static void RB_DrawSolidMesh(Poly *polys, byte *frame_buffer, r32 depth_buffer[DEPTH_BUFFER_DIM][DEPTH_BUFFER_DIM], Bitmap *texture, int pitch, int bpp, int screen_width, int screen_height, int num_polys) {
 	for (int i = 0; i < num_polys; i++) {
       Vec4 poly_color = polys[i].color;
 
@@ -300,7 +300,7 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
       w1 = 1.0f / w1;
       w2 = 1.0f / w2;
 
-      byte *line = buffer + ((min_pt.y>>SPS) * pitch);
+      byte *line = frame_buffer + ((min_pt.y>>SPS) * pitch);
 
       for (pt.y = min_pt.y; pt.y <= max_pt.y; pt.y += SUB_PIXEL_POW2) {
 			int w0_col = w0_row;
@@ -314,7 +314,8 @@ static void RB_DrawSolidMesh(Poly *polys, byte *buffer, Bitmap *texture, int pit
                r32 b2 = (r32)(w2_col)*one_over_tri2d_area;
                r32 z = (z0 + b1*(dz10) + b2*(dz20));
                r32 w = 1.0f / (b0*w0 + b1*w1 + b2*w2);
-               if (1) {
+               if (z <= depth_buffer[pt.y>>SPS][pt.x>>SPS]) {
+                  depth_buffer[pt.y>>SPS][pt.x>>SPS] = z;
                   u32 *pixel = (u32 *)line;
                   r32 u = b0*uv_v0[0] + b1*uv_v1[0] + b2*uv_v2[0];
                   r32 v = b0*uv_v0[1] + b1*uv_v1[1] + b2*uv_v2[1];
@@ -370,7 +371,8 @@ inline static int MapHigherAsciiToTTF(char c) {
 }
 #endif
 
-static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2i origin) {
+// draws monochrome bitmap
+static void RB_DrawGlyphs(RenderTarget *rt, Bitmap *bm, Vec2i origin) {
 	int w = bm->dim[0];
 	int h = bm->dim[1];
 	Assert(w > 0 && h > 0);
@@ -379,14 +381,17 @@ static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2i origin) {
 
 	int pitch = rt->pitch;
 	byte *src = bm->data;
-	byte *dst = rt->buffer + (pitch * origin[1]) + (origin[0] * rt->bpp);	
+	byte *dst = rt->frame_buffer + (pitch * origin[1]) + (origin[0] * rt->bpp);	
 	u32 *src_pixel = (u32 *)src;
 
 	for (int i = 0; i < h; i++){
 		u32 *dst_pixel = (u32 *)dst;
 		for (int j = 0; j < w; j++) {
-			*dst_pixel++ = *src_pixel;
+         if (*src_pixel) {
+            *dst_pixel = *src_pixel;
+         }
 			++src_pixel;
+         ++dst_pixel;
 		}
 		dst += pitch;
 	}
@@ -395,7 +400,7 @@ static void RB_DrawRect(RenderTarget *rt, Bitmap *bm, Vec2i origin) {
 #if 1
 static const void *RB_DrawText(RenderTarget *rt, const void *data) {
 	DrawTextCmd *cmd = (DrawTextCmd *)data;
-	RB_DrawRect(rt, &cmd->bitmap, cmd->origin);
+	RB_DrawGlyphs(rt, &cmd->bitmap, cmd->origin);
 
 	return (const void *)(cmd + 1);
 }
@@ -412,7 +417,7 @@ static void RB_Blit(HDC hdc, HDC hdc_dib, Vec2i min_xy, Vec2i max_xy) {
 static const void *RB_DrawMesh(RenderTarget *rt, const void *data) {
 	DrawPolyCmd *cmd = (DrawPolyCmd *)data;
 
-	RB_DrawSolidMesh(cmd->polys, rt->buffer, &cmd->texture, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
+	RB_DrawSolidMesh(cmd->polys, rt->frame_buffer, rt->depth_buffer, &cmd->texture, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	//if (cmd->is_wireframe) {
 	//	RB_DrawWireframeMesh(cmd->polys, cmd->poly_verts, rt->buffer, rt->pitch, rt->bpp, rt->width, rt->height, cmd->num_polys);
 	//} else {
@@ -428,9 +433,14 @@ static const void *RB_SwapBuffers(RenderTarget *rt, const void *data) {
 	return (const void *)(cmd + 1);
 }
 
-static const void *RB_ClearBuffer(RenderTarget *rt, const void *data) {
+static const void *RB_ClearBuffers(RenderTarget *rt, const void *data) {
 	ClearBufferCmd *cmd = (ClearBufferCmd *)data;
-	RB_ClearMemset(rt->buffer, cmd->size);
+	RB_ClearMemset(rt->frame_buffer, rt->pitch * rt->height);
+   for (int i = 0; i < rt->height; i++) {
+      for (int j = 0; j < rt->width; j++) {
+         rt->depth_buffer[i][j] = 1.0f;
+      }
+   }
 
 	return (const void *)(cmd + 1);
 }
@@ -439,7 +449,7 @@ void RB_ExecuteRenderCommands(RenderTarget *rt, const void *data) {
 	for (;;) {
 		switch (*(const int *)data) {
 			case RCMD_CLEAR:
-				data = RB_ClearBuffer(rt, data);
+				data = RB_ClearBuffers(rt, data);
 				break;
 			case RCMD_SWAP_BUFFERS:
 				data = RB_SwapBuffers(rt, data);

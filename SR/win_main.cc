@@ -130,7 +130,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Com_SetupIO(&pf);
 	Com_LoadTextures(pf, ren);
 	Com_LoadFonts(pf, ren);
-	R_Init(&ren, hinstance, MainWndProc);
+	R_Init(&ren, &pf->main_memory_stack.perm_data, hinstance, MainWndProc);
 
 	Com_LoadEntities(pf);
 

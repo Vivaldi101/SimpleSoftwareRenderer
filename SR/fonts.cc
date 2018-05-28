@@ -90,10 +90,10 @@ Bitmap TTF_LoadString(MemoryStack *ms, const FileInfo *ttf_file, const char *str
 	src = tmp_bmp_buffer + (w * (h - 1));
 	dst = (u32 *)bm.data;
 
-	for (int i = 0; i < h; ++i) {
-		u8 *src_8 = src;
-		for (int j = 0; j < w; ++j) {
-			u8 alpha = *src_8++;
+	for (int i = 0; i < h; i++) {
+		u8 *src8 = src;
+		for (int j = 0; j < w; j++) {
+			u8 alpha = *src8++;
 			*dst++ = ((alpha << 24)|(alpha << 16)|(alpha << 8)|(alpha << 0));
 		}
 		src -= w;
