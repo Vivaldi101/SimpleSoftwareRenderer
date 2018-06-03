@@ -50,13 +50,12 @@ Bitmap TTF_LoadString(MemoryStack *ms, const FileInfo *ttf_file, const char *str
    r32 scale;
    byte *src;
    u32 *dst;
-   int w = 300, h = 60, x = 0;
+   int w = 300, h = 40, x = 0;
    byte tmp_bmp_buffer[512*512] = {};
 
 	Assert(stbtt_InitFont(&font, (const byte *)ttf_file->data, 0));
 	bm = MakeBitmap(ms, w, h);
 
-   /* calculate font scaling */
    scale = stbtt_ScaleForPixelHeight(&font, h - 15);
 
    stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);
@@ -65,23 +64,18 @@ Bitmap TTF_LoadString(MemoryStack *ms, const FileInfo *ttf_file, const char *str
    descent *= scale;
 
    for (int i = 0; i < strlen(str); ++i) {
-      /* get bounding box for character (may be offset to account for chars that dip above or below the line */
       int c_x1, c_y1, c_x2, c_y2;
       stbtt_GetCodepointBitmapBox(&font, str[i], scale, scale, &c_x1, &c_y1, &c_x2, &c_y2);
 
-      /* compute y (different characters have different heights */
       int y = ascent + c_y1;
 
-      /* render character (stride and offset is important here) */
       int byte_offset = x + (y  * w);
       stbtt_MakeCodepointBitmap(&font, tmp_bmp_buffer + byte_offset, c_x2 - c_x1, c_y2 - c_y1, w, scale, scale, str[i]);
 
-      /* how wide is this character */
       int ax;
       stbtt_GetCodepointHMetrics(&font, str[i], &ax, 0);
       x += ax * scale;
 
-      /* add kerning */
       int kern;
       kern = stbtt_GetCodepointKernAdvance(&font, str[i], str[i+1]);
       x += kern * scale;

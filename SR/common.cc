@@ -140,11 +140,11 @@ void Com_Allocate(Platform **pf, Renderer **ren) {
 	//(*ren)->back_end.entities = (*pf)->game_state->entities;
 }
 
-void Com_SetupIO(Platform **pf) {
-	Assert(*pf);
-	(*pf)->file_ptrs.free_file = DebugFreeFile;
-	(*pf)->file_ptrs.read_file = DebugReadFile;
-	(*pf)->file_ptrs.write_file = DebugWriteFile;
+void Com_SetupIO(Platform *pf) {
+	Assert(pf);
+	pf->file_ptrs.free_file = DebugFreeFile;
+	pf->file_ptrs.read_file = DebugReadFile;
+	pf->file_ptrs.write_file = DebugWriteFile;
 }
 
 void Com_LoadEntities(Platform *pf) {
@@ -273,17 +273,19 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 	}
 #endif
 
-	{
-		int last_render_time = Sys_GetMilliseconds();
-		R_EndFrame(&ren->back_end.target, &ren->back_end.cmds);
-      FlushPolys(&ren->back_end);
-		int	now_render_time = Sys_GetMilliseconds();
-		int	render_frame_msec = now_render_time - last_render_time;
+   int last_render_time = Sys_GetMilliseconds();
+   R_EndFrame(&ren->back_end.target, &ren->back_end.cmds);
+   FlushPolys(&ren->back_end);
+   int now_render_time = Sys_GetMilliseconds();
+   int render_frame_msec = now_render_time - last_render_time;
 
+#if 1
+	{
 		char buffer[64];
 		sprintf_s(buffer, "Render time: %d ms\n", render_frame_msec);
 		OutputDebugStringA(buffer);
 	}
+#endif
 }
 
 void Com_Quit() {

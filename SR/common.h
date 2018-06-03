@@ -129,7 +129,7 @@ extern int Sys_GetMilliseconds();
 // Common
 struct Renderer;
 extern void Com_Allocate(Platform **pf, Renderer **ren);
-extern void Com_SetupIO(Platform **pf);
+extern void Com_SetupIO(Platform *pf);
 extern void Com_LoadEntities(Platform *pf);
 extern void Com_LoadTextures(Platform *pf, Renderer *r);
 extern void Com_LoadFonts(Platform *pf, Renderer *r);

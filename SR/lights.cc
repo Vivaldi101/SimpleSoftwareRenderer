@@ -11,11 +11,6 @@ void R_CalculateLighting(const RendererBackend *rb, AmbientState as, Vec3 camera
    Light *lights = rb->lights;
 	for (int i = 0; i < num_polys; ++i) {
       Vec4 color = {};
-		//if ((rb->polys[i].state & POLY_STATE_LIT)) {
-		//	continue;
-		//}
-		//rb->polys[i].state |= POLY_STATE_LIT;
-
 		base = rb->vis_polys[i].color;
 
 		PolyVert v0 = rb->vis_polys[i].vertex_array[0];

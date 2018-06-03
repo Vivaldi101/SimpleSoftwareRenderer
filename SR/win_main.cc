@@ -105,7 +105,7 @@ u32 Sys_PumpEvents() {
 		time = msg.time;
 			
 		TranslateMessage(&msg);
-      	DispatchMessage(&msg);
+      DispatchMessage(&msg);
 	}
 
 	return time;
@@ -127,10 +127,10 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Sys_GetMilliseconds();
 
 	Com_Allocate(&pf, &ren);
-	Com_SetupIO(&pf);
+	Com_SetupIO(pf);
 	Com_LoadTextures(pf, ren);
 	Com_LoadFonts(pf, ren);
-	R_Init(&ren, &pf->main_memory_stack.perm_data, hinstance, MainWndProc);
+	R_Init(ren, pf, hinstance, MainWndProc);
 
 	Com_LoadEntities(pf);
 

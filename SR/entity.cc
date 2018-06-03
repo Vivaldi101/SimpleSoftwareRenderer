@@ -165,10 +165,10 @@ void InitEntities(Platform *pf) {
 	pf->game_state->entities = (BaseEntity *)GetMemStackPos(&pf->main_memory_stack.perm_data);
 	memset(pf->game_state->entities, 0, sizeof(*pf->game_state->entities));
    AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 0.0f), 1.0f, Cube, PLAYER);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 20.0f), 1.0f, Cube, NPC);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 30.0f), 1.0f, Cube, NPC);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 40.0f), 1.0f, Cube, NPC);
-   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 0.0f, 50.0f), 1.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(20.0f, 0.0f, 20.0f), 2.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(-20.0f, 0.0f, 30.0f), 2.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 20.0f, 40.0f), 2.0f, Cube, NPC);
+   AddEntities(pf->game_state, &used_memory, 1, MV3(0.0f, 20.0f, 50.0f), 2.0f, Cube, NPC);
 
 
 	PushArray(&pf->main_memory_stack.perm_data, used_memory, byte);	

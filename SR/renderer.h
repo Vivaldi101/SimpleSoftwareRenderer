@@ -99,7 +99,7 @@ struct Renderer {
 	RendererBackend		back_end;
 };
 
-extern void R_Init(Renderer **ren, MemoryStack *ms, void *hinstance, void *wndproc); 
+extern void R_Init(Renderer *ren, Platform *pf, void *hinstance, void *wndproc); 
 extern void RF_UpdateView(ViewSystem *vs);
 extern void RF_ExtractWorldPlanes(ViewSystem *vs);
 extern void RF_ExtractViewPlanes(ViewSystem *vs);
