@@ -1,5 +1,5 @@
 # Renderer
 First attempt at software rendering
 
-![engine](https://user-images.githubusercontent.com/9664221/49588231-e2b48400-f96e-11e8-8041-590b7418f63f.png)
+![engine](https://user-images.githubusercontent.com/9664221/49639196-12b56300-fa13-11e8-8913-598475534f24.png)
 
