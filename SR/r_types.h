@@ -34,6 +34,11 @@ static Point2D Makepoint2D(s32 x, s32 y) {
    return p;
 }
 
+static inline Vec2i MakeVectorFromPoints(Point2D a, Point2D b) {
+	Vec2i v = {b.x - a.x, b.y - a.y};
+
+	return v;
+}
 
 
 //struct DrawVert {

@@ -30,6 +30,7 @@ typedef double	r64;
 // windows specific
 #ifdef _WIN32
 #include <Windows.h>
+#include <Windowsx.h>
 #ifdef PLATFORM_DEBUG
 #define Assert(cond) do { if (!(cond)) DebugBreak(); } while(0)
 #define ExitIf(cond) do { if (!(cond)) Com_Quit(); } while(0)
@@ -44,6 +45,8 @@ do { \
 #define InvalidCodePath(m) 
 #define CheckMemory(cond) 
 #define EventOverflow 
+#define Assert(cond)
+#define StaticAssert(cond, error)
 #endif
 
 //#define memset ZeroMemory
@@ -57,8 +60,8 @@ do { \
 
 #undef MAX_PERM_MEMORY
 #undef MAX_TEMP_MEMORY
-#define MAX_PERM_MEMORY MEGABYTES(64) 
-#define MAX_TEMP_MEMORY MEGABYTES(256) 
+#define MAX_PERM_MEMORY MEGABYTES(64*2) 
+#define MAX_TEMP_MEMORY MEGABYTES(256*2) 
 
 // angle conversions
 #if 1
@@ -109,7 +112,7 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 // FIXME: fine tune these
 // min/max values
 //#define	MAX_NUM_ENTITIES	(1 << 4)
-#define	MAX_NUM_POLYS		(1 << 10)
+#define	MAX_NUM_POLYS		(1 << 13)
 #define	MAX_NUM_POLY_VERTS	(1 << 12)
 #define	MAX_NUM_LIGHTS		8
 #define	MAX_RENDER_BUFFER	MEGABYTES(4)
@@ -135,17 +138,6 @@ static inline u16 RGB_888To565(int r, int g, int b) {
 #define VaArg(va, t) ( *(t *)(((va) += PointerSizeOf(t)) - PointerSizeOf(t)))
 #define GetAnonType(value, type, prefix) (((value)->type_enum == prefix##type) ? &(value)->type : 0)
 
-
-#ifdef PLATFORM_DEBUG
-//#define Assert(cond) do { if (!(cond)) DebugBreak(); } while(0)
-//#define StaticAssert(cond, error) \
-//do { \
-//    static const char error[(cond)?1:-1];\
-//} while(0)
-#else
-#define Assert(cond)
-#define StaticAssert(cond, error)
-#endif	// PLATFORM_DEBUG
 
 enum {
 	PITCH,		// up / down
@@ -192,11 +184,6 @@ MATHLIB
 #define Vec4Init(v, x, y, z, w)		((v)[0] = (x), (v)[1] = (y), (v)[2] = (z), (v)[3] = (w))
 #define Vec3ZeroOut(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0))
 #define Vec4ZeroOut(v)				((v)[0] = (0), (v)[1] = (0), (v)[2] = (0), (v)[3] = (1))
-
-//#define Dot2(x, y)					((x)[0] * (y)[0] + (x)[1] * (y)[1])
-//#define Dot3(x, y)					((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
-#define Vec3Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2])
-#define Vec4Copy(a, b)				((a)[0] = (b)[0] , (a)[1] = (b)[1] , (a)[2] = (b)[2], (a)[3] = (b)[3])
 
 #define	SnapVec3(v)					((v)[0] = (int)(v)[0], (v)[1] = (int)(v)[1], (v)[2] = (int)(v)[2])
 
@@ -350,6 +337,12 @@ static inline r32 Dot2(Vec2 v1, r32 *v2) {
 	return dot;
 }
 
+static inline s64 Dot2(Vec2i v1, Vec2i v2) {
+	s64 dot = (s64)v1[0]*(s64)v2[0] + (s64)v1[1]*(s64)v2[1];
+
+	return dot;
+}
+
 static inline Vec2 Vec2Norm(Vec2 v) {
 	Vec2 n = {};
 	r32	len, ilen;
@@ -384,10 +377,14 @@ static inline Vec2 Perp(Vec2 a) {
 	return v;
 }
 
+union Vec4;
+
 union Vec3 {
 	struct {	r32 x, y, z;		} v;
 	struct {	r32 r, g, b;		} c;
 	r32 data[3];
+
+	inline operator Vec4() const;
 
 	r32			&operator[](int i)			{ return data[i]; }
 	const r32	&operator[](int i) const	{ return data[i]; }
@@ -524,6 +521,7 @@ static inline Vec3 operator *(r32 s, Vec3 a) {
 	return v;
 }
 
+
 static inline r32 Dot3(Vec3 v1, Vec3 v2) {
 	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 
@@ -634,9 +632,31 @@ union Vec4 {
 	struct {	r32 r, g, b, a;		} c;
 	r32 data[4];
 
+	inline operator Vec3() const;
+
 	r32			&operator[](int i)			{ return data[i]; }
 	const r32	&operator[](int i) const	{ return data[i]; }
 };
+
+static inline r32 Dot4(Vec4 v1, Vec4 v2) {
+	r32 dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] + v1[3]*v2[3];
+
+	return dot;
+}
+
+Vec4::operator Vec3() const
+{
+	Vec3 result = {data[0], data[1], data[2]};
+
+	return result;
+}
+
+Vec3::operator Vec4() const
+{
+	Vec4 result = {data[0], data[1], data[2], 1.0f};
+
+	return result;
+}
 
 static inline Vec4 MakeVec4(r32 x, r32 y, r32 z, r32 w) {
 	Vec4 v;
@@ -713,6 +733,21 @@ static inline s32 RoundReal32ToS32(r32 value) {
 static inline u32 RoundReal32ToU32(r32 value) {
 	u32 result = (u32)(value + 0.5f);
 	return result;
+}
+
+template <typename T>
+static inline T Clamp(T value, T low, T hi)
+{
+	if (value < low)
+	{
+		return low;
+	}
+	else if (value > hi)
+	{
+		return hi;
+	}
+
+	return value;
 }
 
 extern void Mat1x3Mul(r32 out[3], const r32 a[3], const r32 b[3][3]);

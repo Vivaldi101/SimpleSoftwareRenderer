@@ -10,7 +10,13 @@
 
 //#define PLATFORM_FULLSCREEN
 #define BYTES_PER_PIXEL 4	
-#define DEPTH_BUFFER_DIM 2048
+#define DEPTH_BUFFER_DIM 4096
+
+// 24.8 fixed-point format
+#define GUARD_BAND_MIN -(1 << 23)
+#define GUARD_BAND_MAX (1 << 23) - 1
+
+#define SUB_PIXEL_STEP 8
 
 enum {
 	POLY_STATE_CULLED = 0,		
@@ -37,7 +43,7 @@ enum {
 
 struct RenderTarget {
 	byte *			frame_buffer;		
-	r32 		      depth_buffer[DEPTH_BUFFER_DIM][DEPTH_BUFFER_DIM];  // FIXME: variable size?
+	r32 		    depth_buffer[DEPTH_BUFFER_DIM][DEPTH_BUFFER_DIM];  // FIXME: variable size?
 	int				pitch;		
 	int				width;          
 	int				height;

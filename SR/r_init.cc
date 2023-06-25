@@ -6,11 +6,11 @@
 void R_Init(Renderer *ren, Platform *pf, void *hinstance, void *wndproc) { 
 	// init some test lights
 	Light l = {};
-	l.ambient = MV4(0.20f, 0.20f, 0.20f, 1.0f); 
-	l.diffuse  = MV4(0.25f, 0.0f, 0.0f, 1.0f); 
-	l.specular = MV4(0.0f, 0.0f, 0.5f, 0.0f); 
+	l.ambient = MV4(0.0f, 0.0f, 0.0f, 0.0f); 
+	l.diffuse  = MV4(0.25f, 0.75f, 0.0f, 1.0f); 
+	l.specular = MV4(0.0f, 0.0f, 0.0f, 1.0f); 
 	l.radius = 1.0f;
-	l.kc = 0.0f; 
+	l.kc = 0.123f; 
 	l.kl = 0.05000f;
 	l.kq = 0.0f;
 	l.is_active = true;
@@ -41,7 +41,7 @@ void R_Init(Renderer *ren, Platform *pf, void *hinstance, void *wndproc) {
 	ren->front_end.current_view.fov_y = 90.0f;
 
 	ren->front_end.current_view.z_near = 1.0f;
-	ren->front_end.current_view.z_far = 1000.0f;
+	ren->front_end.current_view.z_far = 100000.0f;
 
 	ren->front_end.current_view.viewport_width = ren->back_end.target.width;		
 	ren->front_end.current_view.viewport_height = ren->back_end.target.height;

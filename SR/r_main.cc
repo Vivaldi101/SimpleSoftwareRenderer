@@ -1,9 +1,21 @@
 #include "renderer.h"
 #include "win_r.h"
 
+// Alternative to projection matrix.
+// TODO: Map z to [0, 1] range for depth buffering
+Vec4 RF_Project(Vec3 normal, Vec3 Q, Vec3 P, Vec3 E) {
+	Assert(Dot3(P - E, normal) != 0.0f);
+
+	const r32 depth = Dot3(P - Q, normal);
+
+	Vec4 result = (Dot3(Q - E, normal)*P) + (Dot3(Q - P, normal)*E) + (depth*normal);
+	result[3] = Dot3(P - E, normal);
+
+	return result;
+}
+
 void RF_SetupProjection(ViewSystem *vs) {
 	r32 projection_matrix[16];
-	r32 aspect_ratio = vs->aspect_ratio;
 	r32 fov_y = vs->fov_y;
 	r32 z_near = vs->z_near, z_far = vs->z_far;
 	r32 w = (r32)vs->viewplane_width, h = (r32)vs->viewplane_height;
@@ -17,9 +29,10 @@ void RF_SetupProjection(ViewSystem *vs) {
 	r32 a = z_far / (z_far - z_near);
 	r32 b = -z_near * a;
 
-	r32 m00 = 1.0f / aspect_ratio;
+	r32 aspect_ratio = 1.0f / vs->aspect_ratio;
+	//r32 aspect_ratio = 1.0f;
 
-	projection_matrix[0] = (2.0f * m00 * d) / (right - left);
+	projection_matrix[0] = (2.0f * aspect_ratio * d) / (right - left);
 	projection_matrix[4] = 0.0f;
 	projection_matrix[8] = 0.0f;
 	projection_matrix[12] = 0.0f;
@@ -124,18 +137,17 @@ void RF_ExtractViewPlanes(ViewSystem *vs) {
 	vps[FRUSTUM_PLANE_NEAR].unit_normal = Vec3Norm(vps[FRUSTUM_PLANE_NEAR].unit_normal);
 	vps[FRUSTUM_PLANE_NEAR].dist = Dot3(vps[FRUSTUM_PLANE_NEAR].unit_normal, MV3(0.0f, 0.0f, vs->z_near));
 
-   memcpy(&vs->view_planes, vps, sizeof(vs->view_planes));
+   memcpy(&vs->view_planes, vps, sizeof(vps));
 }
 
 
 void RF_TransformWorldToView(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
 	for (int i = 0; i < num_verts; ++i) {
-		Vec4 p;
-		Vec3Copy(p, poly_verts[i].xyz);
-		p[3] = 1.0f;
+		Vec4 p = poly_verts[i].xyz;
 
 		Mat1x4Mul(&p, &p, vs->view_matrix);  
-		Vec3Copy(poly_verts[i].xyz, p);
+
+		poly_verts[i].xyz = p;
 	}
 }
 
@@ -147,7 +159,7 @@ void RF_TransformModelToWorld(const PolyVert *model_poly_verts, PolyVert *trans_
 }
 
 // culling in worldspace
-#if 1
+#if 0
 int RF_CullPointAndRadius(ViewSystem *vs, Vec3 pt, r32 radius) {
 	for (int i = 0; i < NUM_FRUSTUM_PLANES; ++i) {
 		Plane pl = vs->frustum[i];
@@ -187,32 +199,64 @@ int RF_CullPoly(ViewSystem *vs, Poly *poly) {
 
 
 void RF_TransformViewToProj(ViewSystem *vs, PolyVert *poly_verts, int num_verts) {
+	const Vec3 plane = {0.0f, 0.0f, 1.0f};
+	const Vec3 normal = {0.0f, 0.0f, 1.0f};
+	const Vec3 eye = {0.0f, 0.0f, 0.0f};
+
    for (int i = 0; i < num_verts; ++i) {
+#if 1
+	   Vec3 viewP = poly_verts[i].xyz;
+	   if (Dot3(viewP - eye, normal) == 0.0f)
+	   {
+		   continue;
+	   }
+
+	   Vec4 projP = RF_Project(normal, plane, viewP, eye);
+
+	   poly_verts[i].xyz[0] = projP[0];
+	   poly_verts[i].xyz[1] = projP[1] * vs->aspect_ratio;
+	   poly_verts[i].xyz[2] = projP[2];
+	   poly_verts[i].xyz[3] = projP[3];
+
+	   int foo = 42;
+#else
       r32 in[4];
-      r32 out[4];
+      r32 projP[4];
 
       in[0] = poly_verts[i].xyz[0];
       in[1] = poly_verts[i].xyz[1];
       in[2] = poly_verts[i].xyz[2];
       in[3] = 1.0f;
 
-      Mat1x4Mul(out, in, vs->projection_matrix);  
-      if (out[3] > 0.0f) {
-         poly_verts[i].xyz[0] = out[0];
-         poly_verts[i].xyz[1] = out[1];
-         poly_verts[i].xyz[2] = out[2];
-         poly_verts[i].w = out[3];
-      }
+      Mat1x4Mul(projP, in, vs->projection_matrix);  
+
+	  //projP[2] = Clamp(projP[2], -projP[3], projP[3]);
+	  //out[1] = Clamp(out[1], -out[3], out[3]);
+	  //out[1] = Clamp(out[1], -out[3], out[3]);
+
+	   int foo = 42;
+	  poly_verts[i].xyz[0] = projP[0];
+	  poly_verts[i].xyz[1] = projP[1];
+	  poly_verts[i].xyz[2] = projP[2];
+	  poly_verts[i].w = projP[3];
+#endif
    }
 }
 
 void RF_TransformProjToClip(PolyVert *poly_verts, int num_verts) {
+   // TODO: could do clipping here.
+   // TODO: Clip to assert clip-space invariants.
    for (int i = 0; i < num_verts; ++i) {
       r32 w = poly_verts[i].w;
-      Assert(w > 0.0f);
-      poly_verts[i].xyz[0] /= w;
-      poly_verts[i].xyz[1] /= w;
-      poly_verts[i].xyz[2] /= w;
+	  poly_verts[i].xyz[0] /= w;
+	  poly_verts[i].xyz[1] /= w;
+	  poly_verts[i].xyz[2] /= w;
+
+	  Assert(-1.0f <= poly_verts[i].xyz[0] && poly_verts[i].xyz[0] <= 1.0f);
+	  Assert(-1.0f <= poly_verts[i].xyz[1] && poly_verts[i].xyz[1] <= 1.0f);
+	  // Depth clamp to [0, 1].
+	  poly_verts[i].xyz[2] = Clamp(poly_verts[i].xyz[2], 0.0f, 1.0f);
+	  //Assert(0.0f <= poly_verts[i].xyz[2] && poly_verts[i].xyz[2] <= 1.0f);
    }
 }
 
@@ -362,9 +406,7 @@ void RF_CullBackFaces(ViewSystem *vs, Poly *polys, int num_polys) {
 
 static void RF_RotateForViewer(ViewSystem *vs) {
 	r32	view_matrix[16];
-	Vec3	origin;
-
-	Vec3Copy(origin, vs->world_orientation.origin);
+	Vec3	origin = vs->world_orientation.origin;
 
 	// compute the uvn vectors in view space(LH)
 	Vec3 n = vs->world_orientation.dir;
@@ -659,9 +701,10 @@ void RF_Clip(Renderer *r) {
    int num_polys = r->back_end.num_polys;
    Assert(r->back_end.vis_num_polys == 0);
    Assert(r->back_end.vis_num_poly_verts == 0);
+   //b32 inside = true;
    for (int i = 0; i < num_polys; i++) {
-      b32 inside = true;
       Poly *poly = &r->back_end.polys[i];
+#if 0
       PolyVert pv0 = poly->vertex_array[0];
       PolyVert pv1 = poly->vertex_array[1];
       PolyVert pv2 = poly->vertex_array[2];
@@ -683,8 +726,9 @@ void RF_Clip(Renderer *r) {
             inside = false;
          } 
       }
-      if (inside) {
+#endif
+      //if (inside) {
          RF_AddPoly(&r->back_end, *poly);
-      }
+      //}
    }
 }

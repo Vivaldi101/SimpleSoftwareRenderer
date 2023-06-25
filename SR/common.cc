@@ -152,7 +152,7 @@ void Com_LoadEntities(Platform *pf) {
 }
 
 void Com_LoadTextures(Platform *pf, Renderer *r) {
-	FileInfo fi = pf->file_ptrs.read_file("check2.bmp");
+	FileInfo fi = pf->file_ptrs.read_file("check1.bmp");
 
    int w, h;
    Bitmap test_texture;
@@ -215,8 +215,11 @@ static void Com_RunEventLoop() {
 	}
 }
 
-void Com_RunFrame(Platform *pf, Renderer *ren) {
-	Sys_GenerateEvents();
+bool Com_RunFrame(Platform *pf, Renderer *ren) {
+	if (!Sys_GenerateEvents())
+	{
+		return false;
+	}
 	IN_GetInput(pf->input_state);
 	IN_HandleInput(pf->input_state);
 
@@ -286,6 +289,8 @@ void Com_RunFrame(Platform *pf, Renderer *ren) {
 		OutputDebugStringA(buffer);
 	}
 #endif
+
+	return true;
 }
 
 void Com_Quit() {

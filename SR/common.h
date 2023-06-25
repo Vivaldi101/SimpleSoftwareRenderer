@@ -71,7 +71,7 @@ enum SysEventType {
 
 struct SysEvent {
 	u32					time;
-	SysEventType		type;
+	int					type;
 	int					value, value2;
 	int					data_size;			
 	void *				data;				
@@ -133,11 +133,11 @@ extern void Com_SetupIO(Platform *pf);
 extern void Com_LoadEntities(Platform *pf);
 extern void Com_LoadTextures(Platform *pf, Renderer *r);
 extern void Com_LoadFonts(Platform *pf, Renderer *r);
-extern void Com_RunFrame(Platform *pf, Renderer *ren);
+extern bool Com_RunFrame(Platform *pf, Renderer *ren);
 extern void Com_Quit();
 
 // Events
-extern void Sys_GenerateEvents();
+extern bool Sys_GenerateEvents();
 extern struct SysEvent Com_GetEvent();
 extern struct SysEvent Sys_GetEvent();
 

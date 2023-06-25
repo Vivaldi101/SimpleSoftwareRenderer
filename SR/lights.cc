@@ -2,7 +2,7 @@
 #include "renderer.h"
 #include "lights.h"
 
-// flat shading
+// Flag shading.
 void R_CalculateLighting(const RendererBackend *rb, AmbientState as, Vec3 camera_dir, Vec3 camera_pos) {
 	Vec4 base = {};
 	Vec4 total = {};

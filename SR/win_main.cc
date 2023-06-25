@@ -16,7 +16,7 @@ void Sys_Init() {
 void Sys_Quit() {
 	Sys_DestroyConsole();
 	timeEndPeriod(1);
-	exit(0);
+	//exit(0);
 }
 
 void Sys_Print(const char *msg, ...) {
@@ -94,25 +94,28 @@ SysEvent Sys_GetEvent() {
 	return se;
 }
 
-u32 Sys_PumpEvents() {
+bool Sys_PumpEvents() {
 	u32 time = 0;
     MSG msg;
 
 	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 		if (!GetMessage(&msg, NULL, 0, 0)) {
 			Sys_Quit();
+			return false;
 		}
 		time = msg.time;
 			
-		TranslateMessage(&msg);
+	  TranslateMessage(&msg);
       DispatchMessage(&msg);
+
+	  //Sys_QueEvent(msg.time, msg.message, msg.lParam, msg.wParam, 
 	}
 
-	return time;
+	return true;
 }
 
-void Sys_GenerateEvents() {
-	u32 event_time = Sys_PumpEvents();
+bool Sys_GenerateEvents() {
+	return Sys_PumpEvents();
 }
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line, int cmd_show) {
@@ -122,6 +125,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 	Platform *pf = 0; 
 
 	Sys_CreateConsole(hinstance);
+	Sys_FetchConsole(CON_HIDE, true);
 
 	Sys_Init();
 	Sys_GetMilliseconds();
@@ -134,9 +138,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE prev_instance, LPSTR cmd_line,
 
 	Com_LoadEntities(pf);
 
-	for (;;) {
-		Com_RunFrame(pf, ren);
-	}
+	while(Com_RunFrame(pf, ren));
 
    Com_Quit();
 }

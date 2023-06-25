@@ -27,11 +27,7 @@ void IN_GetInput(Input *in) {
 }
 
 void IN_HandleInput(Input *in) {
-	if (in->keys[ESC_KEY].released) {
-		Com_Quit();
-	} else if (in->keys['C'].released) {
-		//(global_console.visibility == CON_HIDE) ? 
-		//	Sys_FetchConsole(CON_SHOW, true) : 
-		//	Sys_FetchConsole(CON_HIDE, true);
+	if (in->keys['C'].released) {
+		global_console.visibility == CON_HIDE ? Sys_FetchConsole(CON_SHOW, true) : Sys_FetchConsole(CON_HIDE, true);
 	} 
 }
