@@ -2,6 +2,7 @@ ipch/
 .vs/
 SR/x64/
 *.iobj
+*.sln
 *.ipdb
 *.sdf
 *.suo
@@ -9,3 +10,5 @@ SR/x64/
 *.user
 *.filters
 *.obj
+x64/
+Data/
